@@ -24,6 +24,7 @@ namespace Runtime.Player.Movement
         [ShowInInspector, BoxGroup("movement"), ReadOnly]
         private bool _isFacingRight;
 
+
         //Jump vars
         [ShowInInspector]
         [BoxGroup("Jump"), ReadOnly]
@@ -81,6 +82,12 @@ namespace Runtime.Player.Movement
         [ShowInInspector, BoxGroup("Collision"), ReadOnly]
         private bool _bumpedHead;
 
+
+        private void OnEnable()
+        {
+            _movementStats.SlideMovement.selectedCollider = _feetCollider;
+        }
+
         private void Awake()
         {
             _isFacingRight = true;
@@ -100,6 +107,10 @@ namespace Runtime.Player.Movement
             {
                 Move(_movementStats.AirAcceleration, _movementStats.AirDeceleration, InputManager.Movement);
             }
+
+            if (!_isGrounded || _isFalling || _isJumping) return;
+            //apply sliding
+            _rb.Slide(_velocity, Time.fixedDeltaTime, _movementStats.SlideMovement);
         }
 
         private void Update()

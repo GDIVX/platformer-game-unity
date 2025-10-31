@@ -17,6 +17,23 @@ MonoBehaviour:
   GroundDeceleration: 20
   AirAcceleration: 12
   AirDeceleration: 5
+  SlideMovement:
+    <maxIterations>k__BackingField: 20
+    <surfaceSlideAngle>k__BackingField: 30
+    <gravitySlipAngle>k__BackingField: 45
+    <surfaceUp>k__BackingField: {x: 0, y: 0}
+    <surfaceAnchor>k__BackingField: {x: 0, y: 0}
+    <gravity>k__BackingField: {x: 0, y: -8}
+    <startPosition>k__BackingField: {x: 0, y: 0}
+    <selectedCollider>k__BackingField: {fileID: 0}
+    <layerMask>k__BackingField:
+      serializedVersion: 2
+      m_Bits: 64
+    <useLayerMask>k__BackingField: 1
+    <useStartPosition>k__BackingField: 0
+    <useNoMove>k__BackingField: 0
+    <useSimulationMove>k__BackingField: 1
+    <useAttachedTriggers>k__BackingField: 0
   MaxRunSpeed: 15
   GroundLayer:
     serializedVersion: 2

@@ -12,6 +12,7 @@ namespace Runtime.Player.Movement
         [Range(0.25f, 50f)] public float GroundDeceleration = 20f;
         [Range(0.25f, 50f)] public float AirAcceleration = 5f;
         [Range(0.25f, 50f)] public float AirDeceleration = 5f;
+        public Rigidbody2D.SlideMovement SlideMovement;
 
         [Header("Run")] [Range(1f, 100f)] public float MaxRunSpeed = 12.5f;
 
