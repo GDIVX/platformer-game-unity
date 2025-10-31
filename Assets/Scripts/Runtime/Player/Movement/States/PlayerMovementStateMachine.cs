@@ -22,13 +22,13 @@ namespace Runtime.Player.Movement.States
         public IPlayerMovementState CurrentState { get; private set; }
         public IPlayerMovementState PreviousState { get; private set; }
 
-        public void Initialize<TState>() where TState : IPlayerMovementState
+        public void Initialize<TState>() where TState : class, IPlayerMovementState
         {
             CurrentState = GetState<TState>();
             CurrentState?.OnEnter();
         }
 
-        public void ChangeState<TState>() where TState : IPlayerMovementState
+        public void ChangeState<TState>() where TState : class, IPlayerMovementState
         {
             var nextState = GetState<TState>();
             if (nextState == null || ReferenceEquals(nextState, CurrentState))
