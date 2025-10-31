@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: PlayerMovementStats
   m_EditorClassIdentifier: Assembly-CSharp::Runtime.Player.Movement.PlayerMovementStats
   MaxWalkSpeed: 10
-  GroundAcceleration: 5
+  GroundAcceleration: 7
   GroundDeceleration: 20
-  AirAcceleration: 12
-  AirDeceleration: 5
+  AirAcceleration: 5
+  AirDeceleration: 3
   SlideMovement:
     <maxIterations>k__BackingField: 20
     <surfaceSlideAngle>k__BackingField: 30
@@ -34,20 +34,21 @@ MonoBehaviour:
     <useNoMove>k__BackingField: 0
     <useSimulationMove>k__BackingField: 1
     <useAttachedTriggers>k__BackingField: 0
-  MaxRunSpeed: 15
+  StickinessOnLanding: 0.1
+  MaxRunSpeed: 20
   GroundLayer:
     serializedVersion: 2
     m_Bits: 64
   GroundDetectionRayLength: 0.02
   HeadDetectionRayLength: 0.02
   HeadWidth: 0.75
-  JumpHeight: 4.5
+  JumpHeight: 6
   MaxRiseSpeed: 50
   GravityOnReleaseMultiplier: 3
   JumpHeightCompensationFactor: 1.1
   TimeToJumpApex: 0.45
   MaxFallSpeed: 26
-  NumberOfJumpsAllowed: 2
+  NumberOfJumpsAllowed: 1
   TimeForUpwardsCancel: 0.082
   ApexThreshold: 0.376
   ApexHangTime: 0.085

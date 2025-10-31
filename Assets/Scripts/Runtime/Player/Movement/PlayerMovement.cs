@@ -314,6 +314,10 @@ namespace Runtime.Player.Movement
             _jumpsCount = 0;
 
             _verticalVelocity = Physics2D.gravity.y;
+            
+            //Cut some of the horizontal velocity for stickiness
+            _velocity.x = Mathf.Lerp(_velocity.x, 0, _movementStats.StickinessOnLanding);
+            
             OnLand?.Invoke();
         }
 
