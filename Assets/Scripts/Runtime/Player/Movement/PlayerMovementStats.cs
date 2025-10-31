@@ -12,6 +12,7 @@ namespace Runtime.Player.Movement
         [Range(0.25f, 50f)] public float GroundDeceleration = 20f;
         [Range(0.25f, 50f)] public float AirAcceleration = 5f;
         [Range(0.25f, 50f)] public float AirDeceleration = 5f;
+        [Range(0, 1)] public float MinSpeedThreshold = 0.01f;
         public Rigidbody2D.SlideMovement SlideMovement;
 
         [Header("Landing")] [Range(0, 1)] public float StickinessOnLanding = 0.1f;
@@ -22,6 +23,9 @@ namespace Runtime.Player.Movement
         public float GroundDetectionRayLength = 0.02f;
         public float HeadDetectionRayLength = 0.02f;
         [Range(0f, 1f)] public float HeadWidth = 0.75f;
+
+        [Header("Edge Nudging")] public float HeadNudgeDistance = 0.5f;
+        public int HeadNudgeSteps = 3;
 
         [Header("Jump"), OnValueChanged("CalculateValues")]
         public float JumpHeight = 6.5f;
@@ -58,6 +62,10 @@ namespace Runtime.Player.Movement
         public bool DrawnRight = true;
         [Range(5, 100)] public int ArcResolution = 20;
         [Range(0, 500)] public int VisualizationSteps = 90;
+
+        public PlayerMovementStats(float groundEdgeNudgeDistance)
+        {
+        }
 
         [ShowInInspector, ReadOnly] public float Gravity { get; private set; }
         [ShowInInspector, ReadOnly] public float InitialJumpVelocity { get; private set; }

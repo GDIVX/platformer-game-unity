@@ -17,6 +17,7 @@ MonoBehaviour:
   GroundDeceleration: 20
   AirAcceleration: 5
   AirDeceleration: 3
+  MinSpeedThreshold: 0.005
   SlideMovement:
     <maxIterations>k__BackingField: 20
     <surfaceSlideAngle>k__BackingField: 30
@@ -42,6 +43,9 @@ MonoBehaviour:
   GroundDetectionRayLength: 0.02
   HeadDetectionRayLength: 0.02
   HeadWidth: 0.75
+  HeadNudgeDistance: 0.02
+  GroundEdgeNudgeStrength: 0.1
+  GroundEdgeNudgeDistance: 0.02
   JumpHeight: 6
   MaxRiseSpeed: 50
   GravityOnReleaseMultiplier: 3

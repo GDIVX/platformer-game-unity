@@ -158,6 +158,10 @@ namespace Runtime.Player.Movement
             else
             {
                 _velocity = Vector2.Lerp(_velocity, Vector2.zero, deceleration * Time.fixedDeltaTime);
+                if (_velocity.x <= _movementStats.MinSpeedThreshold )
+                {
+                    _velocity.x = 0f;
+                }
             }
 
             _rb.linearVelocity = new Vector2(_velocity.x, _rb.linearVelocityY);
@@ -314,10 +318,10 @@ namespace Runtime.Player.Movement
             _jumpsCount = 0;
 
             _verticalVelocity = Physics2D.gravity.y;
-            
+
             //Cut some of the horizontal velocity for stickiness
             _velocity.x = Mathf.Lerp(_velocity.x, 0, _movementStats.StickinessOnLanding);
-            
+
             OnLand?.Invoke();
         }
 
@@ -362,7 +366,7 @@ namespace Runtime.Player.Movement
             //Apply gravity
             if (_isJumping)
             {
-                HandleJumpGravity();
+                DuringJump();
             }
 
             //Jump cut
@@ -410,12 +414,16 @@ namespace Runtime.Player.Movement
             OnFall?.Invoke();
         }
 
-        private void HandleJumpGravity()
+        private void DuringJump()
         {
             // Check for head bumps
             if (_bumpedHead)
             {
-                _isFastFalling = true;
+                //Edge Nudging
+                if (!TryEdgeNudge())
+                {
+                    _isFastFalling = true;
+                }
             }
 
             //Gravity on ascend
@@ -435,6 +443,70 @@ namespace Runtime.Player.Movement
                 _isFalling = true;
             }
         }
+
+private bool TryEdgeNudge()
+{
+    // How far we are allowed to try to shimmy sideways
+    float maxNudge = _movementStats.HeadNudgeDistance;
+    LayerMask groundMask = _movementStats.GroundLayer;
+
+    // We'll check around the top of the body, since that's where we bumped
+    Bounds bodyBounds = _bodyCollider.bounds;
+
+    // This is the area we want to be clear AFTER the nudge
+    // basically: a box at head level a bit above the body
+    Vector2 clearanceSize = new Vector2(bodyBounds.size.x, _movementStats.HeadDetectionRayLength);
+    Vector2 clearanceOriginBase = new Vector2(bodyBounds.center.x, bodyBounds.max.y);
+
+    // We try in facing dir first, then the opposite
+    Vector2[] directions = _isFacingRight
+        ? new[] { Vector2.right, Vector2.left }
+        : new[] { Vector2.left, Vector2.right };
+
+    // we can try in 2–3 small steps so it doesn't "teleport"
+    int steps = _movementStats.HeadNudgeSteps;
+    float stepSize = maxNudge / steps;
+
+    foreach (var dir in directions)
+    {
+        for (int i = 1; i <= steps; i++)
+        {
+            float dist = stepSize * i;
+            Vector2 offset = dir * dist;
+
+            // 1) check horizontal space at body height
+            bool blockedSide = Physics2D.BoxCast(
+                bodyBounds.center,
+                bodyBounds.size,
+                0f,
+                dir,
+                dist,
+                groundMask);
+
+            if (blockedSide)
+                continue; // this step won't work, try next step / direction
+
+            // 2) check vertical clearance at the *nudged* position
+            Vector2 clearanceOrigin = clearanceOriginBase + offset;
+            bool blockedAbove = Physics2D.OverlapBox(
+                clearanceOrigin,
+                clearanceSize,
+                0f,
+                groundMask);
+
+            if (blockedAbove)
+                continue;
+
+            // 3) both checks passed → apply nudge
+            transform.position += (Vector3)offset;
+            return true;
+        }
+    }
+
+    // no valid nudge
+    return false;
+}
+
 
         private void OnAscent()
         {
