@@ -1,6 +1,6 @@
-using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Runtime.Player.Movement
 {
@@ -14,9 +14,11 @@ namespace Runtime.Player.Movement
 
         private Rigidbody2D _rb;
 
+
         //Movement vars
         [ShowInInspector, BoxGroup("movement"), ReadOnly]
         private Vector2 _velocity;
+
 
         [ShowInInspector, BoxGroup("movement"), ReadOnly]
         Vector2 _targetVelocity; //outer scope for debugging
@@ -26,9 +28,8 @@ namespace Runtime.Player.Movement
 
 
         //Jump vars
-        [ShowInInspector]
-        [BoxGroup("Jump"), ReadOnly]
-        public float VerticalVelocity { get; private set; }
+        [ShowInInspector] [BoxGroup("Jump"), ReadOnly]
+        private float _verticalVelocity;
 
         [ShowInInspector] [BoxGroup("Jump"), ReadOnly]
         private bool _isJumping;
@@ -82,6 +83,10 @@ namespace Runtime.Player.Movement
         [ShowInInspector, BoxGroup("Collision"), ReadOnly]
         private bool _bumpedHead;
 
+        [FoldoutGroup("Events")] public UnityEvent OnJump;
+        [FoldoutGroup("Events")] public UnityEvent OnLand;
+        [FoldoutGroup("Events")] public UnityEvent OnFall;
+        [FoldoutGroup("Events")] public UnityEvent<Vector2> OnMovement;
 
         private void OnEnable()
         {
@@ -148,6 +153,7 @@ namespace Runtime.Player.Movement
                     : new Vector2(moveInput.x, 0f) * _movementStats.MaxWalkSpeed;
 
                 _velocity = Vector2.Lerp(_velocity, _targetVelocity, acceleration * Time.fixedDeltaTime);
+                OnMovement?.Invoke(_velocity);
             }
             else
             {
@@ -261,7 +267,7 @@ namespace Runtime.Player.Movement
             //On jump release
             if (InputManager.JumpReleased)
             {
-                OnJumpInputReleased();
+                JumpCut();
             }
 
             switch (_jumpBufferTimer)
@@ -274,7 +280,7 @@ namespace Runtime.Player.Movement
                     if (_jumpReleasedDuringBuffer)
                     {
                         _isJumping = true;
-                        _fastFallReleaseSpeed = VerticalVelocity;
+                        _fastFallReleaseSpeed = _verticalVelocity;
                     }
 
                     break;
@@ -292,7 +298,7 @@ namespace Runtime.Player.Movement
             }
 
             //Landing
-            if ((_isJumping || _isFalling) && _isGrounded && VerticalVelocity <= 0)
+            if ((_isJumping || _isFalling) && _isGrounded && _verticalVelocity <= 0)
             {
                 HandleLanding();
             }
@@ -307,7 +313,8 @@ namespace Runtime.Player.Movement
             _isPastApexThreshold = false;
             _jumpsCount = 0;
 
-            VerticalVelocity = Physics2D.gravity.y;
+            _verticalVelocity = Physics2D.gravity.y;
+            OnLand?.Invoke();
         }
 
         private void InitiateJump(int jumps)
@@ -319,24 +326,24 @@ namespace Runtime.Player.Movement
 
             _jumpBufferTimer = 0f;
             _jumpsCount += jumps;
-            VerticalVelocity = _movementStats.InitialJumpVelocity;
+            _verticalVelocity = _movementStats.InitialJumpVelocity;
         }
 
-        private void OnJumpInputReleased()
+        private void JumpCut()
         {
             _jumpReleasedDuringBuffer = _jumpBufferTimer > 0f;
 
-            if (!_isJumping || !(VerticalVelocity > 0f)) return;
+            if (!_isJumping || !(_verticalVelocity > 0f)) return;
+            _verticalVelocity = 0f;
             _isFastFalling = true;
             if (_isPastApexThreshold)
             {
                 _isPastApexThreshold = false;
                 _fastFallTime = _movementStats.TimeForUpwardsCancel;
-                VerticalVelocity = 0f;
             }
             else
             {
-                _fastFallReleaseSpeed = VerticalVelocity;
+                _fastFallReleaseSpeed = _verticalVelocity;
             }
         }
 
@@ -351,7 +358,7 @@ namespace Runtime.Player.Movement
             //Apply gravity
             if (_isJumping)
             {
-                OnJump();
+                HandleJumpGravity();
             }
 
             //Jump cut
@@ -367,35 +374,39 @@ namespace Runtime.Player.Movement
             }
 
             //Clamp falls speed
-            VerticalVelocity = Mathf.Clamp(VerticalVelocity, -_movementStats.MaxFallSpeed, _movementStats.MaxRiseSpeed);
+            _verticalVelocity =
+                Mathf.Clamp(_verticalVelocity, -_movementStats.MaxFallSpeed, _movementStats.MaxRiseSpeed);
 
             //Apply to RB
-            _rb.linearVelocity = new Vector2(_rb.linearVelocityX, VerticalVelocity);
+            _rb.linearVelocity = new Vector2(_rb.linearVelocityX, _verticalVelocity);
+            OnJump?.Invoke();
         }
 
         private void Fall()
         {
             _isFalling = true;
-            VerticalVelocity += _movementStats.Gravity * Time.fixedDeltaTime;
+            _verticalVelocity += _movementStats.Gravity * Time.fixedDeltaTime;
+            OnFall?.Invoke();
         }
 
         private void FastFall()
         {
             if (_fastFallTime >= _movementStats.TimeForUpwardsCancel)
             {
-                VerticalVelocity += _movementStats.Gravity * _movementStats.GravityOnReleaseMultiplier *
-                                    Time.fixedDeltaTime;
+                _verticalVelocity += _movementStats.Gravity * _movementStats.GravityOnReleaseMultiplier *
+                                     Time.fixedDeltaTime;
             }
             else if (_fastFallTime < _movementStats.TimeForUpwardsCancel)
             {
-                VerticalVelocity = Mathf.Lerp(_fastFallReleaseSpeed, 0f,
+                _verticalVelocity = Mathf.Lerp(_fastFallReleaseSpeed, 0f,
                     _fastFallTime / _movementStats.TimeForUpwardsCancel);
             }
 
             _fastFallTime += Time.fixedDeltaTime;
+            OnFall?.Invoke();
         }
 
-        private void OnJump()
+        private void HandleJumpGravity()
         {
             // Check for head bumps
             if (_bumpedHead)
@@ -404,7 +415,7 @@ namespace Runtime.Player.Movement
             }
 
             //Gravity on ascend
-            if (VerticalVelocity >= 0f)
+            if (_verticalVelocity >= 0f)
             {
                 OnAscent();
             }
@@ -412,10 +423,10 @@ namespace Runtime.Player.Movement
             //Gravity on decent
             else if (!_isFastFalling)
             {
-                VerticalVelocity += _movementStats.Gravity * _movementStats.GravityOnReleaseMultiplier *
-                                    Time.fixedDeltaTime;
+                _verticalVelocity += _movementStats.Gravity * _movementStats.GravityOnReleaseMultiplier *
+                                     Time.fixedDeltaTime;
             }
-            else if (VerticalVelocity < 0f)
+            else if (_verticalVelocity < 0f)
             {
                 _isFalling = true;
             }
@@ -423,7 +434,7 @@ namespace Runtime.Player.Movement
 
         private void OnAscent()
         {
-            _apexPoint = Mathf.InverseLerp(_movementStats.InitialJumpVelocity, 0f, VerticalVelocity);
+            _apexPoint = Mathf.InverseLerp(_movementStats.InitialJumpVelocity, 0f, _verticalVelocity);
 
             if (_apexPoint > _movementStats.ApexThreshold)
             {
@@ -437,14 +448,14 @@ namespace Runtime.Player.Movement
                 _timePastApexThreshold += Time.fixedDeltaTime;
 
                 if (_timePastApexThreshold < _movementStats.ApexHangTime)
-                    VerticalVelocity = 0f;
+                    _verticalVelocity = 0f;
                 else
-                    VerticalVelocity = -0.01f;
+                    _verticalVelocity = -0.01f;
             }
             //Gravity on decent But not past apex threshold
             else
             {
-                VerticalVelocity += _movementStats.Gravity * Time.fixedDeltaTime;
+                _verticalVelocity += _movementStats.Gravity * Time.fixedDeltaTime;
                 _isPastApexThreshold = false;
             }
         }

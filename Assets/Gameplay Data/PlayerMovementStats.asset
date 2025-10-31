@@ -43,7 +43,7 @@ MonoBehaviour:
   HeadWidth: 0.75
   JumpHeight: 4.5
   MaxRiseSpeed: 50
-  GravityOnReleaseMultiplier: 1.5
+  GravityOnReleaseMultiplier: 3
   JumpHeightCompensationFactor: 1.1
   TimeToJumpApex: 0.45
   MaxFallSpeed: 26
