@@ -44,20 +44,19 @@ MonoBehaviour:
   HeadDetectionRayLength: 0.02
   HeadWidth: 0.75
   HeadNudgeDistance: 0.02
-  GroundEdgeNudgeStrength: 0.1
-  GroundEdgeNudgeDistance: 0.02
-  JumpHeight: 6
-  MaxRiseSpeed: 50
+  HeadNudgeSteps: 0
+  JumpHeight: 8
+  MaxRiseSpeed: 80
   GravityOnReleaseMultiplier: 3
   JumpHeightCompensationFactor: 1.1
-  TimeToJumpApex: 0.45
-  MaxFallSpeed: 26
+  TimeToJumpApex: 0.35
+  MaxFallSpeed: 50
   NumberOfJumpsAllowed: 1
-  TimeForUpwardsCancel: 0.082
-  ApexThreshold: 0.376
-  ApexHangTime: 0.085
+  TimeForUpwardsCancel: 0.08
+  ApexThreshold: 0.5
+  ApexHangTime: 0.125
   JumpBufferTime: 0.35
-  JumpCoyoteTime: 0.1
+  JumpCoyoteTime: 0.125
   DebugShowIsGrounded: 1
   DebugShowHeadBumpBox: 1
   ShowWalkJumpArc: 1
