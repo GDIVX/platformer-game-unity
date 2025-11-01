@@ -36,7 +36,6 @@ namespace Tests.EditMode
                 new UnityEvent(),
                 new UnityEvent(),
                 new UnityEvent(),
-                new UnityEvent(),
                 new UnityEvent<float>());
 
             _stateMachine = new PlayerMovementStateMachine(_context);

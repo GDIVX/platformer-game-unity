@@ -14,7 +14,6 @@ namespace Runtime.Player.Movement.States
             Collider2D bodyCollider,
             Transform transform,
             UnityEvent onJump,
-            UnityEvent onLand,
             UnityEvent onFall,
             UnityEvent onMoveStart,
             UnityEvent onMoveStopped,
@@ -27,7 +26,6 @@ namespace Runtime.Player.Movement.States
             BodyCollider = bodyCollider;
             Transform = transform;
             OnJumpEvent = onJump;
-            OnLandEvent = onLand;
             OnFallEvent = onFall;
             OnMoveStartEvent = onMoveStart;
             OnMoveStoppedEvent = onMoveStopped;
@@ -63,6 +61,7 @@ namespace Runtime.Player.Movement.States
         public bool IsFastFalling { get; set; }
         public int JumpsCount { get; set; }
         public float FastFallTime { get; set; }
+        public float AirTime { get; set; }
         public float FastFallReleaseSpeed { get; set; }
 
         public float ApexPoint { get; set; }
@@ -122,6 +121,7 @@ namespace Runtime.Player.Movement.States
         public void UpdateTimers(float deltaTime)
         {
             JumpBufferTimer = Mathf.Max(0f, JumpBufferTimer - deltaTime);
+            AirTime += Time.fixedDeltaTime;
 
             if (IsGrounded)
             {
@@ -209,21 +209,20 @@ namespace Runtime.Player.Movement.States
 
         public void ApplyLanding()
         {
+            float landingForce = VerticalVelocity;
+            OnLandedEvent?.Invoke(landingForce);
+
+            AirTime = 0f;
+            VerticalVelocity = Physics2D.gravity.y;
+            Velocity = new Vector2(Mathf.Lerp(Velocity.x, 0f, Stats.StickinessOnLanding), Velocity.y);
+            Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
+
             IsJumping = false;
             IsFalling = false;
             IsFastFalling = false;
             FastFallTime = 0f;
             IsPastApexThreshold = false;
             JumpsCount = 0;
-
-            float landingForce = VerticalVelocity;
-            VerticalVelocity = Physics2D.gravity.y;
-
-            Velocity = new Vector2(Mathf.Lerp(Velocity.x, 0f, Stats.StickinessOnLanding), Velocity.y);
-            Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
-
-            OnLandedEvent?.Invoke(landingForce);
-            OnLandEvent?.Invoke();
         }
 
         public void InitiateJump(int jumpIncrements)

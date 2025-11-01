@@ -42,7 +42,6 @@ namespace Runtime.Player.Movement
                 _bodyCollider,
                 transform,
                 OnJump,
-                OnLand,
                 OnFall,
                 OnMoveStart,
                 OnMoveStopped,
