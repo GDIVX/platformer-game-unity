@@ -15,10 +15,11 @@ namespace Runtime.Player.Movement
         [FoldoutGroup("Events")] public UnityEvent OnJump;
         [FoldoutGroup("Events")] public UnityEvent OnLand;
         [FoldoutGroup("Events")] public UnityEvent OnFall;
+        [FoldoutGroup("Events")] public UnityEvent<bool> OnTurn;
         [FoldoutGroup("Events")] public UnityEvent<Vector2> OnMovement;
+        public PlayerMovementContext Context { get; private set; }
 
         private Rigidbody2D _rb;
-        private PlayerMovementContext _context;
         private PlayerMovementStateMachine _stateMachine;
 
         private void OnEnable()
@@ -32,7 +33,7 @@ namespace Runtime.Player.Movement
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
-            _context = new PlayerMovementContext(
+            Context = new PlayerMovementContext(
                 _movementStats,
                 _rb,
                 _feetCollider,
@@ -41,29 +42,30 @@ namespace Runtime.Player.Movement
                 OnJump,
                 OnLand,
                 OnFall,
+                OnTurn,
                 OnMovement);
 
             CollisionCheck();
-            _stateMachine = new PlayerMovementStateMachine(_context);
+            _stateMachine = new PlayerMovementStateMachine(Context);
             _stateMachine.Initialize<GroundedState>();
         }
 
         private void Update()
         {
-            if (_context == null)
+            if (Context == null)
             {
                 return;
             }
 
             ReadInput();
-            _context.UpdateTimers(Time.deltaTime);
+            Context.UpdateTimers(Time.deltaTime);
             _stateMachine.HandleInput();
             _stateMachine.Tick();
         }
 
         private void FixedUpdate()
         {
-            if (_context == null)
+            if (Context == null)
             {
                 return;
             }
@@ -74,7 +76,7 @@ namespace Runtime.Player.Movement
 
         private void ReadInput()
         {
-            _context.SetInput(
+            Context.SetInput(
                 InputManager.Movement,
                 InputManager.RunHeld,
                 InputManager.JumpPressed,
@@ -106,12 +108,12 @@ namespace Runtime.Player.Movement
                 _movementStats.GroundDetectionRayLength,
                 _movementStats.GroundLayer);
 
-            _context.SetGroundHit(groundHit);
+            Context.SetGroundHit(groundHit);
 
 #if UNITY_EDITOR
             if (_movementStats.DebugShowIsGrounded)
             {
-                Color rayColor = _context.IsGrounded ? Color.green : Color.red;
+                Color rayColor = Context.IsGrounded ? Color.green : Color.red;
                 Debug.DrawRay(
                     new Vector2(boxCastOrigin.x - boxCastSize.x / 2, boxCastOrigin.y),
                     Vector2.down * _movementStats.GroundDetectionRayLength,
@@ -150,12 +152,12 @@ namespace Runtime.Player.Movement
                 _movementStats.HeadDetectionRayLength,
                 _movementStats.GroundLayer);
 
-            _context.SetHeadHit(headHit);
+            Context.SetHeadHit(headHit);
 
 #if UNITY_EDITOR
             if (_movementStats.DebugShowHeadBumpBox)
             {
-                Color rayColor = _context.BumpedHead ? Color.green : Color.red;
+                Color rayColor = Context.BumpedHead ? Color.green : Color.red;
                 Debug.DrawRay(
                     new Vector2(boxCastOrigin.x - boxCastSize.x / 2, boxCastOrigin.y),
                     Vector2.up * _movementStats.HeadDetectionRayLength,

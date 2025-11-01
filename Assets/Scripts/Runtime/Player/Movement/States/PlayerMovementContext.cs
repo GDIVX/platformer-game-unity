@@ -1,8 +1,10 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace Runtime.Player.Movement.States
 {
+    [Serializable]
     public class PlayerMovementContext
     {
         public PlayerMovementContext(
@@ -14,6 +16,7 @@ namespace Runtime.Player.Movement.States
             UnityEvent onJump,
             UnityEvent onLand,
             UnityEvent onFall,
+            UnityEvent<bool> onTurn,
             UnityEvent<Vector2> onMovement)
         {
             Stats = stats;
@@ -24,6 +27,7 @@ namespace Runtime.Player.Movement.States
             OnJumpEvent = onJump;
             OnLandEvent = onLand;
             OnFallEvent = onFall;
+            OnTurnEvent = onTurn;
             OnMovementEvent = onMovement;
 
             CoyoteTimer = stats.JumpCoyoteTime;
@@ -38,6 +42,7 @@ namespace Runtime.Player.Movement.States
         public Transform Transform { get; }
         public UnityEvent OnJumpEvent { get; }
         public UnityEvent OnLandEvent { get; }
+        public UnityEvent<bool> OnTurnEvent { get; }
         public UnityEvent OnFallEvent { get; }
         public UnityEvent<Vector2> OnMovementEvent { get; }
 
@@ -340,13 +345,14 @@ namespace Runtime.Player.Movement.States
 
         private void TurnCheck(Vector2 moveInput)
         {
-            if (IsFacingRight && moveInput.x < 0f)
+            switch (IsFacingRight)
             {
-                Turn(false);
-            }
-            else if (!IsFacingRight && moveInput.x > 0f)
-            {
-                Turn(true);
+                case true when moveInput.x < 0f:
+                    Turn(false);
+                    break;
+                case false when moveInput.x > 0f:
+                    Turn(true);
+                    break;
             }
         }
 
@@ -359,6 +365,7 @@ namespace Runtime.Player.Movement.States
 
             IsFacingRight = faceRight;
             Transform.Rotate(0f, faceRight ? 180f : -180f, 0f);
+            OnTurnEvent?.Invoke(IsFacingRight);
         }
     }
 }
