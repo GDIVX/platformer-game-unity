@@ -2,6 +2,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
 using Runtime.Player.Movement.States;
+using Runtime.Player.Movement.Tools;
 
 namespace Runtime.Player.Movement
 {
@@ -179,87 +180,6 @@ namespace Runtime.Player.Movement
 #endif
         }
 
-        private void OnDrawGizmos()
-        {
-#if UNITY_EDITOR
-            if (_movementStats == null || _feetCollider == null)
-            {
-                return;
-            }
 
-            if (_movementStats.ShowWalkJumpArc)
-            {
-                DrawJumpArc(_movementStats.MaxWalkSpeed, Color.white);
-            }
-
-            if (_movementStats.ShowRunJumpArc)
-            {
-                DrawJumpArc(_movementStats.MaxRunSpeed, Color.red);
-            }
-#endif
-        }
-
-        private void DrawJumpArc(float moveSpeed, Color gizmoColor)
-        {
-            Vector2 startPosition = new Vector2(_feetCollider.bounds.center.x, _feetCollider.bounds.min.y);
-            Vector2 previousPosition = startPosition;
-            float speed = _movementStats.DrawnRight ? moveSpeed : -moveSpeed;
-
-            Vector2 velocity = new Vector2(speed, _movementStats.InitialJumpVelocity);
-            Gizmos.color = gizmoColor;
-
-            float timeStep = 2 * _movementStats.TimeToJumpApex / _movementStats.ArcResolution;
-
-            for (int i = 0; i < _movementStats.VisualizationSteps; i++)
-            {
-                float simulationTime = i * timeStep;
-                Vector2 displacement;
-                Vector2 drawPoint;
-
-                if (simulationTime < _movementStats.TimeToJumpApex)
-                {
-                    displacement = velocity * simulationTime +
-                                   0.5f * new Vector2(0, _movementStats.Gravity) * simulationTime * simulationTime;
-                }
-                else if (simulationTime < _movementStats.TimeToJumpApex + _movementStats.ApexHangTime)
-                {
-                    float apexTime = simulationTime - _movementStats.TimeToJumpApex;
-                    displacement = velocity * _movementStats.TimeToJumpApex + 0.5f *
-                        new Vector2(0, _movementStats.Gravity) * _movementStats.TimeToJumpApex *
-                        _movementStats.TimeToJumpApex;
-                    displacement += new Vector2(speed, 0) * apexTime;
-                }
-                else
-                {
-                    float descendTime = simulationTime - (_movementStats.TimeToJumpApex + _movementStats.ApexHangTime);
-                    displacement = velocity * _movementStats.TimeToJumpApex + 0.5f *
-                        new Vector2(0, _movementStats.Gravity) * _movementStats.TimeToJumpApex *
-                        _movementStats.TimeToJumpApex;
-                    displacement += new Vector2(speed, 0) * _movementStats.ApexHangTime;
-                    displacement += new Vector2(speed, 0) * descendTime +
-                                    0.5f * new Vector2(0, _movementStats.Gravity) * descendTime * descendTime;
-                }
-
-                drawPoint = startPosition + displacement;
-
-                if (_movementStats.StopOnCollision)
-                {
-                    RaycastHit2D hit = Physics2D.Raycast(
-                        previousPosition,
-                        drawPoint - previousPosition,
-                        Vector2.Distance(previousPosition, drawPoint),
-                        _movementStats.GroundLayer);
-
-                    if (hit.collider != null)
-                    {
-                        Gizmos.DrawLine(previousPosition, hit.point);
-                        break;
-                    }
-                }
-
-                Gizmos.DrawLine(previousPosition, drawPoint);
-                previousPosition = drawPoint;
-            }
-        }
     }
 }
