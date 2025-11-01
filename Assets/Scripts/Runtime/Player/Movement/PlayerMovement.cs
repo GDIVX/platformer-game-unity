@@ -92,6 +92,7 @@ namespace Runtime.Player.Movement
         {
             CheckIfGrounded();
             CheckIfBumpedHead();
+            CheckForWall();
         }
 
         private void CheckIfGrounded()
@@ -178,6 +179,70 @@ namespace Runtime.Player.Movement
                     rayColor);
             }
 #endif
+        }
+
+        private void CheckForWall()
+        {
+            if (_movementStats == null || _bodyCollider == null)
+            {
+                Context.ClearWallHit();
+                return;
+            }
+
+            var wallSettings = _movementStats.WallSlide;
+            if (wallSettings == null)
+            {
+                Context.ClearWallHit();
+                return;
+            }
+
+            Bounds bodyBounds = _bodyCollider.bounds;
+            float shrink = Mathf.Clamp(wallSettings.WallDetectionVerticalShrink, 0f, bodyBounds.size.y * 0.95f);
+            Vector2 castSize = new Vector2(bodyBounds.size.x, Mathf.Max(0.05f, bodyBounds.size.y - shrink));
+            Vector2 castOrigin = bodyBounds.center;
+
+            RaycastHit2D leftHit = Physics2D.BoxCast(
+                castOrigin,
+                castSize,
+                0f,
+                Vector2.left,
+                wallSettings.WallDetectionHorizontalDistance,
+                _movementStats.GroundLayer);
+
+            RaycastHit2D rightHit = Physics2D.BoxCast(
+                castOrigin,
+                castSize,
+                0f,
+                Vector2.right,
+                wallSettings.WallDetectionHorizontalDistance,
+                _movementStats.GroundLayer);
+
+            bool hasLeft = leftHit.collider != null && leftHit.collider != _bodyCollider && leftHit.collider != _feetCollider;
+            bool hasRight = rightHit.collider != null && rightHit.collider != _bodyCollider && rightHit.collider != _feetCollider;
+
+            if (hasLeft && hasRight)
+            {
+                if (leftHit.distance <= rightHit.distance)
+                {
+                    Context.SetWallHit(leftHit, -1);
+                }
+                else
+                {
+                    Context.SetWallHit(rightHit, 1);
+                }
+            }
+            else if (hasLeft)
+            {
+                Context.SetWallHit(leftHit, -1);
+            }
+            else if (hasRight)
+            {
+                Context.SetWallHit(rightHit, 1);
+            }
+            else
+            {
+                Context.ClearWallHit();
+            }
         }
 
 
