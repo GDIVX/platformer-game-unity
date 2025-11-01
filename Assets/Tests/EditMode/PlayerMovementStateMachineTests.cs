@@ -34,8 +34,10 @@ namespace Tests.EditMode
                 new UnityEvent(),
                 new UnityEvent(),
                 new UnityEvent(),
-                new UnityEvent<bool>(),
-                new UnityEvent<Vector2>());
+                new UnityEvent(),
+                new UnityEvent(),
+                new UnityEvent(),
+                new UnityEvent<float>());
 
             _stateMachine = new PlayerMovementStateMachine(_context);
             _stateMachine.Initialize<GroundedState>();

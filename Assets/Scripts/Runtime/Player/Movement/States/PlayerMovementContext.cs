@@ -16,8 +16,10 @@ namespace Runtime.Player.Movement.States
             UnityEvent onJump,
             UnityEvent onLand,
             UnityEvent onFall,
-            UnityEvent<bool> onTurn,
-            UnityEvent<Vector2> onMovement)
+            UnityEvent onMoveStart,
+            UnityEvent onMoveStopped,
+            UnityEvent onMoveFullyStopped,
+            UnityEvent<float> onLanded)
         {
             Stats = stats;
             Rigidbody = rigidbody;
@@ -27,8 +29,10 @@ namespace Runtime.Player.Movement.States
             OnJumpEvent = onJump;
             OnLandEvent = onLand;
             OnFallEvent = onFall;
-            OnTurnEvent = onTurn;
-            OnMovementEvent = onMovement;
+            OnMoveStartEvent = onMoveStart;
+            OnMoveStoppedEvent = onMoveStopped;
+            OnMoveFullyStoppedEvent = onMoveFullyStopped;
+            OnLandedEvent = onLanded;
 
             CoyoteTimer = stats.JumpCoyoteTime;
             VerticalVelocity = Physics2D.gravity.y;
@@ -44,7 +48,10 @@ namespace Runtime.Player.Movement.States
         public UnityEvent OnLandEvent { get; }
         public UnityEvent<bool> OnTurnEvent { get; }
         public UnityEvent OnFallEvent { get; }
-        public UnityEvent<Vector2> OnMovementEvent { get; }
+        public UnityEvent OnMoveStartEvent { get; }
+        public UnityEvent OnMoveStoppedEvent { get; }
+        public UnityEvent OnMoveFullyStoppedEvent { get; }
+        public UnityEvent<float> OnLandedEvent { get; }
 
         public Vector2 Velocity { get; set; }
         public Vector2 TargetVelocity { get; private set; }
@@ -77,13 +84,29 @@ namespace Runtime.Player.Movement.States
         public bool JumpHeld { get; private set; }
         public bool JumpReleased { get; private set; }
 
+        private bool _hasHorizontalInput;
+        private bool _isFullyStopped = true;
+
         public void SetInput(Vector2 moveInput, bool runHeld, bool jumpPressed, bool jumpHeld, bool jumpReleased)
         {
+            bool wasMovingHorizontally = _hasHorizontalInput;
             MoveInput = moveInput;
             RunHeld = runHeld;
             JumpPressed = jumpPressed;
             JumpHeld = jumpHeld;
             JumpReleased = jumpReleased;
+
+            _hasHorizontalInput = !Mathf.Approximately(MoveInput.x, 0f);
+
+            if (!wasMovingHorizontally && _hasHorizontalInput)
+            {
+                _isFullyStopped = false;
+                OnMoveStartEvent?.Invoke();
+            }
+            else if (wasMovingHorizontally && !_hasHorizontalInput)
+            {
+                OnMoveStoppedEvent?.Invoke();
+            }
 
             if (jumpPressed)
             {
@@ -140,7 +163,9 @@ namespace Runtime.Player.Movement.States
 
         public void ApplyHorizontalMovement(float acceleration, float deceleration)
         {
-            if (MoveInput != Vector2.zero)
+            bool wasFullyStopped = _isFullyStopped;
+
+            if (_hasHorizontalInput)
             {
                 TurnCheck(MoveInput);
 
@@ -149,10 +174,11 @@ namespace Runtime.Player.Movement.States
                 TargetVelocity = desired * maxSpeed;
 
                 Velocity = Vector2.Lerp(Velocity, TargetVelocity, acceleration * Time.fixedDeltaTime);
-                OnMovementEvent?.Invoke(Velocity);
+                _isFullyStopped = false;
             }
             else
             {
+                TargetVelocity = Vector2.zero;
                 Velocity = Vector2.Lerp(Velocity, Vector2.zero, deceleration * Time.fixedDeltaTime);
                 if (Mathf.Abs(Velocity.x) <= Stats.MinSpeedThreshold)
                 {
@@ -161,6 +187,14 @@ namespace Runtime.Player.Movement.States
             }
 
             Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
+
+            bool isFullyStopped = Mathf.Approximately(Velocity.x, 0f);
+            if (!wasFullyStopped && isFullyStopped)
+            {
+                OnMoveFullyStoppedEvent?.Invoke();
+            }
+
+            _isFullyStopped = isFullyStopped;
         }
 
         public void ApplyVerticalVelocity()
@@ -181,11 +215,14 @@ namespace Runtime.Player.Movement.States
             FastFallTime = 0f;
             IsPastApexThreshold = false;
             JumpsCount = 0;
+
+            float landingForce = VerticalVelocity;
             VerticalVelocity = Physics2D.gravity.y;
 
             Velocity = new Vector2(Mathf.Lerp(Velocity.x, 0f, Stats.StickinessOnLanding), Velocity.y);
             Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
 
+            OnLandedEvent?.Invoke(landingForce);
             OnLandEvent?.Invoke();
         }
 

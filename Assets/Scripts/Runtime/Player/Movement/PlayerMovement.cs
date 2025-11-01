@@ -15,8 +15,10 @@ namespace Runtime.Player.Movement
         [FoldoutGroup("Events")] public UnityEvent OnJump;
         [FoldoutGroup("Events")] public UnityEvent OnLand;
         [FoldoutGroup("Events")] public UnityEvent OnFall;
-        [FoldoutGroup("Events")] public UnityEvent<bool> OnTurn;
-        [FoldoutGroup("Events")] public UnityEvent<Vector2> OnMovement;
+        [FoldoutGroup("Events")] public UnityEvent OnMoveStart;
+        [FoldoutGroup("Events")] public UnityEvent OnMoveStopped;
+        [FoldoutGroup("Events")] public UnityEvent OnMoveFullyStopped;
+        [FoldoutGroup("Events")] public UnityEvent<float> OnLanded;
         public PlayerMovementContext Context { get; private set; }
 
         private Rigidbody2D _rb;
@@ -42,8 +44,10 @@ namespace Runtime.Player.Movement
                 OnJump,
                 OnLand,
                 OnFall,
-                OnTurn,
-                OnMovement);
+                OnMoveStart,
+                OnMoveStopped,
+                OnMoveFullyStopped,
+                OnLanded);
 
             CollisionCheck();
             _stateMachine = new PlayerMovementStateMachine(Context);
