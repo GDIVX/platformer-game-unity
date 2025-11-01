@@ -57,6 +57,10 @@ MonoBehaviour:
   GroundDetectionRayLength: 0.02
   HeadDetectionRayLength: 0.02
   HeadWidth: 0.75
+  WallDetectionRayLength: 0.02
+  WallDetectionHeightScale: 0.7
+  DebugShowWallChecks: 1
+  WallStickTime: 2
   HeadNudgeDistance: 0.02
   HeadNudgeSteps: 0
   JumpHeight: 8

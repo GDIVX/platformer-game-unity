@@ -30,6 +30,12 @@ namespace Runtime.Player.Movement
         public float HeadDetectionRayLength = 0.02f;
         [Range(0f, 1f)] public float HeadWidth = 0.75f;
 
+        [Header("Wall Checks")] public float WallDetectionRayLength = 0.1f;
+        [Range(0.1f, 1f)] public float WallDetectionHeightScale = 0.9f;
+        public bool DebugShowWallChecks = false;
+
+        [Header("Wall Movement")] [Range(0f, 2f)] public float WallStickTime = 0.2f;
+
         [Header("Edge Nudging")] public float HeadNudgeDistance = 0.5f;
         public int HeadNudgeSteps = 3;
 

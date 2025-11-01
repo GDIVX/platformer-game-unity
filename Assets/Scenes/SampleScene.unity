@@ -1076,7 +1076,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -17.26749, y: 5.08433, z: -12}
+  m_LocalPosition: {x: -16.4, y: 17.22, z: -12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2100,7 +2100,7 @@ Transform:
   m_GameObject: {fileID: 1191507197}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -17.267488, y: 5.08433, z: -10}
+  m_LocalPosition: {x: -16.399998, y: 17.22, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2378,7 +2378,7 @@ Transform:
   m_GameObject: {fileID: 1378950747}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -17.26749, y: 5.08433, z: 0}
+  m_LocalPosition: {x: -16.4, y: 17.22, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2538,7 +2538,7 @@ Transform:
   m_GameObject: {fileID: 1849245684}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -17.16749, y: 5.08433, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3677,11 +3677,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1039312815831141757, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.1
+      value: -16.4
       objectReference: {fileID: 0}
     - target: {fileID: 1039312815831141757, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 17.22
       objectReference: {fileID: 0}
     - target: {fileID: 1039312815831141757, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3722,6 +3722,14 @@ PrefabInstance:
     - target: {fileID: 2333660657379343393, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: m_TagString
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 3216285998569459636, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+      propertyPath: m_Size.x
+      value: 1.0766163
+      objectReference: {fileID: 0}
+    - target: {fileID: 3216285998569459636, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+      propertyPath: m_Offset.x
+      value: -0.000702858
       objectReference: {fileID: 0}
     - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: OnTurn.m_PersistentCalls.m_Calls.Array.size
