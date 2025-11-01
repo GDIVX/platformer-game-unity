@@ -32,8 +32,8 @@ MonoBehaviour:
       m_Bits: 64
     <useLayerMask>k__BackingField: 1
     <useStartPosition>k__BackingField: 0
-    <useNoMove>k__BackingField: 0
-    <useSimulationMove>k__BackingField: 1
+    <useNoMove>k__BackingField: 1
+    <useSimulationMove>k__BackingField: 0
     <useAttachedTriggers>k__BackingField: 0
   StickinessOnLanding: 0.1
   MaxRunSpeed: 20
@@ -62,6 +62,6 @@ MonoBehaviour:
   ShowWalkJumpArc: 1
   ShowRunJumpArc: 1
   StopOnCollision: 1
-  DrawnRight: 1
-  ArcResolution: 20
-  VisualizationSteps: 130
+  DrawnRight: 0
+  ArcResolution: 5
+  VisualizationSteps: 100

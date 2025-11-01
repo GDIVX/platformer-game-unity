@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Runtime.Player.Movement.DebugTools
+namespace Runtime.Player.Movement.Tools
 {
     public class JumpArcSimulator
     {
@@ -115,7 +115,7 @@ namespace Runtime.Player.Movement.DebugTools
 
                 verticalVelocity = Mathf.Clamp(verticalVelocity, -_stats.MaxFallSpeed, _stats.MaxRiseSpeed);
 
-                Vector2 previousPosition = points[points.Count - 1];
+                Vector2 previousPosition = points[^1];
                 Vector2 displacement = new Vector2(horizontalVelocity * deltaTime, verticalVelocity * deltaTime);
                 Vector2 proposedPosition = previousPosition + displacement;
 
@@ -133,24 +133,24 @@ namespace Runtime.Player.Movement.DebugTools
                     }
                 }
 
-                if (previousPosition.y >= startHeight && proposedPosition.y < startHeight)
-                {
-                    float travelY = previousPosition.y - proposedPosition.y;
-                    float t = Mathf.Approximately(travelY, 0f)
-                        ? 1f
-                        : (previousPosition.y - startHeight) / travelY;
-                    t = Mathf.Clamp01(t);
-                    Vector2 landingPoint = Vector2.Lerp(previousPosition, proposedPosition, t);
-                    points.Add(landingPoint);
-                    break;
-                }
+                // if (previousPosition.y >= startHeight && proposedPosition.y < startHeight)
+                // {
+                //     float travelY = previousPosition.y - proposedPosition.y;
+                //     float t = Mathf.Approximately(travelY, 0f)
+                //         ? 1f
+                //         : (previousPosition.y - startHeight) / travelY;
+                //     t = Mathf.Clamp01(t);
+                //     Vector2 landingPoint = Vector2.Lerp(previousPosition, proposedPosition, t);
+                //     points.Add(landingPoint);
+                //     break;
+                // }
 
                 points.Add(proposedPosition);
 
-                if (proposedPosition.y <= startHeight)
-                {
-                    break;
-                }
+                // if (proposedPosition.y <= startHeight)
+                // {
+                //     break;
+                // }
             }
 
             return new SimulationResult(points, collisionIndex);

@@ -6,15 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="d54d5fb3-25d1-4a54-88f3-3183bb0f20ba" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/Debug/JumpArcSimulator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/Debug/JumpArcSimulator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Gameplay Data/PlayerMovementStats.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Gameplay Data/PlayerMovementStats.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/Debug.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/Debug/JumpArcSimulator.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/Debug/JumpArcSimulator.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/PlayerMovement.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/PlayerMovement.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Tests.meta" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Tests.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Tests/EditMode.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Tests/EditMode/PlayerMovementStateMachineTests.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Tests/EditMode/PlayerMovementStateMachineTests.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Tests/PlayMode.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Tests/PlayMode/JumpArcSimulatorPlayModeTests.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Tests/PlayMode/JumpArcSimulatorPlayModeTests.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Tests/JumpArcSimulatorPlayModeTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Tests/JumpArcSimulatorPlayModeTests.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -118,7 +116,7 @@
       <workItem from="1761901388573" duration="1149000" />
       <workItem from="1761902583935" duration="10379000" />
       <workItem from="1762006720419" duration="3984000" />
-      <workItem from="1762023044321" duration="589000" />
+      <workItem from="1762023044321" duration="2134000" />
     </task>
     <servers />
   </component>
@@ -135,24 +133,5 @@
   <component name="UnityUnitTestConfiguration" currentTestLauncher="Both" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="DotNet Breakpoints">
-          <url>file://$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Camera/VelocityToImpulseForceShaper.cs</url>
-          <line>15</line>
-          <properties documentPath="C:\Unity Projects\platformer-game-unity\Assets\Scripts\Runtime\Player\Camera\VelocityToImpulseForceShaper.cs" containingFunctionPresentation="Method 'ShapedForce'">
-            <startOffsets>
-              <option value="493" />
-            </startOffsets>
-            <endOffsets>
-              <option value="494" />
-            </endOffsets>
-          </properties>
-          <option name="timeStamp" value="4" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

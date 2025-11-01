@@ -1,8 +1,8 @@
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
-using Runtime.Player.Movement.DebugTools;
 using Runtime.Player.Movement.States;
+using Runtime.Player.Movement.Tools;
 
 namespace Runtime.Player.Movement
 {
@@ -180,59 +180,6 @@ namespace Runtime.Player.Movement
 #endif
         }
 
-        private void OnDrawGizmos()
-        {
-#if UNITY_EDITOR
-            if (_movementStats == null || _feetCollider == null)
-            {
-                return;
-            }
 
-            if (_movementStats.ShowWalkJumpArc)
-            {
-                DrawJumpArc(false, Color.white);
-            }
-
-            if (_movementStats.ShowRunJumpArc)
-            {
-                DrawJumpArc(true, Color.red);
-            }
-#endif
-        }
-
-        private void DrawJumpArc(bool runHeld, Color gizmoColor)
-        {
-            var simulator = new JumpArcSimulator(_movementStats);
-
-            Vector2 startPosition = new Vector2(_feetCollider.bounds.center.x, _feetCollider.bounds.min.y);
-            float horizontalInput = _movementStats.DrawnRight ? 1f : -1f;
-            float initialHorizontalVelocity = Context != null ? Context.Velocity.x : 0f;
-
-            var settings = new JumpArcSimulator.SimulationSettings
-            {
-                StartPosition = startPosition,
-                HorizontalInput = horizontalInput,
-                RunHeld = runHeld,
-                InitialHorizontalVelocity = initialHorizontalVelocity,
-                MaxSteps = Mathf.Max(1, _movementStats.VisualizationSteps),
-                StopOnCollision = _movementStats.StopOnCollision,
-                CollisionMask = _movementStats.GroundLayer
-            };
-
-            JumpArcSimulator.SimulationResult result = simulator.Simulate(settings);
-
-            Gizmos.color = gizmoColor;
-            var points = result.Points;
-
-            for (int i = 1; i < points.Count; i++)
-            {
-                Gizmos.DrawLine(points[i - 1], points[i]);
-
-                if (result.CollisionIndex.HasValue && i >= result.CollisionIndex.Value)
-                {
-                    break;
-                }
-            }
-        }
     }
 }

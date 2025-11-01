@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Runtime.Player.Movement;
-using Runtime.Player.Movement.DebugTools;
 using Runtime.Player.Movement.States;
+using Runtime.Player.Movement.Tools;
 using UnityEngine;
 using UnityEngine.TestTools;
 
