@@ -43,7 +43,6 @@ namespace Runtime.Player.Movement.States
         public Collider2D BodyCollider { get; }
         public Transform Transform { get; }
         public UnityEvent OnJumpEvent { get; }
-        public UnityEvent OnLandEvent { get; }
         public UnityEvent<bool> OnTurnEvent { get; }
         public UnityEvent OnFallEvent { get; }
         public UnityEvent OnMoveStartEvent { get; }
@@ -79,11 +78,13 @@ namespace Runtime.Player.Movement.States
 
         public RaycastHit2D LeftWallHit { get; private set; }
         public RaycastHit2D RightWallHit { get; private set; }
+        public RaycastHit2D WallHit { get; private set; }
         public bool IsTouchingWall { get; private set; }
         public bool IsTouchingLeftWall { get; private set; }
         public bool IsTouchingRightWall { get; private set; }
+        public int WallDirection { get; private set; }
         public float WallStickTimer { get; private set; }
-        public float WallStickDuration => Stats.WallStickTime;
+        public bool IsWallSliding { get; set; }
 
         public Vector2 MoveInput { get; private set; }
         public bool RunHeld { get; private set; }
@@ -93,6 +94,8 @@ namespace Runtime.Player.Movement.States
 
         private bool _hasHorizontalInput;
         private bool _isFullyStopped = true;
+
+        private float WallStickDuration => Stats.WallSlide?.StickDuration ?? 0f;
 
         public void SetInput(Vector2 moveInput, bool runHeld, bool jumpPressed, bool jumpHeld, bool jumpReleased)
         {
@@ -131,22 +134,20 @@ namespace Runtime.Player.Movement.States
             JumpBufferTimer = Mathf.Max(0f, JumpBufferTimer - deltaTime);
             AirTime += Time.fixedDeltaTime;
 
-            if (IsGrounded)
-            {
-                CoyoteTimer = Stats.JumpCoyoteTime;
-            }
-            else
-            {
-                CoyoteTimer = Mathf.Max(0f, CoyoteTimer - deltaTime);
-            }
+            CoyoteTimer = IsGrounded ? Stats.JumpCoyoteTime : Mathf.Max(0f, CoyoteTimer - deltaTime);
 
             if (IsTouchingWall)
             {
-                WallStickTimer = Stats.WallStickTime;
+                WallStickTimer = WallStickDuration;
             }
-            else
+            else if (WallStickTimer > 0f)
             {
                 WallStickTimer = Mathf.Max(0f, WallStickTimer - deltaTime);
+                if (WallStickTimer <= 0f && !IsWallSliding)
+                {
+                    WallDirection = 0;
+                    WallHit = default;
+                }
             }
         }
 
@@ -177,7 +178,9 @@ namespace Runtime.Player.Movement.States
 
             if (hit.collider != null)
             {
-                WallStickTimer = Stats.WallStickTime;
+                WallStickTimer = WallStickDuration;
+                WallDirection = isRight ? 1 : -1;
+                WallHit = hit;
             }
 
             UpdateWallContactState();
@@ -199,9 +202,52 @@ namespace Runtime.Player.Movement.States
             UpdateWallContactState();
         }
 
+        public void ClearWallHit()
+        {
+            LeftWallHit = default;
+            RightWallHit = default;
+            IsTouchingLeftWall = false;
+            IsTouchingRightWall = false;
+            UpdateWallContactState();
+            if (WallStickTimer <= 0f)
+            {
+                WallDirection = 0;
+                WallHit = default;
+            }
+        }
+
         private void UpdateWallContactState()
         {
             IsTouchingWall = IsTouchingLeftWall || IsTouchingRightWall;
+
+            if (IsTouchingLeftWall && IsTouchingRightWall)
+            {
+                if (LeftWallHit.distance <= RightWallHit.distance)
+                {
+                    WallDirection = -1;
+                    WallHit = LeftWallHit;
+                }
+                else
+                {
+                    WallDirection = 1;
+                    WallHit = RightWallHit;
+                }
+            }
+            else if (IsTouchingRightWall)
+            {
+                WallDirection = 1;
+                WallHit = RightWallHit;
+            }
+            else if (IsTouchingLeftWall)
+            {
+                WallDirection = -1;
+                WallHit = LeftWallHit;
+            }
+            else if (WallStickTimer <= 0f && !IsWallSliding)
+            {
+                WallDirection = 0;
+                WallHit = default;
+            }
         }
 
         public void StartJumpBuffer()
@@ -282,6 +328,10 @@ namespace Runtime.Player.Movement.States
             FastFallTime = 0f;
             IsPastApexThreshold = false;
             JumpsCount = 0;
+            IsWallSliding = false;
+            WallStickTimer = 0f;
+            WallDirection = 0;
+            ClearWallHit();
         }
 
         public void InitiateJump(int jumpIncrements)
@@ -301,6 +351,38 @@ namespace Runtime.Player.Movement.States
             FastFallReleaseSpeed = VerticalVelocity;
 
             OnJumpEvent?.Invoke();
+        }
+
+        public void PerformWallJump()
+        {
+            if (WallDirection == 0)
+            {
+                return;
+            }
+
+            var settings = Stats.WallSlide;
+            if (settings == null)
+            {
+                return;
+            }
+
+            int pushDirection = -WallDirection;
+
+            InitiateJump(1);
+
+            if (settings.WallJumpUpwardBoost > 0f)
+            {
+                VerticalVelocity += settings.WallJumpUpwardBoost;
+            }
+
+            float horizontalPush = settings.WallJumpHorizontalPush * pushDirection;
+            Velocity = new Vector2(horizontalPush, Velocity.y);
+            Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
+
+            IsWallSliding = false;
+            WallStickTimer = 0f;
+            WallDirection = 0;
+            ClearWallHit();
         }
 
         public void AttemptJumpCut()
@@ -345,6 +427,42 @@ namespace Runtime.Player.Movement.States
             IsFalling = true;
             VerticalVelocity += Stats.Gravity * Time.fixedDeltaTime;
             OnFallEvent?.Invoke();
+        }
+
+        public void ApplyWallSlideVertical(PlayerMovementStats.WallSlideSettings settings)
+        {
+            float gravity = settings.CalculatedGravity != 0f
+                ? settings.CalculatedGravity
+                : Stats.Gravity * settings.GravityMultiplier;
+
+            VerticalVelocity += gravity * Time.fixedDeltaTime;
+
+            float maxDownward = -Mathf.Abs(settings.MaxSlideSpeed);
+            float minDownward = -Mathf.Abs(settings.MinSlideSpeed);
+            if (minDownward < maxDownward)
+            {
+                (maxDownward, minDownward) = (minDownward, maxDownward);
+            }
+            VerticalVelocity = Mathf.Clamp(VerticalVelocity, maxDownward, minDownward);
+        }
+
+        public void ApplyWallSlideHorizontal(PlayerMovementStats.WallSlideSettings settings)
+        {
+            float inputX = MoveInput.x;
+            int inputDirection = Mathf.Approximately(inputX, 0f) ? 0 : (inputX > 0f ? 1 : -1);
+
+            float target = 0f;
+            float rate = settings.HorizontalFriction;
+
+            if (WallDirection != 0 && inputDirection == -WallDirection)
+            {
+                target = inputX * (RunHeld ? Stats.MaxRunSpeed : Stats.MaxWalkSpeed);
+                rate = settings.HorizontalAcceleration;
+            }
+
+            float nextX = Mathf.Lerp(Velocity.x, target, rate * Time.fixedDeltaTime);
+            Velocity = new Vector2(nextX, Velocity.y);
+            Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
         }
 
         public void HandleJumpAscent()
@@ -431,6 +549,55 @@ namespace Runtime.Player.Movement.States
             }
 
             return false;
+        }
+
+        public bool ShouldStartWallSlide()
+        {
+            if (Stats.WallSlide == null)
+            {
+                return false;
+            }
+
+            if (IsGrounded || VerticalVelocity > 0f)
+            {
+                return false;
+            }
+
+            if (!IsTouchingWall && WallStickTimer <= 0f)
+            {
+                return false;
+            }
+
+            int inputDirection = Mathf.Approximately(MoveInput.x, 0f) ? 0 : (MoveInput.x > 0f ? 1 : -1);
+
+            if (IsTouchingWall)
+            {
+                return WallDirection != 0 && (inputDirection == WallDirection || inputDirection == 0);
+            }
+
+            return WallDirection != 0 && WallStickTimer > 0f && inputDirection != -WallDirection;
+        }
+
+        public bool CanContinueWallSlide()
+        {
+            if (Stats.WallSlide == null)
+            {
+                return false;
+            }
+
+            if (IsGrounded || VerticalVelocity > 0f)
+            {
+                return false;
+            }
+
+            int inputDirection = Mathf.Approximately(MoveInput.x, 0f) ? 0 : (MoveInput.x > 0f ? 1 : -1);
+
+            if (IsTouchingWall)
+            {
+                return WallDirection != 0 && (inputDirection == WallDirection || inputDirection == 0);
+            }
+
+            return WallDirection != 0 && WallStickTimer > 0f && inputDirection != -WallDirection;
         }
 
         public bool ShouldSlide()

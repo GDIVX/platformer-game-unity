@@ -47,6 +47,12 @@ namespace Runtime.Player.Movement.States
                 }
             }
 
+            if (Context.ShouldStartWallSlide())
+            {
+                StateMachine.ChangeState<WallSlideState>();
+                return;
+            }
+
             if (Context.IsFastFalling)
             {
                 StateMachine.ChangeState<FastFallingState>();
@@ -65,6 +71,12 @@ namespace Runtime.Player.Movement.States
             Context.ApplyFall();
             Context.ClampVerticalVelocity();
             Context.ApplyVerticalVelocity();
+
+            if (Context.ShouldStartWallSlide())
+            {
+                StateMachine.ChangeState<WallSlideState>();
+                return;
+            }
 
             if (Context.IsGrounded && Context.VerticalVelocity <= 0f)
             {

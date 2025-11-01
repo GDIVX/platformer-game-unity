@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace Runtime.Player.Movement.States
 {
     public class FastFallingState : PlayerMovementStateBase
@@ -18,6 +16,13 @@ namespace Runtime.Player.Movement.States
 
         public override void HandleInput()
         {
+            if (Context.ShouldStartWallSlide())
+            {
+                Context.IsFastFalling = false;
+                StateMachine.ChangeState<WallSlideState>();
+                return;
+            }
+
             if (Context.JumpBufferTimer > 0f && Context.JumpsCount < Context.Stats.NumberOfJumpsAllowed)
             {
                 Context.IsFastFalling = false;
@@ -35,6 +40,14 @@ namespace Runtime.Player.Movement.States
         public override void FixedTick()
         {
             Context.ApplyHorizontalMovement(Context.Stats.AirAcceleration, Context.Stats.AirDeceleration);
+
+            if (Context.ShouldStartWallSlide())
+            {
+                Context.IsFastFalling = false;
+                StateMachine.ChangeState<WallSlideState>();
+                return;
+            }
+
             Context.ApplyFastFall();
             Context.ClampVerticalVelocity();
             Context.ApplyVerticalVelocity();

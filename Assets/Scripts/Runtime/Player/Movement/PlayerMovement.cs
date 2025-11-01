@@ -190,7 +190,27 @@ namespace Runtime.Player.Movement
                 return;
             }
 
-            RaycastHit2D rightHit = CastForWall(Vector2.right);
+            var wallSettings = _movementStats.WallSlide;
+            float castDistance = wallSettings?.WallDetectionHorizontalDistance ?? _movementStats.WallDetectionRayLength;
+            castDistance = Mathf.Max(0f, castDistance);
+
+            float heightScale = Mathf.Clamp01(_movementStats.WallDetectionHeightScale);
+            if (wallSettings != null && _bodyCollider != null)
+            {
+                Bounds bounds = _bodyCollider.bounds;
+                float shrink = Mathf.Clamp(wallSettings.WallDetectionVerticalShrink, 0f, bounds.size.y * 0.95f);
+                if (bounds.size.y > 0f)
+                {
+                    heightScale = Mathf.Clamp01(Mathf.Max(0.05f, (bounds.size.y - shrink) / bounds.size.y));
+                }
+            }
+
+            RaycastHit2D rightHit = CastForWall(Vector2.right, castDistance, heightScale);
+            if (rightHit.collider != null && (rightHit.collider == _bodyCollider || rightHit.collider == _feetCollider))
+            {
+                rightHit = default;
+            }
+
             if (rightHit.collider != null)
             {
                 Context.SetWallHit(true, rightHit);
@@ -200,7 +220,12 @@ namespace Runtime.Player.Movement
                 Context.ClearWallHit(true);
             }
 
-            RaycastHit2D leftHit = CastForWall(Vector2.left);
+            RaycastHit2D leftHit = CastForWall(Vector2.left, castDistance, heightScale);
+            if (leftHit.collider != null && (leftHit.collider == _bodyCollider || leftHit.collider == _feetCollider))
+            {
+                leftHit = default;
+            }
+
             if (leftHit.collider != null)
             {
                 Context.SetWallHit(false, leftHit);
@@ -213,29 +238,15 @@ namespace Runtime.Player.Movement
 #if UNITY_EDITOR
             if (_movementStats.DebugShowWallChecks)
             {
-                Bounds bounds = _bodyCollider.bounds;
-                float halfHeight = bounds.extents.y * _movementStats.WallDetectionHeightScale;
-
-                Vector2 rightTop = new Vector2(bounds.max.x, bounds.center.y + halfHeight);
-                Vector2 rightBottom = new Vector2(bounds.max.x, bounds.center.y - halfHeight);
-                Vector2 leftTop = new Vector2(bounds.min.x, bounds.center.y + halfHeight);
-                Vector2 leftBottom = new Vector2(bounds.min.x, bounds.center.y - halfHeight);
-
-                Color rightColor = Context.IsTouchingRightWall ? Color.green : Color.red;
-                Color leftColor = Context.IsTouchingLeftWall ? Color.green : Color.red;
-
-                Debug.DrawRay(rightTop, Vector2.right * _movementStats.WallDetectionRayLength, rightColor);
-                Debug.DrawRay(rightBottom, Vector2.right * _movementStats.WallDetectionRayLength, rightColor);
-                Debug.DrawRay(leftTop, Vector2.left * _movementStats.WallDetectionRayLength, leftColor);
-                Debug.DrawRay(leftBottom, Vector2.left * _movementStats.WallDetectionRayLength, leftColor);
+                DrawWallDebug(castDistance, heightScale);
             }
 #endif
         }
 
-        private RaycastHit2D CastForWall(Vector2 direction)
+        private RaycastHit2D CastForWall(Vector2 direction, float distance, float heightScale)
         {
             Bounds bounds = _bodyCollider.bounds;
-            float heightScale = Mathf.Clamp01(_movementStats.WallDetectionHeightScale);
+            heightScale = Mathf.Clamp(heightScale, 0.05f, 1f);
 
             if (_bodyCollider is CapsuleCollider2D capsuleCollider)
             {
@@ -259,7 +270,7 @@ namespace Runtime.Player.Movement
                     capsuleCollider.direction,
                     capsuleCollider.transform.eulerAngles.z,
                     direction,
-                    _movementStats.WallDetectionRayLength,
+                    distance,
                     _movementStats.GroundLayer);
             }
 
@@ -269,10 +280,29 @@ namespace Runtime.Player.Movement
                 castSize,
                 0f,
                 direction,
-                _movementStats.WallDetectionRayLength,
+                distance,
                 _movementStats.GroundLayer);
         }
 
+#if UNITY_EDITOR
+        private void DrawWallDebug(float distance, float heightScale)
+        {
+            Bounds bounds = _bodyCollider.bounds;
+            float halfHeight = bounds.extents.y * heightScale;
 
+            Vector2 rightTop = new Vector2(bounds.max.x, bounds.center.y + halfHeight);
+            Vector2 rightBottom = new Vector2(bounds.max.x, bounds.center.y - halfHeight);
+            Vector2 leftTop = new Vector2(bounds.min.x, bounds.center.y + halfHeight);
+            Vector2 leftBottom = new Vector2(bounds.min.x, bounds.center.y - halfHeight);
+
+            Color rightColor = Context.IsTouchingRightWall ? Color.green : Color.red;
+            Color leftColor = Context.IsTouchingLeftWall ? Color.green : Color.red;
+
+            Debug.DrawRay(rightTop, Vector2.right * distance, rightColor);
+            Debug.DrawRay(rightBottom, Vector2.right * distance, rightColor);
+            Debug.DrawRay(leftTop, Vector2.left * distance, leftColor);
+            Debug.DrawRay(leftBottom, Vector2.left * distance, leftColor);
+        }
+#endif
     }
 }

@@ -17,18 +17,18 @@ namespace Runtime.Player.Movement
 
         [Header("Landing")] [Range(0, 1)] public float StickinessOnLanding = 0.1f;
 
+        [Header("Wall Checks")] public float WallDetectionRayLength = 0.1f;
+        [Range(0.1f, 1f)] public float WallDetectionHeightScale = 0.9f;
+        public bool DebugShowWallChecks = false;
+
+        [Header("Wall Slide")] [SerializeField] private WallSlideSettings _wallSlide = new();
+
         [Header("Run")] [Range(1f, 100f)] public float MaxRunSpeed = 12.5f;
 
         [Header("Grounded/Collision Checks")] public LayerMask GroundLayer;
         public float GroundDetectionRayLength = 0.02f;
         public float HeadDetectionRayLength = 0.02f;
         [Range(0f, 1f)] public float HeadWidth = 0.75f;
-
-        [Header("Wall Checks")] public float WallDetectionRayLength = 0.1f;
-        [Range(0.1f, 1f)] public float WallDetectionHeightScale = 0.9f;
-        public bool DebugShowWallChecks = false;
-
-        [Header("Wall Movement")] [Range(0f, 2f)] public float WallStickTime = 0.2f;
 
         [Header("Edge Nudging")] public float HeadNudgeDistance = 0.5f;
         public int HeadNudgeSteps = 3;
@@ -69,13 +69,11 @@ namespace Runtime.Player.Movement
         [Range(5, 100)] public int ArcResolution = 20;
         [Range(0, 500)] public int VisualizationSteps = 90;
 
-        public PlayerMovementStats(float groundEdgeNudgeDistance)
-        {
-        }
-
         [ShowInInspector, ReadOnly] public float Gravity { get; private set; }
         [ShowInInspector, ReadOnly] public float InitialJumpVelocity { get; private set; }
         [ShowInInspector, ReadOnly] public float AdjustmentFactor { get; private set; }
+
+        public WallSlideSettings WallSlide => _wallSlide;
 
         private void OnEnable()
         {
@@ -87,6 +85,7 @@ namespace Runtime.Player.Movement
             AdjustmentFactor = JumpHeight * JumpHeightCompensationFactor;
             CalculateGravity();
             CalculateInitialJumpVelocity();
+            _wallSlide?.CalculateDerivedValues(Gravity);
         }
 
         private void CalculateGravity()
@@ -97,6 +96,48 @@ namespace Runtime.Player.Movement
         private void CalculateInitialJumpVelocity()
         {
             InitialJumpVelocity = Mathf.Abs(Gravity) * TimeToJumpApex;
+        }
+
+        [Serializable]
+        public class WallSlideSettings
+        {
+            [FoldoutGroup("Settings"), LabelText("Stick Time"), Range(0f, 1f)]
+            public float StickDuration = 0.2f;
+
+            [FoldoutGroup("Settings"), LabelText("Gravity Multiplier"), Range(0f, 5f)]
+            public float GravityMultiplier = 0.5f;
+
+            [FoldoutGroup("Settings"), LabelText("Horizontal Friction"), Range(0f, 50f)]
+            public float HorizontalFriction = 20f;
+
+            [FoldoutGroup("Settings"), LabelText("Horizontal Acceleration"), Range(0f, 50f)]
+            public float HorizontalAcceleration = 15f;
+
+            [FoldoutGroup("Settings"), LabelText("Min Slide Speed"), Range(0f, 50f)]
+            public float MinSlideSpeed = 1.5f;
+
+            [FoldoutGroup("Settings"), LabelText("Max Slide Speed"), Range(0f, 50f)]
+            public float MaxSlideSpeed = 8f;
+
+            [FoldoutGroup("Jump"), LabelText("Horizontal Push"), Range(0f, 50f)]
+            public float WallJumpHorizontalPush = 12f;
+
+            [FoldoutGroup("Jump"), LabelText("Upward Boost"), Range(0f, 50f)]
+            public float WallJumpUpwardBoost = 2f;
+
+            [FoldoutGroup("Detection"), LabelText("Horizontal Distance"), Range(0f, 1f)]
+            public float WallDetectionHorizontalDistance = 0.25f;
+
+            [FoldoutGroup("Detection"), LabelText("Vertical Shrink"), Range(0f, 1f)]
+            public float WallDetectionVerticalShrink = 0.1f;
+
+            [ShowInInspector, ReadOnly]
+            public float CalculatedGravity { get; private set; }
+
+            public void CalculateDerivedValues(float baseGravity)
+            {
+                CalculatedGravity = baseGravity * GravityMultiplier;
+            }
         }
     }
 }

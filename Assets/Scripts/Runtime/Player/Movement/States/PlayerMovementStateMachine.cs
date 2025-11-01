@@ -15,7 +15,8 @@ namespace Runtime.Player.Movement.States
                 { typeof(SlidingState), new SlidingState(context, this) },
                 { typeof(JumpingState), new JumpingState(context, this) },
                 { typeof(FallingState), new FallingState(context, this) },
-                { typeof(FastFallingState), new FastFallingState(context, this) }
+                { typeof(FastFallingState), new FastFallingState(context, this) },
+                { typeof(WallSlideState), new WallSlideState(context, this) }
             };
         }
 
