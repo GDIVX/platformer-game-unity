@@ -63,5 +63,5 @@ MonoBehaviour:
   ShowRunJumpArc: 1
   StopOnCollision: 1
   DrawnRight: 1
-  ArcResolution: 21
-  VisualizationSteps: 125
+  ArcResolution: 20
+  VisualizationSteps: 130

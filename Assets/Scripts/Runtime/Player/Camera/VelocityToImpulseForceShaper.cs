@@ -18,7 +18,6 @@ namespace Runtime.Player.Camera
             var relation = Mathf.InverseLerp(0, _maxAirTime, airTime);
             var relativeForce = _curve.Evaluate(relation);
             OnShapedForce.Invoke(relativeForce);
-            Debug.Log(relation);
         }
     }
 }

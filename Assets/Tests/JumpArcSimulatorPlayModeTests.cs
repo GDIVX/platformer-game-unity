@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Runtime.Player.Movement;
-using Runtime.Player.Movement.Debug;
+using Runtime.Player.Movement.DebugTools;
 using Runtime.Player.Movement.States;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Tests.PlayMode
+namespace Tests
 {
     public class JumpArcSimulatorPlayModeTests
     {
@@ -26,11 +26,16 @@ namespace Tests.PlayMode
             groundCollider.size = new Vector2(10f, 1f);
             ground.transform.position = new Vector3(0f, -0.5f, 0f);
 
-            var player = new GameObject("PlayerMovementSimulatorTest");
-            player.transform.position = new Vector3(0f, 1f, 0f);
+            var player = new GameObject("PlayerMovementSimulatorTest")
+            {
+                transform =
+                {
+                    position = new Vector3(0f, 1f, 0f)
+                }
+            };
             var rigidbody = player.AddComponent<Rigidbody2D>();
             rigidbody.gravityScale = 0f;
-            rigidbody.isKinematic = true;
+            rigidbody.bodyType = RigidbodyType2D.Kinematic;
 
             var feetCollider = player.AddComponent<BoxCollider2D>();
             feetCollider.size = new Vector2(0.5f, 1f);
@@ -71,7 +76,7 @@ namespace Tests.PlayMode
 
             JumpArcSimulator.SimulationResult simulation = simulator.Simulate(settings);
             IReadOnlyList<Vector2> simulatedPoints = simulation.Points;
-            Vector2 expectedLanding = simulatedPoints[simulatedPoints.Count - 1];
+            Vector2 expectedLanding = simulatedPoints[^1];
 
             var actualPoints = new List<Vector2> { startPoint };
 
@@ -102,7 +107,7 @@ namespace Tests.PlayMode
                 yield return null;
             }
 
-            Vector2 actualLanding = actualPoints[actualPoints.Count - 1];
+            Vector2 actualLanding = actualPoints[^1];
 
             Assert.That(Vector2.Distance(expectedLanding, actualLanding), Is.LessThan(Tolerance));
             Assert.That(Mathf.Abs(expectedLanding.x - actualLanding.x), Is.LessThan(Tolerance));
@@ -117,13 +122,14 @@ namespace Tests.PlayMode
         private static void SetPrivateField<T>(object instance, string fieldName, T value)
         {
             var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            field.SetValue(instance, value);
+            if (field != null) field.SetValue(instance, value);
         }
 
         private static T GetPrivateField<T>(object instance, string fieldName)
         {
             var field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            return (T)field.GetValue(instance);
+            if (field != null) return (T)field.GetValue(instance);
+            return default;
         }
 
         private static void InvokePrivateMethod(object instance, string methodName)

@@ -1,7 +1,7 @@
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
-using Runtime.Player.Movement.Debug;
+using Runtime.Player.Movement.DebugTools;
 using Runtime.Player.Movement.States;
 
 namespace Runtime.Player.Movement

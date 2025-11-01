@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Runtime.Player.Movement.Debug
+namespace Runtime.Player.Movement.DebugTools
 {
     public class JumpArcSimulator
     {
