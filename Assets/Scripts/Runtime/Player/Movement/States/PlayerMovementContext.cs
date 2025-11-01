@@ -77,6 +77,14 @@ namespace Runtime.Player.Movement.States
         public bool IsGrounded { get; private set; }
         public bool BumpedHead { get; private set; }
 
+        public RaycastHit2D LeftWallHit { get; private set; }
+        public RaycastHit2D RightWallHit { get; private set; }
+        public bool IsTouchingWall { get; private set; }
+        public bool IsTouchingLeftWall { get; private set; }
+        public bool IsTouchingRightWall { get; private set; }
+        public float WallStickTimer { get; private set; }
+        public float WallStickDuration => Stats.WallStickTime;
+
         public Vector2 MoveInput { get; private set; }
         public bool RunHeld { get; private set; }
         public bool JumpPressed { get; private set; }
@@ -131,6 +139,15 @@ namespace Runtime.Player.Movement.States
             {
                 CoyoteTimer = Mathf.Max(0f, CoyoteTimer - deltaTime);
             }
+
+            if (IsTouchingWall)
+            {
+                WallStickTimer = Stats.WallStickTime;
+            }
+            else
+            {
+                WallStickTimer = Mathf.Max(0f, WallStickTimer - deltaTime);
+            }
         }
 
         public void SetGroundHit(RaycastHit2D hit)
@@ -143,6 +160,48 @@ namespace Runtime.Player.Movement.States
         {
             HeadHit = hit;
             BumpedHead = hit.collider != null;
+        }
+
+        public void SetWallHit(bool isRight, RaycastHit2D hit)
+        {
+            if (isRight)
+            {
+                RightWallHit = hit;
+                IsTouchingRightWall = hit.collider != null;
+            }
+            else
+            {
+                LeftWallHit = hit;
+                IsTouchingLeftWall = hit.collider != null;
+            }
+
+            if (hit.collider != null)
+            {
+                WallStickTimer = Stats.WallStickTime;
+            }
+
+            UpdateWallContactState();
+        }
+
+        public void ClearWallHit(bool isRight)
+        {
+            if (isRight)
+            {
+                RightWallHit = default;
+                IsTouchingRightWall = false;
+            }
+            else
+            {
+                LeftWallHit = default;
+                IsTouchingLeftWall = false;
+            }
+
+            UpdateWallContactState();
+        }
+
+        private void UpdateWallContactState()
+        {
+            IsTouchingWall = IsTouchingLeftWall || IsTouchingRightWall;
         }
 
         public void StartJumpBuffer()
