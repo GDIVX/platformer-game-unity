@@ -77,8 +77,12 @@ namespace Runtime.Player.Movement.States
         public bool IsGrounded { get; private set; }
         public bool BumpedHead { get; private set; }
 
+        public RaycastHit2D LeftWallHit { get; private set; }
+        public RaycastHit2D RightWallHit { get; private set; }
         public RaycastHit2D WallHit { get; private set; }
         public bool IsTouchingWall { get; private set; }
+        public bool IsTouchingLeftWall { get; private set; }
+        public bool IsTouchingRightWall { get; private set; }
         public int WallDirection { get; private set; }
         public float WallStickTimer { get; private set; }
         public bool IsWallSliding { get; set; }
@@ -91,6 +95,8 @@ namespace Runtime.Player.Movement.States
 
         private bool _hasHorizontalInput;
         private bool _isFullyStopped = true;
+
+        private float WallStickDuration => Stats.WallSlide?.StickDuration ?? 0f;
 
         public void SetInput(Vector2 moveInput, bool runHeld, bool jumpPressed, bool jumpHeld, bool jumpReleased)
         {
@@ -140,7 +146,7 @@ namespace Runtime.Player.Movement.States
 
             if (IsTouchingWall)
             {
-                WallStickTimer = Stats.WallSlide?.StickDuration ?? 0f;
+                WallStickTimer = WallStickDuration;
             }
             else if (WallStickTimer > 0f)
             {
@@ -148,6 +154,7 @@ namespace Runtime.Player.Movement.States
                 if (WallStickTimer <= 0f && !IsWallSliding)
                 {
                     WallDirection = 0;
+                    WallHit = default;
                 }
             }
         }
@@ -164,24 +171,91 @@ namespace Runtime.Player.Movement.States
             BumpedHead = hit.collider != null;
         }
 
-        public void SetWallHit(RaycastHit2D hit, int direction)
+        public void SetWallHit(bool isRight, RaycastHit2D hit)
         {
-            WallHit = hit;
-            IsTouchingWall = hit.collider != null;
-
-            if (!IsTouchingWall)
+            if (isRight)
             {
-                return;
+                RightWallHit = hit;
+                IsTouchingRightWall = hit.collider != null;
+            }
+            else
+            {
+                LeftWallHit = hit;
+                IsTouchingLeftWall = hit.collider != null;
             }
 
-            WallDirection = direction;
-            WallStickTimer = Stats.WallSlide?.StickDuration ?? 0f;
+            if (hit.collider != null)
+            {
+                WallStickTimer = WallStickDuration;
+                WallDirection = isRight ? 1 : -1;
+                WallHit = hit;
+            }
+
+            UpdateWallContactState();
+        }
+
+        public void ClearWallHit(bool isRight)
+        {
+            if (isRight)
+            {
+                RightWallHit = default;
+                IsTouchingRightWall = false;
+            }
+            else
+            {
+                LeftWallHit = default;
+                IsTouchingLeftWall = false;
+            }
+
+            UpdateWallContactState();
         }
 
         public void ClearWallHit()
         {
-            WallHit = default;
-            IsTouchingWall = false;
+            LeftWallHit = default;
+            RightWallHit = default;
+            IsTouchingLeftWall = false;
+            IsTouchingRightWall = false;
+            UpdateWallContactState();
+            if (WallStickTimer <= 0f)
+            {
+                WallDirection = 0;
+                WallHit = default;
+            }
+        }
+
+        private void UpdateWallContactState()
+        {
+            IsTouchingWall = IsTouchingLeftWall || IsTouchingRightWall;
+
+            if (IsTouchingLeftWall && IsTouchingRightWall)
+            {
+                if (LeftWallHit.distance <= RightWallHit.distance)
+                {
+                    WallDirection = -1;
+                    WallHit = LeftWallHit;
+                }
+                else
+                {
+                    WallDirection = 1;
+                    WallHit = RightWallHit;
+                }
+            }
+            else if (IsTouchingRightWall)
+            {
+                WallDirection = 1;
+                WallHit = RightWallHit;
+            }
+            else if (IsTouchingLeftWall)
+            {
+                WallDirection = -1;
+                WallHit = LeftWallHit;
+            }
+            else if (WallStickTimer <= 0f && !IsWallSliding)
+            {
+                WallDirection = 0;
+                WallHit = default;
+            }
         }
 
         public void StartJumpBuffer()

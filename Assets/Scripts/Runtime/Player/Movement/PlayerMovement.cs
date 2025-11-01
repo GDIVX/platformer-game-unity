@@ -92,7 +92,7 @@ namespace Runtime.Player.Movement
         {
             CheckIfGrounded();
             CheckIfBumpedHead();
-            CheckForWall();
+            CheckWallContact();
         }
 
         private void CheckIfGrounded()
@@ -181,70 +181,128 @@ namespace Runtime.Player.Movement
 #endif
         }
 
-        private void CheckForWall()
+        private void CheckWallContact()
         {
-            if (_movementStats == null || _bodyCollider == null)
+            if (_bodyCollider == null)
             {
-                Context.ClearWallHit();
+                Context.ClearWallHit(true);
+                Context.ClearWallHit(false);
                 return;
             }
 
             var wallSettings = _movementStats.WallSlide;
-            if (wallSettings == null)
+            float castDistance = wallSettings?.WallDetectionHorizontalDistance ?? _movementStats.WallDetectionRayLength;
+            castDistance = Mathf.Max(0f, castDistance);
+
+            float heightScale = Mathf.Clamp01(_movementStats.WallDetectionHeightScale);
+            if (wallSettings != null && _bodyCollider != null)
             {
-                Context.ClearWallHit();
-                return;
-            }
-
-            Bounds bodyBounds = _bodyCollider.bounds;
-            float shrink = Mathf.Clamp(wallSettings.WallDetectionVerticalShrink, 0f, bodyBounds.size.y * 0.95f);
-            Vector2 castSize = new Vector2(bodyBounds.size.x, Mathf.Max(0.05f, bodyBounds.size.y - shrink));
-            Vector2 castOrigin = bodyBounds.center;
-
-            RaycastHit2D leftHit = Physics2D.BoxCast(
-                castOrigin,
-                castSize,
-                0f,
-                Vector2.left,
-                wallSettings.WallDetectionHorizontalDistance,
-                _movementStats.GroundLayer);
-
-            RaycastHit2D rightHit = Physics2D.BoxCast(
-                castOrigin,
-                castSize,
-                0f,
-                Vector2.right,
-                wallSettings.WallDetectionHorizontalDistance,
-                _movementStats.GroundLayer);
-
-            bool hasLeft = leftHit.collider != null && leftHit.collider != _bodyCollider && leftHit.collider != _feetCollider;
-            bool hasRight = rightHit.collider != null && rightHit.collider != _bodyCollider && rightHit.collider != _feetCollider;
-
-            if (hasLeft && hasRight)
-            {
-                if (leftHit.distance <= rightHit.distance)
+                Bounds bounds = _bodyCollider.bounds;
+                float shrink = Mathf.Clamp(wallSettings.WallDetectionVerticalShrink, 0f, bounds.size.y * 0.95f);
+                if (bounds.size.y > 0f)
                 {
-                    Context.SetWallHit(leftHit, -1);
-                }
-                else
-                {
-                    Context.SetWallHit(rightHit, 1);
+                    heightScale = Mathf.Clamp01(Mathf.Max(0.05f, (bounds.size.y - shrink) / bounds.size.y));
                 }
             }
-            else if (hasLeft)
+
+            RaycastHit2D rightHit = CastForWall(Vector2.right, castDistance, heightScale);
+            if (rightHit.collider != null && (rightHit.collider == _bodyCollider || rightHit.collider == _feetCollider))
             {
-                Context.SetWallHit(leftHit, -1);
+                rightHit = default;
             }
-            else if (hasRight)
+
+            if (rightHit.collider != null)
             {
-                Context.SetWallHit(rightHit, 1);
+                Context.SetWallHit(true, rightHit);
             }
             else
             {
-                Context.ClearWallHit();
+                Context.ClearWallHit(true);
             }
+
+            RaycastHit2D leftHit = CastForWall(Vector2.left, castDistance, heightScale);
+            if (leftHit.collider != null && (leftHit.collider == _bodyCollider || leftHit.collider == _feetCollider))
+            {
+                leftHit = default;
+            }
+
+            if (leftHit.collider != null)
+            {
+                Context.SetWallHit(false, leftHit);
+            }
+            else
+            {
+                Context.ClearWallHit(false);
+            }
+
+#if UNITY_EDITOR
+            if (_movementStats.DebugShowWallChecks)
+            {
+                DrawWallDebug(castDistance, heightScale);
+            }
+#endif
         }
 
+        private RaycastHit2D CastForWall(Vector2 direction, float distance, float heightScale)
+        {
+            Bounds bounds = _bodyCollider.bounds;
+            heightScale = Mathf.Clamp(heightScale, 0.05f, 1f);
 
+            if (_bodyCollider is CapsuleCollider2D capsuleCollider)
+            {
+                Vector3 lossyScale = capsuleCollider.transform.lossyScale;
+                Vector2 capsuleSize = new Vector2(
+                    capsuleCollider.size.x * Mathf.Abs(lossyScale.x),
+                    capsuleCollider.size.y * Mathf.Abs(lossyScale.y));
+
+                if (capsuleCollider.direction == CapsuleDirection2D.Vertical)
+                {
+                    capsuleSize.y *= heightScale;
+                }
+                else
+                {
+                    capsuleSize.x *= heightScale;
+                }
+
+                return Physics2D.CapsuleCast(
+                    bounds.center,
+                    capsuleSize,
+                    capsuleCollider.direction,
+                    capsuleCollider.transform.eulerAngles.z,
+                    direction,
+                    distance,
+                    _movementStats.GroundLayer);
+            }
+
+            Vector2 castSize = new Vector2(bounds.size.x, bounds.size.y * heightScale);
+            return Physics2D.BoxCast(
+                bounds.center,
+                castSize,
+                0f,
+                direction,
+                distance,
+                _movementStats.GroundLayer);
+        }
+
+#if UNITY_EDITOR
+        private void DrawWallDebug(float distance, float heightScale)
+        {
+            Bounds bounds = _bodyCollider.bounds;
+            float halfHeight = bounds.extents.y * heightScale;
+
+            Vector2 rightTop = new Vector2(bounds.max.x, bounds.center.y + halfHeight);
+            Vector2 rightBottom = new Vector2(bounds.max.x, bounds.center.y - halfHeight);
+            Vector2 leftTop = new Vector2(bounds.min.x, bounds.center.y + halfHeight);
+            Vector2 leftBottom = new Vector2(bounds.min.x, bounds.center.y - halfHeight);
+
+            Color rightColor = Context.IsTouchingRightWall ? Color.green : Color.red;
+            Color leftColor = Context.IsTouchingLeftWall ? Color.green : Color.red;
+
+            Debug.DrawRay(rightTop, Vector2.right * distance, rightColor);
+            Debug.DrawRay(rightBottom, Vector2.right * distance, rightColor);
+            Debug.DrawRay(leftTop, Vector2.left * distance, leftColor);
+            Debug.DrawRay(leftBottom, Vector2.left * distance, leftColor);
+        }
+#endif
     }
 }

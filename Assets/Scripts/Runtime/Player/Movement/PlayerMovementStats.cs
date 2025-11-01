@@ -17,6 +17,10 @@ namespace Runtime.Player.Movement
 
         [Header("Landing")] [Range(0, 1)] public float StickinessOnLanding = 0.1f;
 
+        [Header("Wall Checks")] public float WallDetectionRayLength = 0.1f;
+        [Range(0.1f, 1f)] public float WallDetectionHeightScale = 0.9f;
+        public bool DebugShowWallChecks = false;
+
         [Header("Wall Slide")] [SerializeField] private WallSlideSettings _wallSlide = new();
 
         [Header("Run")] [Range(1f, 100f)] public float MaxRunSpeed = 12.5f;

@@ -36,6 +36,9 @@ MonoBehaviour:
     <useSimulationMove>k__BackingField: 0
     <useAttachedTriggers>k__BackingField: 0
   StickinessOnLanding: 0.1
+  WallDetectionRayLength: 0.35
+  WallDetectionHeightScale: 0.85
+  DebugShowWallChecks: 1
   _wallSlide:
     StickDuration: 0.2
     GravityMultiplier: 0.5
