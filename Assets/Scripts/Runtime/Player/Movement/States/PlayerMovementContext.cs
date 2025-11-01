@@ -16,7 +16,6 @@ namespace Runtime.Player.Movement.States
             UnityEvent onJump,
             UnityEvent onLand,
             UnityEvent onFall,
-            UnityEvent<bool> onTurn,
             UnityEvent onMoveStart,
             UnityEvent onMoveStopped,
             UnityEvent onMoveFullyStopped,
@@ -30,7 +29,6 @@ namespace Runtime.Player.Movement.States
             OnJumpEvent = onJump;
             OnLandEvent = onLand;
             OnFallEvent = onFall;
-            OnTurnEvent = onTurn;
             OnMoveStartEvent = onMoveStart;
             OnMoveStoppedEvent = onMoveStopped;
             OnMoveFullyStoppedEvent = onMoveFullyStopped;

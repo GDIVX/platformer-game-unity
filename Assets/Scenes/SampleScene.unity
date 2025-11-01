@@ -2209,6 +2209,11 @@ MonoBehaviour:
     Weight: 10
     Radius: 12
   m_LegacyTargets: []
+--- !u!1 &1544233364 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2333660657379343393, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+  m_PrefabInstance: {fileID: 5685145387301818862}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1578613319 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2368318872232036099, guid: cc9bfc031fafce1408f2de6956627af4, type: 3}
@@ -3000,16 +3005,28 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: OnTurn.m_PersistentCalls.m_Calls.Array.size
-      value: 1
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+      propertyPath: OnLanded.m_PersistentCalls.m_Calls.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: OnTurn.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+      propertyPath: OnLanded.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: OnTurn.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+      propertyPath: OnLanded.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1544233364}
     - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: OnTurn.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
@@ -3019,11 +3036,27 @@ PrefabInstance:
       value: CallTurn
       objectReference: {fileID: 0}
     - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+      propertyPath: OnLanded.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+      propertyPath: OnLanded.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: SetActive
+      objectReference: {fileID: 0}
+    - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: OnTurn.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
       value: Runtime.Player.Camera.PlayerCameraFollowObject, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+      propertyPath: OnLanded.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UnityEngine.GameObject, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
       propertyPath: OnTurn.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 5552195182736840487, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}
+      propertyPath: OnLanded.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 6898659779806654260, guid: 3e326ddc9cf251f468004ef83a8eeeda, type: 3}

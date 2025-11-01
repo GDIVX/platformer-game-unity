@@ -15,7 +15,6 @@ namespace Runtime.Player.Movement
         [FoldoutGroup("Events")] public UnityEvent OnJump;
         [FoldoutGroup("Events")] public UnityEvent OnLand;
         [FoldoutGroup("Events")] public UnityEvent OnFall;
-        [FoldoutGroup("Events")] public UnityEvent<bool> OnTurn;
         [FoldoutGroup("Events")] public UnityEvent OnMoveStart;
         [FoldoutGroup("Events")] public UnityEvent OnMoveStopped;
         [FoldoutGroup("Events")] public UnityEvent OnMoveFullyStopped;
@@ -45,7 +44,6 @@ namespace Runtime.Player.Movement
                 OnJump,
                 OnLand,
                 OnFall,
-                OnTurn,
                 OnMoveStart,
                 OnMoveStopped,
                 OnMoveFullyStopped,
