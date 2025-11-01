@@ -43,7 +43,6 @@ namespace Runtime.Player.Movement.States
         public Collider2D BodyCollider { get; }
         public Transform Transform { get; }
         public UnityEvent OnJumpEvent { get; }
-        public UnityEvent OnLandEvent { get; }
         public UnityEvent<bool> OnTurnEvent { get; }
         public UnityEvent OnFallEvent { get; }
         public UnityEvent OnMoveStartEvent { get; }
@@ -135,14 +134,7 @@ namespace Runtime.Player.Movement.States
             JumpBufferTimer = Mathf.Max(0f, JumpBufferTimer - deltaTime);
             AirTime += Time.fixedDeltaTime;
 
-            if (IsGrounded)
-            {
-                CoyoteTimer = Stats.JumpCoyoteTime;
-            }
-            else
-            {
-                CoyoteTimer = Mathf.Max(0f, CoyoteTimer - deltaTime);
-            }
+            CoyoteTimer = IsGrounded ? Stats.JumpCoyoteTime : Mathf.Max(0f, CoyoteTimer - deltaTime);
 
             if (IsTouchingWall)
             {
@@ -449,9 +441,7 @@ namespace Runtime.Player.Movement.States
             float minDownward = -Mathf.Abs(settings.MinSlideSpeed);
             if (minDownward < maxDownward)
             {
-                float temp = maxDownward;
-                maxDownward = minDownward;
-                minDownward = temp;
+                (maxDownward, minDownward) = (minDownward, maxDownward);
             }
             VerticalVelocity = Mathf.Clamp(VerticalVelocity, maxDownward, minDownward);
         }
