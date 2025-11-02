@@ -42,13 +42,13 @@ MonoBehaviour:
   _wallSlide:
     StickDuration: 0.3
     GravityMultiplier: 3
-    HorizontalFriction: 15.5
-    HorizontalAcceleration: 22.6
+    HorizontalFriction: 1.6
+    HorizontalAcceleration: 0
     MinSlideSpeed: 1.5
     MaxSlideSpeed: 12
-    WallJumpHorizontalPush: 23
-    WallJumpUpwardBoost: 3
-    WallDetectionHorizontalDistance: 0.35
+    WallJumpHorizontalPush: 2
+    WallJumpUpwardBoost: 1.25
+    WallDetectionHorizontalDistance: 0.25
     WallDetectionVerticalShrink: 0.15
   MaxRunSpeed: 20
   GroundLayer:

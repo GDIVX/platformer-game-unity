@@ -5,7 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d54d5fb3-25d1-4a54-88f3-3183bb0f20ba" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/PlayerMovementStats.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/PlayerMovementStats.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Player.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Player.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/PlayerControls.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/PlayerControls.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/PlayerControls.inputactions" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/PlayerControls.inputactions" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/EditorBuildSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/EditorBuildSettings.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,6 +36,9 @@
     &quot;accountId&quot;: &quot;63b59772-c2d8-4c9c-8e0c-ac587e3d85f9&quot;
   }
 }</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/Assets/Scripts/Runtime/Player/InputPromptGUI.cs" root0="FORCE_HIGHLIGHTING" />
+  </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
@@ -44,7 +53,7 @@
     "Attach to Unity Editor.Attach to Unity Editor.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "#7 on codex/add-wall-slide-settings-and…ation",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
