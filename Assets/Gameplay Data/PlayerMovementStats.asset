@@ -40,13 +40,13 @@ MonoBehaviour:
   WallDetectionHeightScale: 0.85
   DebugShowWallChecks: 1
   _wallSlide:
-    StickDuration: 0.2
-    GravityMultiplier: 0.5
-    HorizontalFriction: 18
-    HorizontalAcceleration: 24
+    StickDuration: 0.3
+    GravityMultiplier: 3
+    HorizontalFriction: 15.5
+    HorizontalAcceleration: 22.6
     MinSlideSpeed: 1.5
     MaxSlideSpeed: 12
-    WallJumpHorizontalPush: 14
+    WallJumpHorizontalPush: 23
     WallJumpUpwardBoost: 3
     WallDetectionHorizontalDistance: 0.35
     WallDetectionVerticalShrink: 0.15
@@ -57,10 +57,6 @@ MonoBehaviour:
   GroundDetectionRayLength: 0.02
   HeadDetectionRayLength: 0.02
   HeadWidth: 0.75
-  WallDetectionRayLength: 0.02
-  WallDetectionHeightScale: 0.7
-  DebugShowWallChecks: 1
-  WallStickTime: 2
   HeadNudgeDistance: 0.02
   HeadNudgeSteps: 0
   JumpHeight: 8
