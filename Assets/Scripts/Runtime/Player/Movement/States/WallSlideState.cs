@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Runtime.Player.Movement.States
 {
     public class WallSlideState : PlayerMovementStateBase
@@ -71,8 +73,9 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
-            Context.ApplyWallSlideHorizontal(settings);
-            Context.ApplyWallSlideVertical(settings);
+            float fixedDeltaTime = Time.fixedDeltaTime;
+            Context.ApplyWallSlideHorizontal(settings, fixedDeltaTime);
+            Context.ApplyWallSlideVertical(settings, fixedDeltaTime);
             Context.ApplyVerticalVelocity();
         }
     }

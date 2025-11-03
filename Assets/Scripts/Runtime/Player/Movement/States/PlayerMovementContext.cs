@@ -556,11 +556,11 @@ namespace Runtime.Player.Movement.States
             }
         }
 
-        public void ApplyFastFall()
+        public void ApplyFastFall(float deltaTime)
         {
             if (FastFallTime >= Stats.TimeForUpwardsCancel)
             {
-                VerticalVelocity += Stats.Gravity * Stats.GravityOnReleaseMultiplier * Time.fixedDeltaTime;
+                VerticalVelocity += Stats.Gravity * Stats.GravityOnReleaseMultiplier * deltaTime;
             }
             else
             {
@@ -568,11 +568,14 @@ namespace Runtime.Player.Movement.States
                     FastFallTime / Stats.TimeForUpwardsCancel);
             }
 
+            OnFallEvent?.Invoke();
             FastFallTime += Time.fixedDeltaTime;
         }
 
-        public void ApplyFall()
+        public void ApplyFall(float deltaTime)
         {
+            IsFalling = true;
+            VerticalVelocity += Stats.Gravity * deltaTime;
             VerticalVelocity += Stats.Gravity * Time.fixedDeltaTime;
         }
 
@@ -582,13 +585,13 @@ namespace Runtime.Player.Movement.States
             OnFallEvent?.Invoke();
         }
 
-        public void ApplyWallSlideVertical(PlayerMovementStats.WallSlideSettings settings)
+        public void ApplyWallSlideVertical(PlayerMovementStats.WallSlideSettings settings, float deltaTime)
         {
             float gravity = settings.CalculatedGravity != 0f
                 ? settings.CalculatedGravity
                 : Stats.Gravity * settings.GravityMultiplier;
 
-            VerticalVelocity += gravity * Time.fixedDeltaTime;
+            VerticalVelocity += gravity * deltaTime;
 
             float maxDownward = -Mathf.Abs(settings.MaxSlideSpeed);
             float minDownward = -Mathf.Abs(settings.MinSlideSpeed);
@@ -600,7 +603,7 @@ namespace Runtime.Player.Movement.States
             VerticalVelocity = Mathf.Clamp(VerticalVelocity, maxDownward, minDownward);
         }
 
-        public void ApplyWallSlideHorizontal(PlayerMovementStats.WallSlideSettings settings)
+        public void ApplyWallSlideHorizontal(PlayerMovementStats.WallSlideSettings settings, float deltaTime)
         {
             float inputX = MoveInput.x;
             int inputDirection = Mathf.Approximately(inputX, 0f) ? 0 : (inputX > 0f ? 1 : -1);
@@ -614,12 +617,12 @@ namespace Runtime.Player.Movement.States
                 rate = settings.HorizontalAcceleration;
             }
 
-            float nextX = Mathf.Lerp(Velocity.x, target, rate * Time.fixedDeltaTime);
+            float nextX = Mathf.Lerp(Velocity.x, target, rate * deltaTime);
             Velocity = new Vector2(nextX, Velocity.y);
             Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
         }
 
-        public void HandleJumpAscent()
+        public void HandleJumpAscent(float deltaTime)
         {
             ApexPoint = Mathf.InverseLerp(Stats.InitialJumpVelocity, 0f, VerticalVelocity);
 
@@ -631,7 +634,7 @@ namespace Runtime.Player.Movement.States
                     TimePastApexThreshold = 0f;
                 }
 
-                TimePastApexThreshold += Time.fixedDeltaTime;
+                TimePastApexThreshold += deltaTime;
                 if (TimePastApexThreshold < Stats.ApexHangTime)
                 {
                     VerticalVelocity = 0f;
@@ -643,7 +646,7 @@ namespace Runtime.Player.Movement.States
             }
             else
             {
-                VerticalVelocity += Stats.Gravity * Time.fixedDeltaTime;
+                VerticalVelocity += Stats.Gravity * deltaTime;
                 IsPastApexThreshold = false;
             }
         }
