@@ -560,13 +560,16 @@ namespace Runtime.Player.Movement.States
             }
 
             FastFallTime += Time.fixedDeltaTime;
-            OnFallEvent?.Invoke();
         }
 
         public void ApplyFall()
         {
-            IsFalling = true;
             VerticalVelocity += Stats.Gravity * Time.fixedDeltaTime;
+        }
+
+        public void NotifyFallStarted()
+        {
+            IsFalling = true;
             OnFallEvent?.Invoke();
         }
 
