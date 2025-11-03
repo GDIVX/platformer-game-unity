@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Runtime.Player.Movement.States
 {
     public class WallSlideState : PlayerMovementStateBase
