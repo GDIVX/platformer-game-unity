@@ -15,7 +15,6 @@ namespace Runtime.Player.Movement
         [SerializeField] private Collider2D _bodyCollider;
 
         [FoldoutGroup("Events")] public UnityEvent OnJump;
-        [FoldoutGroup("Events")] public UnityEvent OnLand;
         [FoldoutGroup("Events")] public UnityEvent OnFall;
         [FoldoutGroup("Events")] public UnityEvent OnMoveStart;
         [FoldoutGroup("Events")] public UnityEvent OnMoveStopped;
