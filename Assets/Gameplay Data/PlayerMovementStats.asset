@@ -35,6 +35,7 @@ MonoBehaviour:
     <useNoMove>k__BackingField: 1
     <useSimulationMove>k__BackingField: 0
     <useAttachedTriggers>k__BackingField: 0
+  DirectionBufferDuration: 0.15
   StickinessOnLanding: 0.1
   WallDetectionRayLength: 0.35
   WallDetectionHeightScale: 0.85
@@ -43,12 +44,15 @@ MonoBehaviour:
     StickDuration: 0.3
     GravityMultiplier: 3
     HorizontalFriction: 1.6
-    HorizontalAcceleration: 0
+    HorizontalAcceleration: 4
     MinSlideSpeed: 1.5
     MaxSlideSpeed: 12
-    WallJumpHorizontalPush: 2
-    WallJumpUpwardBoost: 1.25
+    WallJumpHorizontalPush: 12
+    WallJumpUpwardBoost: 1.5
+    LongWallJumpUpwardMultiplier: 3
+    LongWallJumpHorizontalMultiplier: 2
     WallDetectionHorizontalDistance: 0.25
+    WallJumpDownwardCancelMultiplier: 1
     WallDetectionVerticalShrink: 0.15
   MaxRunSpeed: 20
   GroundLayer:
