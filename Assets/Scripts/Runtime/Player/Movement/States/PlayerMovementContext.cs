@@ -229,7 +229,11 @@ namespace Runtime.Player.Movement.States
         public void UpdateTimers(float deltaTime)
         {
             JumpBufferTimer = Mathf.Max(0f, JumpBufferTimer - deltaTime);
-            AirTime += Time.fixedDeltaTime;
+
+            if (!IsGrounded)
+            {
+                AirTime += deltaTime;
+            }
 
             CoyoteTimer = IsGrounded ? Stats.JumpCoyoteTime : Mathf.Max(0f, CoyoteTimer - deltaTime);
 
@@ -247,12 +251,12 @@ namespace Runtime.Player.Movement.States
                 }
             }
 
-            UpdateDirectionBuffer();
+            UpdateDirectionBuffer(deltaTime);
         }
 
 
 
-        public void UpdateDirectionBuffer()
+        public void UpdateDirectionBuffer(float deltaTime)
         {
             if (WallDirection == 0)
             {
@@ -271,7 +275,7 @@ namespace Runtime.Player.Movement.States
             }
             else if (DirectionBufferTimer > 0)
             {
-                DirectionBufferTimer -= Time.deltaTime;
+                DirectionBufferTimer = Mathf.Max(0f, DirectionBufferTimer - deltaTime);
                 if (DirectionBufferTimer <= 0)
                     WantsToMoveAwayFromWall = false;
             }
