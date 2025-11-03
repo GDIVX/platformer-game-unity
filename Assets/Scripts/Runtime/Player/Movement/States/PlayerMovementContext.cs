@@ -568,7 +568,8 @@ namespace Runtime.Player.Movement.States
                     FastFallTime / Stats.TimeForUpwardsCancel);
             }
 
-            FastFallTime += Time.fixedDeltaTime;
+            OnFallEvent?.Invoke();
+            FastFallTime += deltaTime;
         }
 
         public void ApplyFall(float deltaTime)
