@@ -130,9 +130,9 @@ namespace Runtime.Player.Movement
             public float WallJumpUpwardBoost = 2f;
 
             [FoldoutGroup("Jump"), LabelText("Long Jump Upward Multiplier")]
-            public float LongWallJumpUpwardMultiplier;
+            public float LongWallJumpUpwardMultiplier = 1f;
             [FoldoutGroup("Jump"), LabelText("Long Jump Horizontal Multiplier")]
-            public float LongWallJumpHorizontalMultiplier;
+            public float LongWallJumpHorizontalMultiplier = 1f;
             [FoldoutGroup("Detection"), LabelText("Horizontal Distance"), Range(0f, 1f)]
             public float WallDetectionHorizontalDistance = 0.25f;
 

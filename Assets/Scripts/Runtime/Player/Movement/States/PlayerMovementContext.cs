@@ -496,8 +496,11 @@ namespace Runtime.Player.Movement.States
 
             if (isLong)
             {
-                upwardBoost *= settings.LongWallJumpUpwardMultiplier;
-                horizontalPush *= settings.LongWallJumpHorizontalMultiplier;
+                float longUpwardMultiplier = Mathf.Max(settings.LongWallJumpUpwardMultiplier, 1f);
+                float longHorizontalMultiplier = Mathf.Max(settings.LongWallJumpHorizontalMultiplier, 1f);
+
+                upwardBoost *= longUpwardMultiplier;
+                horizontalPush *= longHorizontalMultiplier;
             }
 
             // --- 3️⃣ Jump Cancel Forgiveness ---
