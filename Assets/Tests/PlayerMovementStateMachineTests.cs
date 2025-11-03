@@ -123,6 +123,9 @@ namespace Tests.EditMode
 
             Assert.IsTrue(eventInvoked);
             Assert.IsFalse(facingRight ?? true);
+        }
+
+        [Test]
         public void FallingState_OnEnter_InvokesFallEventOnce()
         {
             _stateMachine.ChangeState<FallingState>();
