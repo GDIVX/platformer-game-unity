@@ -36,6 +36,7 @@ namespace Tests.EditMode
                 new UnityEvent(),
                 new UnityEvent(),
                 new UnityEvent(),
+                new UnityEvent<bool>(),
                 new UnityEvent<float>());
 
             _stateMachine = new PlayerMovementStateMachine(_context);
@@ -99,6 +100,24 @@ namespace Tests.EditMode
 
             Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
             Assert.AreEqual(Mathf.Min(2, _stats.NumberOfJumpsAllowed), _context.JumpsCount);
+        }
+
+        [Test]
+        public void ApplyHorizontalMovement_TurnsLeft_InvokesTurnEvent()
+        {
+            bool eventInvoked = false;
+            bool? facingRight = null;
+            _context.OnTurnEvent.AddListener(value =>
+            {
+                eventInvoked = true;
+                facingRight = value;
+            });
+
+            _context.SetInput(new Vector2(-1f, 0f), false, false, false, false);
+            _context.ApplyHorizontalMovement(_stats.GroundAcceleration, _stats.GroundDeceleration);
+
+            Assert.IsTrue(eventInvoked);
+            Assert.IsFalse(facingRight ?? true);
         }
     }
 }
