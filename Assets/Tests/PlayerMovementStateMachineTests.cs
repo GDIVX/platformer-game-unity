@@ -15,6 +15,7 @@ namespace Tests.EditMode
         private BoxCollider2D _bodyCollider;
         private PlayerMovementContext _context;
         private PlayerMovementStateMachine _stateMachine;
+        private int _fallEventInvocations;
 
         [SetUp]
         public void SetUp()
@@ -25,6 +26,10 @@ namespace Tests.EditMode
             _feetCollider = _player.AddComponent<BoxCollider2D>();
             _bodyCollider = _player.AddComponent<BoxCollider2D>();
 
+            _fallEventInvocations = 0;
+            var fallEvent = new UnityEvent();
+            fallEvent.AddListener(() => _fallEventInvocations++);
+
             _context = new PlayerMovementContext(
                 _stats,
                 _rigidbody,
@@ -32,7 +37,7 @@ namespace Tests.EditMode
                 _bodyCollider,
                 _player.transform,
                 new UnityEvent(),
-                new UnityEvent(),
+                fallEvent,
                 new UnityEvent(),
                 new UnityEvent(),
                 new UnityEvent(),
@@ -118,6 +123,28 @@ namespace Tests.EditMode
 
             Assert.IsTrue(eventInvoked);
             Assert.IsFalse(facingRight ?? true);
+        public void FallingState_OnEnter_InvokesFallEventOnce()
+        {
+            _stateMachine.ChangeState<FallingState>();
+
+            Assert.AreEqual(1, _fallEventInvocations);
+
+            _stateMachine.FixedTick();
+
+            Assert.AreEqual(1, _fallEventInvocations);
+        }
+
+        [Test]
+        public void FastFallingState_OnEnter_InvokesFallEventOnce()
+        {
+            _stateMachine.ChangeState<FallingState>();
+            _stateMachine.ChangeState<FastFallingState>();
+
+            Assert.AreEqual(2, _fallEventInvocations);
+
+            _stateMachine.FixedTick();
+
+            Assert.AreEqual(2, _fallEventInvocations);
         }
     }
 }
