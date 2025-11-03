@@ -68,7 +68,7 @@ namespace Runtime.Player.Movement.States
         public override void FixedTick()
         {
             Context.ApplyHorizontalMovement(Context.Stats.AirAcceleration, Context.Stats.AirDeceleration);
-            Context.ApplyFall();
+            Context.ApplyFall(Time.fixedDeltaTime);
             Context.ClampVerticalVelocity();
             Context.ApplyVerticalVelocity();
 

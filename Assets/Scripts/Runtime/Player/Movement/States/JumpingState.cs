@@ -54,16 +54,17 @@ namespace Runtime.Player.Movement.States
 
         public override void FixedTick()
         {
+            float fixedDeltaTime = Time.fixedDeltaTime;
             Context.ApplyHorizontalMovement(Context.Stats.AirAcceleration, Context.Stats.AirDeceleration);
 
             if (Context.VerticalVelocity >= 0f)
             {
-                Context.HandleJumpAscent();
+                Context.HandleJumpAscent(fixedDeltaTime);
             }
             else if (!Context.IsFastFalling)
             {
                 Context.VerticalVelocity += Context.Stats.Gravity * Context.Stats.GravityOnReleaseMultiplier *
-                                            Time.fixedDeltaTime;
+                                            fixedDeltaTime;
             }
             else if (Context.VerticalVelocity < 0f)
             {

@@ -48,7 +48,7 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
-            Context.ApplyFastFall();
+            Context.ApplyFastFall(Time.fixedDeltaTime);
             Context.ClampVerticalVelocity();
             Context.ApplyVerticalVelocity();
 
