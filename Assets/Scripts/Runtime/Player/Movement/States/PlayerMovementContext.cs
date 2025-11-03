@@ -569,7 +569,7 @@ namespace Runtime.Player.Movement.States
             }
 
             OnFallEvent?.Invoke();
-            FastFallTime += Time.fixedDeltaTime;
+            FastFallTime += deltaTime;
         }
 
         public void ApplyFall(float deltaTime)
