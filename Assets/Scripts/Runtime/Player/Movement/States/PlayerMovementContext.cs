@@ -36,7 +36,7 @@ namespace Runtime.Player.Movement.States
             OnLandedEvent = onLanded;
 
             CoyoteTimer = stats.JumpCoyoteTime;
-            VerticalVelocity = Physics2D.gravity.y;
+            VerticalVelocity = Stats.Gravity;
             IsFacingRight = true;
         }
 
@@ -451,7 +451,7 @@ namespace Runtime.Player.Movement.States
             OnLandedEvent?.Invoke(landingForce);
 
             AirTime = 0f;
-            VerticalVelocity = Physics2D.gravity.y;
+            VerticalVelocity = Stats.Gravity;
             Velocity = new Vector2(Mathf.Lerp(Velocity.x, 0f, Stats.StickinessOnLanding), Velocity.y);
             Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
 
