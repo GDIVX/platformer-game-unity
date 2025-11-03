@@ -718,6 +718,9 @@ MonoBehaviour:
   OnMoveFullyStopped:
     m_PersistentCalls:
       m_Calls: []
+  OnTurn:
+    m_PersistentCalls:
+      m_Calls: []
   OnLanded:
     m_PersistentCalls:
       m_Calls:

@@ -19,6 +19,7 @@ namespace Runtime.Player.Movement
         [FoldoutGroup("Events")] public UnityEvent OnMoveStart;
         [FoldoutGroup("Events")] public UnityEvent OnMoveStopped;
         [FoldoutGroup("Events")] public UnityEvent OnMoveFullyStopped;
+        [FoldoutGroup("Events")] public UnityEvent<bool> OnTurn;
         [FoldoutGroup("Events")] public UnityEvent<float> OnLanded;
         [ShowInInspector, ReadOnly] public PlayerMovementContext Context { get; private set; }
 
@@ -47,6 +48,7 @@ namespace Runtime.Player.Movement
                 OnMoveStart,
                 OnMoveStopped,
                 OnMoveFullyStopped,
+                OnTurn,
                 OnLanded);
 
             CollisionCheck();
