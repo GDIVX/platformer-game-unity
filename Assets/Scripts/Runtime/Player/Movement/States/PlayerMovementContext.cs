@@ -19,6 +19,7 @@ namespace Runtime.Player.Movement.States
             UnityEvent onMoveStart,
             UnityEvent onMoveStopped,
             UnityEvent onMoveFullyStopped,
+            UnityEvent<bool> onTurn,
             UnityEvent<float> onLanded)
         {
             Stats = stats;
@@ -31,6 +32,7 @@ namespace Runtime.Player.Movement.States
             OnMoveStartEvent = onMoveStart;
             OnMoveStoppedEvent = onMoveStopped;
             OnMoveFullyStoppedEvent = onMoveFullyStopped;
+            OnTurnEvent = onTurn;
             OnLandedEvent = onLanded;
 
             CoyoteTimer = stats.JumpCoyoteTime;
