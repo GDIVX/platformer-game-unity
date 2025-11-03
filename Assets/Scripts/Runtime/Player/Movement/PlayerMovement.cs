@@ -8,8 +8,9 @@ namespace Runtime.Player.Movement
 {
     public class PlayerMovement : MonoBehaviour
     {
-        [Header("References")]
-        [SerializeField] private PlayerMovementStats _movementStats;
+        [Header("References")] [SerializeField]
+        private PlayerMovementStats _movementStats;
+
         [SerializeField] private Collider2D _feetCollider;
         [SerializeField] private Collider2D _bodyCollider;
 
@@ -20,7 +21,7 @@ namespace Runtime.Player.Movement
         [FoldoutGroup("Events")] public UnityEvent OnMoveStopped;
         [FoldoutGroup("Events")] public UnityEvent OnMoveFullyStopped;
         [FoldoutGroup("Events")] public UnityEvent<float> OnLanded;
-        public PlayerMovementContext Context { get; private set; }
+        [ShowInInspector, ReadOnly] public PlayerMovementContext Context { get; private set; }
 
         private Rigidbody2D _rb;
         private PlayerMovementStateMachine _stateMachine;

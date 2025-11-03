@@ -1,4 +1,5 @@
 using System;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -50,51 +51,147 @@ namespace Runtime.Player.Movement.States
         public UnityEvent OnMoveFullyStoppedEvent { get; }
         public UnityEvent<float> OnLandedEvent { get; }
 
+        // ---------------------------- //
+        // ────── MOVEMENT DATA ─────── //
+        // ---------------------------- //
+        [FoldoutGroup("Velocity"), ShowInInspector, ReadOnly]
         public Vector2 Velocity { get; set; }
+
+        [FoldoutGroup("Velocity"), ShowInInspector, ReadOnly]
         public Vector2 TargetVelocity { get; private set; }
+
+        [FoldoutGroup("Velocity"), ShowInInspector, ReadOnly]
         public bool IsFacingRight { get; private set; }
 
+        [FoldoutGroup("Velocity"), ShowInInspector, ReadOnly]
         public float VerticalVelocity { get; set; }
+
+        // ---------------------------- //
+        // ──────── JUMPING ─────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Jumping"), ShowInInspector, ReadOnly]
         public bool IsJumping { get; set; }
-        public bool IsFalling { get; set; }
-        public bool IsFastFalling { get; set; }
-        public int JumpsCount { get; set; }
-        public float FastFallTime { get; set; }
-        public float AirTime { get; set; }
-        public float FastFallReleaseSpeed { get; set; }
 
-        public float ApexPoint { get; set; }
-        public float TimePastApexThreshold { get; set; }
-        public bool IsPastApexThreshold { get; set; }
-
+        [FoldoutGroup("Jumping"), ShowInInspector, ReadOnly]
         public float JumpBufferTimer { get; private set; }
+
+        [FoldoutGroup("Jumping"), ShowInInspector, ReadOnly]
         public bool JumpReleasedDuringBuffer { get; private set; }
+
+        [FoldoutGroup("Jumping"), ShowInInspector, ReadOnly]
         public float CoyoteTimer { get; private set; }
 
-        public RaycastHit2D GroundHit { get; private set; }
-        public RaycastHit2D HeadHit { get; private set; }
+        [FoldoutGroup("Jumping"), ShowInInspector, ReadOnly]
+        public int JumpsCount { get; set; }
+
+        [FoldoutGroup("Jumping"), ShowInInspector, ReadOnly]
+        public float ApexPoint { get; set; }
+
+        [FoldoutGroup("Jumping"), ShowInInspector, ReadOnly]
+        public float TimePastApexThreshold { get; set; }
+
+        [FoldoutGroup("Jumping"), ShowInInspector, ReadOnly]
+        public bool IsPastApexThreshold { get; set; }
+
+        // ---------------------------- //
+        // ──────── AIR STATE ───────── //
+        // ---------------------------- //
+        [FoldoutGroup("Air State"), ShowInInspector, ReadOnly]
+        public bool IsFalling { get; set; }
+
+        [FoldoutGroup("Air State"), ShowInInspector, ReadOnly]
+        public bool IsFastFalling { get; set; }
+
+        [FoldoutGroup("Air State"), ShowInInspector, ReadOnly]
+        public float AirTime { get; set; }
+
+        [FoldoutGroup("Air State"), ShowInInspector, ReadOnly]
+        public float FastFallTime { get; set; }
+
+        [FoldoutGroup("Air State"), ShowInInspector, ReadOnly]
+        public float FastFallReleaseSpeed { get; set; }
+
+        // ---------------------------- //
+        // ───────── GROUND ─────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Ground"), ShowInInspector, ReadOnly]
         public bool IsGrounded { get; private set; }
+
+        [FoldoutGroup("Ground"), ShowInInspector, ReadOnly]
         public bool BumpedHead { get; private set; }
 
-        public RaycastHit2D LeftWallHit { get; private set; }
-        public RaycastHit2D RightWallHit { get; private set; }
-        public RaycastHit2D WallHit { get; private set; }
+        [FoldoutGroup("Ground"), ShowInInspector, ReadOnly]
+        public RaycastHit2D GroundHit { get; private set; }
+
+        [FoldoutGroup("Ground"), ShowInInspector, ReadOnly]
+        public RaycastHit2D HeadHit { get; private set; }
+
+        // ---------------------------- //
+        // ───────── WALLS ──────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
         public bool IsTouchingWall { get; private set; }
+
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
         public bool IsTouchingLeftWall { get; private set; }
+
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
         public bool IsTouchingRightWall { get; private set; }
+
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
+        public RaycastHit2D LeftWallHit { get; private set; }
+
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
+        public RaycastHit2D RightWallHit { get; private set; }
+
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
+        public RaycastHit2D WallHit { get; private set; }
+
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
         public int WallDirection { get; private set; }
+
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
         public float WallStickTimer { get; private set; }
+
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
         public bool IsWallSliding { get; set; }
 
+        [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
+        public float DirectionBufferTimer { get; private set; }
+        [ShowInInspector, ReadOnly , FoldoutGroup("Walls")]public bool WantsToMoveAwayFromWall { get; private set; }
+
+
+        // ---------------------------- //
+        // ───────── INPUTS ─────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Input"), ShowInInspector, ReadOnly]
         public Vector2 MoveInput { get; private set; }
+
+        [FoldoutGroup("Input"), ShowInInspector, ReadOnly]
         public bool RunHeld { get; private set; }
+
+        [FoldoutGroup("Input"), ShowInInspector, ReadOnly]
         public bool JumpPressed { get; private set; }
+
+        [FoldoutGroup("Input"), ShowInInspector, ReadOnly]
         public bool JumpHeld { get; private set; }
+
+        [FoldoutGroup("Input"), ShowInInspector, ReadOnly]
         public bool JumpReleased { get; private set; }
 
+        // ---------------------------- //
+        // ──────── INTERNALS ───────── //
+        // ---------------------------- //
+        [FoldoutGroup("Internals"), ShowInInspector, ReadOnly]
         private bool _hasHorizontalInput;
+
+        [FoldoutGroup("Internals"), ShowInInspector, ReadOnly]
         private bool _isFullyStopped = true;
 
+        // ---------------------------- //
+        // ───────── HELPERS ────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Helpers"), ShowInInspector, ReadOnly]
         private float WallStickDuration => Stats.WallSlide?.StickDuration ?? 0f;
 
         public void SetInput(Vector2 moveInput, bool runHeld, bool jumpPressed, bool jumpHeld, bool jumpReleased)
@@ -149,7 +246,37 @@ namespace Runtime.Player.Movement.States
                     WallHit = default;
                 }
             }
+
+            UpdateDirectionBuffer();
         }
+
+
+
+        public void UpdateDirectionBuffer()
+        {
+            if (WallDirection == 0)
+            {
+                WantsToMoveAwayFromWall = false;
+                DirectionBufferTimer = 0;
+                return;
+            }
+
+            // Player is holding opposite direction of wall
+            bool movingAway = Mathf.Approximately(Mathf.Sign(MoveInput.x), -WallDirection) && Mathf.Abs(MoveInput.x) > 0.25f;
+
+            if (movingAway)
+            {
+                WantsToMoveAwayFromWall = true;
+                DirectionBufferTimer = Stats.DirectionBufferDuration;
+            }
+            else if (DirectionBufferTimer > 0)
+            {
+                DirectionBufferTimer -= Time.deltaTime;
+                if (DirectionBufferTimer <= 0)
+                    WantsToMoveAwayFromWall = false;
+            }
+        }
+
 
         public void SetGroundHit(RaycastHit2D hit)
         {
@@ -353,37 +480,48 @@ namespace Runtime.Player.Movement.States
             OnJumpEvent?.Invoke();
         }
 
-        public void PerformWallJump()
+        public void PerformWallJump(bool isLong = false)
         {
             if (WallDirection == 0)
-            {
                 return;
-            }
 
             var settings = Stats.WallSlide;
             if (settings == null)
-            {
                 return;
-            }
 
             int pushDirection = -WallDirection;
 
-            InitiateJump(1);
+            float upwardBoost = settings.WallJumpUpwardBoost;
+            float horizontalPush = settings.WallJumpHorizontalPush;
 
-            if (settings.WallJumpUpwardBoost > 0f)
+            if (isLong)
             {
-                VerticalVelocity += settings.WallJumpUpwardBoost;
+                upwardBoost *= settings.LongWallJumpUpwardMultiplier;
+                horizontalPush *= settings.LongWallJumpHorizontalMultiplier;
             }
 
-            float horizontalPush = settings.WallJumpHorizontalPush * pushDirection;
-            Velocity = new Vector2(horizontalPush, Velocity.y);
-            Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
+            // --- 3️⃣ Jump Cancel Forgiveness ---
+            // If the player is sliding fast, cancel part of downward momentum.
+            if (Rigidbody.linearVelocityY < 0f)
+                Rigidbody.linearVelocityY *= settings.WallJumpDownwardCancelMultiplier; // e.g. 0.2f
 
+            // --- Apply boosts ---
+            VerticalVelocity = Mathf.Max(VerticalVelocity, 0f);
+            VerticalVelocity += upwardBoost;
+            var targetVelocityX = Velocity.x + horizontalPush * pushDirection;
+            Velocity = new Vector2(targetVelocityX, Velocity.y);
+
+            Rigidbody.linearVelocity = new Vector2(Velocity.x, VerticalVelocity);
+
+            InitiateJump(1);
+
+            // --- Reset wall-related state ---
             IsWallSliding = false;
             WallStickTimer = 0f;
             WallDirection = 0;
             ClearWallHit();
         }
+
 
         public void AttemptJumpCut()
         {
@@ -443,6 +581,7 @@ namespace Runtime.Player.Movement.States
             {
                 (maxDownward, minDownward) = (minDownward, maxDownward);
             }
+
             VerticalVelocity = Mathf.Clamp(VerticalVelocity, maxDownward, minDownward);
         }
 

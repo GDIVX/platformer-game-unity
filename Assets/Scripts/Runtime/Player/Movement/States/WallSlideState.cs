@@ -18,31 +18,31 @@ namespace Runtime.Player.Movement.States
         public override void OnExit()
         {
             Context.IsWallSliding = false;
+            Context.AirTime = 0;
         }
 
         public override void HandleInput()
         {
             if (Context.JumpBufferTimer > 0f && Context.WallDirection != 0)
             {
-                Context.PerformWallJump();
+                bool longJump = Context.WantsToMoveAwayFromWall;
+                Context.PerformWallJump(longJump);
                 StateMachine.ChangeState<JumpingState>();
                 return;
             }
 
+
+            // 🔽 If can’t keep sliding, transition out
             if (!Context.CanContinueWallSlide())
             {
                 if (Context.IsFastFalling)
-                {
                     StateMachine.ChangeState<FastFallingState>();
-                }
                 else
-                {
                     StateMachine.ChangeState<FallingState>();
-                }
-
                 return;
             }
 
+            // 🟩 Ground contact check
             if (Context.IsGrounded)
             {
                 StateMachine.ChangeState<GroundedState>();
@@ -51,24 +51,20 @@ namespace Runtime.Player.Movement.States
 
         public override void FixedTick()
         {
+            // 🔁 If can’t keep sliding, bail out early
             if (!Context.CanContinueWallSlide())
             {
                 if (Context.IsGrounded)
-                {
                     StateMachine.ChangeState<GroundedState>();
-                }
                 else if (Context.IsFastFalling)
-                {
                     StateMachine.ChangeState<FastFallingState>();
-                }
                 else
-                {
                     StateMachine.ChangeState<FallingState>();
-                }
 
                 return;
             }
 
+            // 📉 Sliding logic
             var settings = Context.Stats.WallSlide;
             if (settings == null)
             {
