@@ -19,6 +19,7 @@ namespace Runtime.Player.Movement.States
             UnityEvent onMoveStart,
             UnityEvent onMoveStopped,
             UnityEvent onMoveFullyStopped,
+            UnityEvent<bool> onTurn,
             UnityEvent<float> onLanded)
         {
             Stats = stats;
@@ -31,6 +32,7 @@ namespace Runtime.Player.Movement.States
             OnMoveStartEvent = onMoveStart;
             OnMoveStoppedEvent = onMoveStopped;
             OnMoveFullyStoppedEvent = onMoveFullyStopped;
+            OnTurnEvent = onTurn;
             OnLandedEvent = onLanded;
 
             CoyoteTimer = stats.JumpCoyoteTime;
@@ -229,7 +231,11 @@ namespace Runtime.Player.Movement.States
         public void UpdateTimers(float deltaTime)
         {
             JumpBufferTimer = Mathf.Max(0f, JumpBufferTimer - deltaTime);
-            AirTime += Time.fixedDeltaTime;
+
+            if (!IsGrounded)
+            {
+                AirTime += deltaTime;
+            }
 
             CoyoteTimer = IsGrounded ? Stats.JumpCoyoteTime : Mathf.Max(0f, CoyoteTimer - deltaTime);
 
@@ -247,12 +253,12 @@ namespace Runtime.Player.Movement.States
                 }
             }
 
-            UpdateDirectionBuffer();
+            UpdateDirectionBuffer(deltaTime);
         }
 
 
 
-        public void UpdateDirectionBuffer()
+        public void UpdateDirectionBuffer(float deltaTime)
         {
             if (WallDirection == 0)
             {
@@ -271,7 +277,7 @@ namespace Runtime.Player.Movement.States
             }
             else if (DirectionBufferTimer > 0)
             {
-                DirectionBufferTimer -= Time.deltaTime;
+                DirectionBufferTimer = Mathf.Max(0f, DirectionBufferTimer - deltaTime);
                 if (DirectionBufferTimer <= 0)
                     WantsToMoveAwayFromWall = false;
             }
@@ -533,6 +539,9 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
+            float releaseSpeed = VerticalVelocity;
+            FastFallReleaseSpeed = releaseSpeed;
+
             VerticalVelocity = 0f;
             IsFastFalling = true;
 
@@ -543,7 +552,7 @@ namespace Runtime.Player.Movement.States
             }
             else
             {
-                FastFallReleaseSpeed = VerticalVelocity;
+                FastFallTime = 0f;
             }
         }
 
@@ -560,13 +569,16 @@ namespace Runtime.Player.Movement.States
             }
 
             FastFallTime += Time.fixedDeltaTime;
-            OnFallEvent?.Invoke();
         }
 
         public void ApplyFall()
         {
-            IsFalling = true;
             VerticalVelocity += Stats.Gravity * Time.fixedDeltaTime;
+        }
+
+        public void NotifyFallStarted()
+        {
+            IsFalling = true;
             OnFallEvent?.Invoke();
         }
 

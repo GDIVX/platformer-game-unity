@@ -20,6 +20,8 @@ namespace Tests
             var stats = ScriptableObject.CreateInstance<PlayerMovementStats>();
             stats.GroundLayer = LayerMask.GetMask("Default");
             stats.StopOnCollision = false;
+            stats.VisualizationSteps = 100;
+            stats.ArcResolution = 20;
 
             var ground = new GameObject("Ground");
             var groundCollider = ground.AddComponent<BoxCollider2D>();

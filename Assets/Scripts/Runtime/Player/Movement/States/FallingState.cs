@@ -9,8 +9,8 @@ namespace Runtime.Player.Movement.States
 
         public override void OnEnter()
         {
-            Context.IsFalling = true;
             Context.IsJumping = Context.JumpsCount > 0;
+            Context.NotifyFallStarted();
         }
 
         public override void HandleInput()
