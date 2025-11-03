@@ -461,7 +461,7 @@ namespace Runtime.Player.Movement.States
             ClearWallHit();
         }
 
-        public void InitiateJump(int jumpIncrements)
+        public void InitiateJump(int jumpIncrements, float? initialVerticalVelocityOverride = null)
         {
             if (!IsJumping)
             {
@@ -471,7 +471,8 @@ namespace Runtime.Player.Movement.States
             ConsumeJumpBuffer();
             JumpReleasedDuringBuffer = false;
             JumpsCount += jumpIncrements;
-            VerticalVelocity = Stats.InitialJumpVelocity;
+            float targetVertical = initialVerticalVelocityOverride ?? Stats.InitialJumpVelocity;
+            VerticalVelocity = targetVertical;
             FastFallTime = 0f;
             IsFastFalling = false;
             IsFalling = false;
@@ -491,29 +492,31 @@ namespace Runtime.Player.Movement.States
 
             int pushDirection = -WallDirection;
 
-            float upwardBoost = settings.WallJumpUpwardBoost;
-            float horizontalPush = settings.WallJumpHorizontalPush;
+            float upwardBoost = Mathf.Max(0f, settings.WallJumpUpwardBoost);
+            float horizontalPush = Mathf.Max(0f, settings.WallJumpHorizontalPush);
 
             if (isLong)
             {
-                upwardBoost *= settings.LongWallJumpUpwardMultiplier;
-                horizontalPush *= settings.LongWallJumpHorizontalMultiplier;
+                float verticalMultiplier = Mathf.Max(1f, settings.LongWallJumpUpwardMultiplier);
+                float horizontalMultiplier = Mathf.Max(1f, settings.LongWallJumpHorizontalMultiplier);
+                upwardBoost *= verticalMultiplier;
+                horizontalPush *= horizontalMultiplier;
             }
 
-            // --- 3️⃣ Jump Cancel Forgiveness ---
-            // If the player is sliding fast, cancel part of downward momentum.
-            if (Rigidbody.linearVelocityY < 0f)
-                Rigidbody.linearVelocityY *= settings.WallJumpDownwardCancelMultiplier; // e.g. 0.2f
+            float cancelMultiplier = Mathf.Clamp01(settings.WallJumpDownwardCancelMultiplier);
+            float preservedVertical = VerticalVelocity < 0f
+                ? VerticalVelocity * cancelMultiplier
+                : VerticalVelocity;
+            float baseVertical = Mathf.Max(0f, preservedVertical);
+            float targetVerticalVelocity = Mathf.Max(Stats.InitialJumpVelocity, baseVertical + upwardBoost);
 
-            // --- Apply boosts ---
-            VerticalVelocity = Mathf.Max(VerticalVelocity, 0f);
-            VerticalVelocity += upwardBoost;
-            var targetVelocityX = Velocity.x + horizontalPush * pushDirection;
-            Velocity = new Vector2(targetVelocityX, Velocity.y);
+            float currentAwaySpeed = Mathf.Max(0f, Velocity.x * pushDirection);
+            float finalHorizontalSpeed = Mathf.Max(horizontalPush, currentAwaySpeed) * pushDirection;
+            Velocity = new Vector2(finalHorizontalSpeed, Velocity.y);
+
+            InitiateJump(1, targetVerticalVelocity);
 
             Rigidbody.linearVelocity = new Vector2(Velocity.x, VerticalVelocity);
-
-            InitiateJump(1);
 
             // --- Reset wall-related state ---
             IsWallSliding = false;

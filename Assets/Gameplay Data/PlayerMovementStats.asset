@@ -46,8 +46,10 @@ MonoBehaviour:
     HorizontalAcceleration: 0
     MinSlideSpeed: 1.5
     MaxSlideSpeed: 12
-    WallJumpHorizontalPush: 2
-    WallJumpUpwardBoost: 1.25
+    WallJumpHorizontalPush: 12
+    WallJumpUpwardBoost: 1.5
+    LongWallJumpUpwardMultiplier: 1.25
+    LongWallJumpHorizontalMultiplier: 1.5
     WallDetectionHorizontalDistance: 0.25
     WallDetectionVerticalShrink: 0.15
   MaxRunSpeed: 20
