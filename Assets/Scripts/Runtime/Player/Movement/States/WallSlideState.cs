@@ -18,7 +18,6 @@ namespace Runtime.Player.Movement.States
         public override void OnExit()
         {
             Context.IsWallSliding = false;
-            Context.AirTime = 0;
         }
 
         public override void HandleInput()
