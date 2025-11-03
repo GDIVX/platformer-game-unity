@@ -576,7 +576,6 @@ namespace Runtime.Player.Movement.States
         {
             IsFalling = true;
             VerticalVelocity += Stats.Gravity * deltaTime;
-            VerticalVelocity += Stats.Gravity * Time.fixedDeltaTime;
         }
 
         public void NotifyFallStarted()

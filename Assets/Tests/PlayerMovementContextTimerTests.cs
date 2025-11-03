@@ -97,6 +97,22 @@ namespace Tests.EditMode
             Assert.That(_context.VerticalVelocity, Is.EqualTo(expectedVelocity).Within(1e-6f));
         }
 
+        [TestCase(0.016f, 0.016f)]
+        [TestCase(0.02f, 0.005f)]
+        [TestCase(0.008f, 0.02f)]
+        public void ApplyFall_IntegratesGravityUsingProvidedDeltaTime(float deltaTime, float fixedDeltaTime)
+        {
+            Time.fixedDeltaTime = fixedDeltaTime;
+            _context.VerticalVelocity = 0f;
+            _context.IsFalling = false;
+
+            _context.ApplyFall(deltaTime);
+
+            float expectedVelocity = _stats.Gravity * deltaTime;
+            Assert.IsTrue(_context.IsFalling);
+            Assert.That(_context.VerticalVelocity, Is.EqualTo(expectedVelocity).Within(1e-6f));
+        }
+
         [Test]
         public void HandleJumpAscent_AccumulatesProvidedDeltaTime()
         {
