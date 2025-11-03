@@ -533,6 +533,9 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
+            float releaseSpeed = VerticalVelocity;
+            FastFallReleaseSpeed = releaseSpeed;
+
             VerticalVelocity = 0f;
             IsFastFalling = true;
 
@@ -543,7 +546,7 @@ namespace Runtime.Player.Movement.States
             }
             else
             {
-                FastFallReleaseSpeed = VerticalVelocity;
+                FastFallTime = 0f;
             }
         }
 
