@@ -568,7 +568,6 @@ namespace Runtime.Player.Movement.States
                     FastFallTime / Stats.TimeForUpwardsCancel);
             }
 
-            OnFallEvent?.Invoke();
             FastFallTime += Time.fixedDeltaTime;
         }
 
@@ -581,6 +580,10 @@ namespace Runtime.Player.Movement.States
         public void NotifyFallStarted()
         {
             IsFalling = true;
+        }
+
+        public void InvokeFallEvent()
+        {
             OnFallEvent?.Invoke();
         }
 
