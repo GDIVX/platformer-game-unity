@@ -14,6 +14,7 @@ namespace Runtime.Player.Movement.States
             Context.IsFastFalling = true;
             Context.IsJumping = false;
             Context.NotifyFallStarted();
+            Context.InvokeFallEvent();
         }
 
         public override void HandleInput()

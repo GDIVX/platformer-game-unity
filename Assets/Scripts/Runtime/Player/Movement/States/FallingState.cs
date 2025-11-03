@@ -13,6 +13,7 @@ namespace Runtime.Player.Movement.States
         {
             Context.IsJumping = Context.JumpsCount > 0;
             Context.NotifyFallStarted();
+            Context.InvokeFallEvent();
         }
 
         public override void HandleInput()
