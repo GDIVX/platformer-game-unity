@@ -53,6 +53,12 @@ namespace Runtime.Player.Movement.States
             Context.ApplyHorizontalMovement(Context.Stats.GroundAcceleration, Context.Stats.GroundDeceleration);
             Context.ClampVerticalVelocity();
             Context.ApplyVerticalVelocity();
+
+            if (Context.Stats.SlideMovement.maxIterations <= 0)
+            {
+                Context.Stats.SlideMovement.maxIterations = 50;
+            }
+
             Context.Rigidbody.Slide(Context.Velocity, Time.fixedDeltaTime, Context.Stats.SlideMovement);
         }
     }

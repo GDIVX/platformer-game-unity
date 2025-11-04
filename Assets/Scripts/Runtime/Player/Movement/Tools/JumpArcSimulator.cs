@@ -3,8 +3,23 @@ using UnityEngine;
 
 namespace Runtime.Player.Movement.Tools
 {
+    /// <summary>
+    /// Predicts and visualizes player jump trajectories for use by level designers.
+    /// Focuses on consistent, intuitive results over perfect physics parity.
+    /// </summary>
+    [System.Serializable]
     public class JumpArcSimulator
     {
+        [Header("Designer Tweaks")]
+        [Tooltip("Applies a mild horizontal damping each step to emulate air resistance or input drift.")]
+        [Range(0f, 0.5f)] public float SimulatedAirDrag = 0.05f;
+
+        [Tooltip("Multiplier on player max speed. Values above 1.0 slightly exaggerate jump reach for safety margins.")]
+        [Range(1f, 1.3f)] public float SimulatedSpeedBoost = 1.1f;
+
+        [Tooltip("Small tolerance above ground level to avoid premature landing detection.")]
+        [Range(0f, 0.1f)] public float GroundTolerance = 0.05f;
+
         public struct SimulationSettings
         {
             public Vector2 StartPosition;
@@ -35,47 +50,57 @@ namespace Runtime.Player.Movement.Tools
             _stats = stats;
         }
 
+        /// <summary>
+        /// Simulates a jump arc from the given settings and returns a sequence of points.
+        /// </summary>
         public SimulationResult Simulate(SimulationSettings settings)
         {
             var points = new List<Vector2> { settings.StartPosition };
-            float horizontalVelocity = settings.InitialHorizontalVelocity;
-            float verticalVelocity = _stats.InitialJumpVelocity;
+
+            Vector2 position = settings.StartPosition;
+            Vector2 velocity = new Vector2(settings.InitialHorizontalVelocity, _stats.InitialJumpVelocity);
+
             bool isPastApexThreshold = false;
             float timePastApexThreshold = 0f;
             bool appliedReleaseGravity = false;
 
             float startHeight = settings.StartPosition.y;
             float horizontalInput = settings.HorizontalInput;
-            float acceleration = _stats.AirAcceleration;
-            float deceleration = _stats.AirDeceleration;
             float deltaTime = Time.fixedDeltaTime;
-
-            int? collisionIndex = null;
             int stepsLimit = Mathf.Max(1, settings.MaxSteps);
+            int? collisionIndex = null;
 
             for (int step = 0; step < stepsLimit; step++)
             {
+                // --------------------------------------------------------
+                // HORIZONTAL — mirrors controller feel, not raw physics
+                // --------------------------------------------------------
                 bool hasHorizontalInput = !Mathf.Approximately(horizontalInput, 0f);
+                float baseSpeed = settings.RunHeld ? _stats.MaxRunSpeed : _stats.MaxWalkSpeed;
+                float maxSpeed = baseSpeed * SimulatedSpeedBoost;
+
                 if (hasHorizontalInput)
                 {
-                    float targetSpeed = horizontalInput * (settings.RunHeld ? _stats.MaxRunSpeed : _stats.MaxWalkSpeed);
-                    float lerpFactor = Mathf.Clamp01(acceleration * deltaTime);
-                    horizontalVelocity = Mathf.Lerp(horizontalVelocity, targetSpeed, lerpFactor);
+                    float targetSpeed = horizontalInput * maxSpeed;
+                    velocity.x = Mathf.Lerp(velocity.x, targetSpeed, _stats.AirAcceleration * deltaTime);
                 }
                 else
                 {
-                    float lerpFactor = Mathf.Clamp01(deceleration * deltaTime);
-                    horizontalVelocity = Mathf.Lerp(horizontalVelocity, 0f, lerpFactor);
-
-                    if (Mathf.Abs(horizontalVelocity) <= _stats.MinSpeedThreshold)
-                    {
-                        horizontalVelocity = 0f;
-                    }
+                    velocity.x = Mathf.Lerp(velocity.x, 0f, _stats.AirDeceleration * deltaTime);
+                    if (Mathf.Abs(velocity.x) <= _stats.MinSpeedThreshold)
+                        velocity.x = 0f;
                 }
 
-                if (verticalVelocity >= 0f)
+                // Mild air drag for realism
+                velocity.x = Mathf.Lerp(velocity.x, 0f, SimulatedAirDrag * deltaTime);
+                velocity.x = Mathf.Clamp(velocity.x, -maxSpeed, maxSpeed);
+
+                // --------------------------------------------------------
+                // VERTICAL — mirrors HandleJumpAscent and fall logic
+                // --------------------------------------------------------
+                if (velocity.y >= 0f)
                 {
-                    float apexPoint = Mathf.InverseLerp(_stats.InitialJumpVelocity, 0f, verticalVelocity);
+                    float apexPoint = Mathf.InverseLerp(_stats.InitialJumpVelocity, 0f, velocity.y);
                     if (apexPoint > _stats.ApexThreshold)
                     {
                         if (!isPastApexThreshold)
@@ -87,16 +112,16 @@ namespace Runtime.Player.Movement.Tools
                         timePastApexThreshold += deltaTime;
                         if (timePastApexThreshold < _stats.ApexHangTime)
                         {
-                            verticalVelocity = 0f;
+                            velocity.y = 0f;
                         }
                         else
                         {
-                            verticalVelocity = -0.01f;
+                            velocity.y = -0.01f;
                         }
                     }
                     else
                     {
-                        verticalVelocity += _stats.Gravity * deltaTime;
+                        velocity.y += _stats.Gravity * deltaTime;
                         isPastApexThreshold = false;
                     }
                 }
@@ -104,27 +129,28 @@ namespace Runtime.Player.Movement.Tools
                 {
                     if (!appliedReleaseGravity)
                     {
-                        verticalVelocity += _stats.Gravity * _stats.GravityOnReleaseMultiplier * deltaTime;
+                        velocity.y += _stats.Gravity * _stats.GravityOnReleaseMultiplier * deltaTime;
                         appliedReleaseGravity = true;
                     }
                     else
                     {
-                        verticalVelocity += _stats.Gravity * deltaTime;
+                        velocity.y += _stats.Gravity * deltaTime;
                     }
                 }
 
-                verticalVelocity = Mathf.Clamp(verticalVelocity, -_stats.MaxFallSpeed, _stats.MaxRiseSpeed);
+                velocity.y = Mathf.Clamp(velocity.y, -_stats.MaxFallSpeed, _stats.MaxRiseSpeed);
 
-                Vector2 previousPosition = points[^1];
-                Vector2 displacement = new Vector2(horizontalVelocity * deltaTime, verticalVelocity * deltaTime);
+                // --------------------------------------------------------
+                // APPLY DISPLACEMENT
+                // --------------------------------------------------------
+                Vector2 previousPosition = position;
+                Vector2 displacement = velocity * deltaTime;
                 Vector2 proposedPosition = previousPosition + displacement;
 
+                // Stop on collision
                 if (settings.StopOnCollision && settings.CollisionMask != 0)
                 {
-                    Vector2 direction = displacement.normalized;
-                    float distance = displacement.magnitude;
-                    RaycastHit2D hit = Physics2D.Raycast(previousPosition, direction, distance, settings.CollisionMask);
-
+                    RaycastHit2D hit = Physics2D.Raycast(previousPosition, displacement.normalized, displacement.magnitude, settings.CollisionMask);
                     if (hit.collider != null)
                     {
                         points.Add(hit.point);
@@ -133,27 +159,56 @@ namespace Runtime.Player.Movement.Tools
                     }
                 }
 
-                // if (previousPosition.y >= startHeight && proposedPosition.y < startHeight)
-                // {
-                //     float travelY = previousPosition.y - proposedPosition.y;
-                //     float t = Mathf.Approximately(travelY, 0f)
-                //         ? 1f
-                //         : (previousPosition.y - startHeight) / travelY;
-                //     t = Mathf.Clamp01(t);
-                //     Vector2 landingPoint = Vector2.Lerp(previousPosition, proposedPosition, t);
-                //     points.Add(landingPoint);
-                //     break;
-                // }
+                // Landing detection — when crossing starting height (with tolerance)
+                bool crossedStartHeight =
+                    previousPosition.y >= startHeight + GroundTolerance &&
+                    proposedPosition.y <= startHeight + GroundTolerance;
 
-                points.Add(proposedPosition);
+                if (crossedStartHeight)
+                {
+                    float travelY = previousPosition.y - proposedPosition.y;
+                    float t = Mathf.Approximately(travelY, 0f)
+                        ? 1f
+                        : (previousPosition.y - startHeight) / travelY;
+                    t = Mathf.Clamp01(t);
 
-                // if (proposedPosition.y <= startHeight)
-                // {
-                //     break;
-                // }
+                    Vector2 landingPoint = Vector2.Lerp(previousPosition, proposedPosition, t);
+                    points.Add(landingPoint);
+                    break;
+                }
+
+                position = proposedPosition;
+                points.Add(position);
+
+                if (position.y <= startHeight - GroundTolerance)
+                    break;
             }
 
             return new SimulationResult(points, collisionIndex);
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Draws a simple arc gizmo in the Scene view for visual debugging.
+        /// </summary>
+        public static void DrawGizmo(JumpArcSimulator.SimulationResult result, Color color)
+        {
+            if (result.Points == null || result.Points.Count < 2)
+                return;
+
+            UnityEditor.Handles.color = color;
+            for (int i = 0; i < result.Points.Count - 1; i++)
+            {
+                UnityEditor.Handles.DrawLine(result.Points[i], result.Points[i + 1]);
+            }
+
+            if (result.CollisionIndex.HasValue)
+            {
+                Vector2 hit = result.Points[result.CollisionIndex.Value];
+                UnityEditor.Handles.color = Color.red;
+                UnityEditor.Handles.DrawSolidDisc(hit, Vector3.forward, 0.05f);
+            }
+        }
+#endif
     }
 }
