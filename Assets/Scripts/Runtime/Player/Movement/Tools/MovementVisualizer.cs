@@ -18,7 +18,6 @@ namespace Runtime.Player.Movement.Tools
         [SerializeField] private bool _showRunJumpArc = true;
         [SerializeField] private bool _stopOnCollision = true;
         [SerializeField] private bool _drawRight = true;
-        [SerializeField, Range(5, 100)] private int _arcResolution = 20;
         [SerializeField, Range(10, 500)] private int _visualizationSteps = 90;
 
         [Header("Freefall Visualization")] [SerializeField]
@@ -133,9 +132,9 @@ namespace Runtime.Player.Movement.Tools
             }
         }
 
-#if UNITY_EDITOR
         private void DrawArc(JumpArcSimulator.SimulationResult result, Color color, string label)
         {
+#if UNITY_EDITOR
             var points = result.Points;
             if (points.Count < 2) return;
 
@@ -158,7 +157,7 @@ namespace Runtime.Player.Movement.Tools
             Gizmos.DrawSphere(landing, _landingMarkerSize);
             Handles.Label(landing + Vector2.up * 0.25f, $"{label}\n({landing.x:F2}, {landing.y:F2})",
                 EditorStyles.miniBoldLabel);
-        }
 #endif
+        }
     }
 }
