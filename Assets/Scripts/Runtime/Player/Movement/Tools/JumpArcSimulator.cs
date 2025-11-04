@@ -12,13 +12,13 @@ namespace Runtime.Player.Movement.Tools
     {
         [Header("Designer Tweaks")]
         [Tooltip("Applies a mild horizontal damping each step to emulate air resistance or input drift.")]
-        [Range(0f, 0.5f)] public float SimulatedAirDrag = 0.05f;
+        [Range(0f, 0.5f)]
+        public float SimulatedAirDrag = 0.05f;
 
         [Tooltip("Multiplier on player max speed. Values above 1.0 slightly exaggerate jump reach for safety margins.")]
-        [Range(1f, 1.3f)] public float SimulatedSpeedBoost = 1.1f;
+        [Range(1f, 1.3f)]
+        public float SimulatedSpeedBoost = 1.1f;
 
-        [Tooltip("Small tolerance above ground level to avoid premature landing detection.")]
-        [Range(0f, 0.1f)] public float GroundTolerance = 0.05f;
 
         public struct SimulationSettings
         {
@@ -150,7 +150,8 @@ namespace Runtime.Player.Movement.Tools
                 // Stop on collision
                 if (settings.StopOnCollision && settings.CollisionMask != 0)
                 {
-                    RaycastHit2D hit = Physics2D.Raycast(previousPosition, displacement.normalized, displacement.magnitude, settings.CollisionMask);
+                    RaycastHit2D hit = Physics2D.Raycast(previousPosition, displacement.normalized,
+                        displacement.magnitude, settings.CollisionMask);
                     if (hit.collider != null)
                     {
                         points.Add(hit.point);
@@ -159,29 +160,9 @@ namespace Runtime.Player.Movement.Tools
                     }
                 }
 
-                // Landing detection — when crossing starting height (with tolerance)
-                bool crossedStartHeight =
-                    previousPosition.y >= startHeight + GroundTolerance &&
-                    proposedPosition.y <= startHeight + GroundTolerance;
-
-                if (crossedStartHeight)
-                {
-                    float travelY = previousPosition.y - proposedPosition.y;
-                    float t = Mathf.Approximately(travelY, 0f)
-                        ? 1f
-                        : (previousPosition.y - startHeight) / travelY;
-                    t = Mathf.Clamp01(t);
-
-                    Vector2 landingPoint = Vector2.Lerp(previousPosition, proposedPosition, t);
-                    points.Add(landingPoint);
-                    break;
-                }
 
                 position = proposedPosition;
                 points.Add(position);
-
-                if (position.y <= startHeight - GroundTolerance)
-                    break;
             }
 
             return new SimulationResult(points, collisionIndex);
