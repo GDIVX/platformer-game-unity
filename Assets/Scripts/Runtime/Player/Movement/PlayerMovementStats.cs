@@ -66,12 +66,7 @@ namespace Runtime.Player.Movement
         [Header("Debug")] public bool DebugShowIsGrounded = false;
         public bool DebugShowHeadBumpBox = false;
 
-        [Header("JumpVisualization Tool")] public bool ShowWalkJumpArc = false;
-        public bool ShowRunJumpArc = false;
-        public bool StopOnCollision = false;
-        public bool DrawnRight = true;
-        [Range(5, 100)] public int ArcResolution = 20;
-        [Range(0, 500)] public int VisualizationSteps = 90;
+
 
         [ShowInInspector, ReadOnly] public float Gravity { get; private set; }
         [ShowInInspector, ReadOnly] public float InitialJumpVelocity { get; private set; }

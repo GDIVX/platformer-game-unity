@@ -89,7 +89,6 @@ namespace Runtime.Player
             }
         }
 
-#if UNITY_EDITOR
         private IEnumerable<string> GetActionMapNames()
         {
             if (_inputActions == null) yield break;
@@ -106,6 +105,5 @@ namespace Runtime.Player
             foreach (var action in map.actions)
                 yield return action.name;
         }
-#endif
     }
 }

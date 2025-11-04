@@ -5,13 +5,13 @@ namespace Utilities
 {
     public class MonoSingleton<T> : MonoBehaviour where T : MonoBehaviour
     {
-        private static T _instance;
+        public static T Instance { get; private set; }
 
         private void Awake()
         {
-            if (_instance == null)
+            if (Instance == null)
             {
-                _instance = this as T;
+                Instance = this as T;
             }
             else
             {

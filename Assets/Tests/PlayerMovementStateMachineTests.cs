@@ -15,6 +15,7 @@ namespace Tests.EditMode
         private BoxCollider2D _bodyCollider;
         private PlayerMovementContext _context;
         private PlayerMovementStateMachine _stateMachine;
+        private int _fallEventInvocations;
 
         [SetUp]
         public void SetUp()
@@ -25,6 +26,10 @@ namespace Tests.EditMode
             _feetCollider = _player.AddComponent<BoxCollider2D>();
             _bodyCollider = _player.AddComponent<BoxCollider2D>();
 
+            _fallEventInvocations = 0;
+            var fallEvent = new UnityEvent();
+            fallEvent.AddListener(() => _fallEventInvocations++);
+
             _context = new PlayerMovementContext(
                 _stats,
                 _rigidbody,
@@ -32,10 +37,11 @@ namespace Tests.EditMode
                 _bodyCollider,
                 _player.transform,
                 new UnityEvent(),
+                fallEvent,
                 new UnityEvent(),
                 new UnityEvent(),
                 new UnityEvent(),
-                new UnityEvent(),
+                new UnityEvent<bool>(),
                 new UnityEvent<float>());
 
             _stateMachine = new PlayerMovementStateMachine(_context);
@@ -99,6 +105,49 @@ namespace Tests.EditMode
 
             Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
             Assert.AreEqual(Mathf.Min(2, _stats.NumberOfJumpsAllowed), _context.JumpsCount);
+        }
+
+        [Test]
+        public void ApplyHorizontalMovement_TurnsLeft_InvokesTurnEvent()
+        {
+            bool eventInvoked = false;
+            bool? facingRight = null;
+            _context.OnTurnEvent.AddListener(value =>
+            {
+                eventInvoked = true;
+                facingRight = value;
+            });
+
+            _context.SetInput(new Vector2(-1f, 0f), false, false, false, false);
+            _context.ApplyHorizontalMovement(_stats.GroundAcceleration, _stats.GroundDeceleration);
+
+            Assert.IsTrue(eventInvoked);
+            Assert.IsFalse(facingRight ?? true);
+        }
+
+        [Test]
+        public void FallingState_OnEnter_InvokesFallEventOnce()
+        {
+            _stateMachine.ChangeState<FallingState>();
+
+            Assert.AreEqual(1, _fallEventInvocations);
+
+            _stateMachine.FixedTick();
+
+            Assert.AreEqual(1, _fallEventInvocations);
+        }
+
+        [Test]
+        public void FastFallingState_OnEnter_InvokesFallEventOnce()
+        {
+            _stateMachine.ChangeState<FallingState>();
+            _stateMachine.ChangeState<FastFallingState>();
+
+            Assert.AreEqual(2, _fallEventInvocations);
+
+            _stateMachine.FixedTick();
+
+            Assert.AreEqual(2, _fallEventInvocations);
         }
     }
 }

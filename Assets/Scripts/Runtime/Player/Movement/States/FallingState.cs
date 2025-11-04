@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Runtime.Player.Movement.States
 {
     public class FallingState : PlayerMovementStateBase
@@ -9,8 +11,9 @@ namespace Runtime.Player.Movement.States
 
         public override void OnEnter()
         {
-            Context.IsFalling = true;
             Context.IsJumping = Context.JumpsCount > 0;
+            Context.NotifyFallStarted();
+            Context.InvokeFallEvent();
         }
 
         public override void HandleInput()
@@ -68,7 +71,7 @@ namespace Runtime.Player.Movement.States
         public override void FixedTick()
         {
             Context.ApplyHorizontalMovement(Context.Stats.AirAcceleration, Context.Stats.AirDeceleration);
-            Context.ApplyFall();
+            Context.ApplyFall(Time.fixedDeltaTime);
             Context.ClampVerticalVelocity();
             Context.ApplyVerticalVelocity();
 

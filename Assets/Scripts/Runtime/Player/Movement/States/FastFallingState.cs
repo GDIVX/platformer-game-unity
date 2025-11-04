@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Runtime.Player.Movement.States
 {
     public class FastFallingState : PlayerMovementStateBase
@@ -11,7 +13,8 @@ namespace Runtime.Player.Movement.States
         {
             Context.IsFastFalling = true;
             Context.IsJumping = false;
-            Context.IsFalling = true;
+            Context.NotifyFallStarted();
+            Context.InvokeFallEvent();
         }
 
         public override void HandleInput()
@@ -48,7 +51,7 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
-            Context.ApplyFastFall();
+            Context.ApplyFastFall(Time.fixedDeltaTime);
             Context.ClampVerticalVelocity();
             Context.ApplyVerticalVelocity();
 

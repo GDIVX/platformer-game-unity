@@ -19,6 +19,7 @@ namespace Runtime.Player.Movement.States
             UnityEvent onMoveStart,
             UnityEvent onMoveStopped,
             UnityEvent onMoveFullyStopped,
+            UnityEvent<bool> onTurn,
             UnityEvent<float> onLanded)
         {
             Stats = stats;
@@ -31,10 +32,11 @@ namespace Runtime.Player.Movement.States
             OnMoveStartEvent = onMoveStart;
             OnMoveStoppedEvent = onMoveStopped;
             OnMoveFullyStoppedEvent = onMoveFullyStopped;
+            OnTurnEvent = onTurn;
             OnLandedEvent = onLanded;
 
             CoyoteTimer = stats.JumpCoyoteTime;
-            VerticalVelocity = Physics2D.gravity.y;
+            VerticalVelocity = Stats.Gravity;
             IsFacingRight = true;
         }
 
@@ -229,7 +231,11 @@ namespace Runtime.Player.Movement.States
         public void UpdateTimers(float deltaTime)
         {
             JumpBufferTimer = Mathf.Max(0f, JumpBufferTimer - deltaTime);
-            AirTime += Time.fixedDeltaTime;
+
+            if (!IsGrounded)
+            {
+                AirTime += deltaTime;
+            }
 
             CoyoteTimer = IsGrounded ? Stats.JumpCoyoteTime : Mathf.Max(0f, CoyoteTimer - deltaTime);
 
@@ -247,12 +253,12 @@ namespace Runtime.Player.Movement.States
                 }
             }
 
-            UpdateDirectionBuffer();
+            UpdateDirectionBuffer(deltaTime);
         }
 
 
 
-        public void UpdateDirectionBuffer()
+        public void UpdateDirectionBuffer(float deltaTime)
         {
             if (WallDirection == 0)
             {
@@ -271,7 +277,7 @@ namespace Runtime.Player.Movement.States
             }
             else if (DirectionBufferTimer > 0)
             {
-                DirectionBufferTimer -= Time.deltaTime;
+                DirectionBufferTimer = Mathf.Max(0f, DirectionBufferTimer - deltaTime);
                 if (DirectionBufferTimer <= 0)
                     WantsToMoveAwayFromWall = false;
             }
@@ -445,7 +451,7 @@ namespace Runtime.Player.Movement.States
             OnLandedEvent?.Invoke(landingForce);
 
             AirTime = 0f;
-            VerticalVelocity = Physics2D.gravity.y;
+            VerticalVelocity = Stats.Gravity;
             Velocity = new Vector2(Mathf.Lerp(Velocity.x, 0f, Stats.StickinessOnLanding), Velocity.y);
             Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
 
@@ -533,6 +539,9 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
+            float releaseSpeed = VerticalVelocity;
+            FastFallReleaseSpeed = releaseSpeed;
+
             VerticalVelocity = 0f;
             IsFastFalling = true;
 
@@ -543,15 +552,15 @@ namespace Runtime.Player.Movement.States
             }
             else
             {
-                FastFallReleaseSpeed = VerticalVelocity;
+                FastFallTime = 0f;
             }
         }
 
-        public void ApplyFastFall()
+        public void ApplyFastFall(float deltaTime)
         {
             if (FastFallTime >= Stats.TimeForUpwardsCancel)
             {
-                VerticalVelocity += Stats.Gravity * Stats.GravityOnReleaseMultiplier * Time.fixedDeltaTime;
+                VerticalVelocity += Stats.Gravity * Stats.GravityOnReleaseMultiplier * deltaTime;
             }
             else
             {
@@ -559,24 +568,33 @@ namespace Runtime.Player.Movement.States
                     FastFallTime / Stats.TimeForUpwardsCancel);
             }
 
-            FastFallTime += Time.fixedDeltaTime;
             OnFallEvent?.Invoke();
+            FastFallTime += deltaTime;
         }
 
-        public void ApplyFall()
+        public void ApplyFall(float deltaTime)
         {
             IsFalling = true;
-            VerticalVelocity += Stats.Gravity * Time.fixedDeltaTime;
+            VerticalVelocity += Stats.Gravity * deltaTime;
+        }
+
+        public void NotifyFallStarted()
+        {
+            IsFalling = true;
+        }
+
+        public void InvokeFallEvent()
+        {
             OnFallEvent?.Invoke();
         }
 
-        public void ApplyWallSlideVertical(PlayerMovementStats.WallSlideSettings settings)
+        public void ApplyWallSlideVertical(PlayerMovementStats.WallSlideSettings settings, float deltaTime)
         {
             float gravity = settings.CalculatedGravity != 0f
                 ? settings.CalculatedGravity
                 : Stats.Gravity * settings.GravityMultiplier;
 
-            VerticalVelocity += gravity * Time.fixedDeltaTime;
+            VerticalVelocity += gravity * deltaTime;
 
             float maxDownward = -Mathf.Abs(settings.MaxSlideSpeed);
             float minDownward = -Mathf.Abs(settings.MinSlideSpeed);
@@ -588,7 +606,7 @@ namespace Runtime.Player.Movement.States
             VerticalVelocity = Mathf.Clamp(VerticalVelocity, maxDownward, minDownward);
         }
 
-        public void ApplyWallSlideHorizontal(PlayerMovementStats.WallSlideSettings settings)
+        public void ApplyWallSlideHorizontal(PlayerMovementStats.WallSlideSettings settings, float deltaTime)
         {
             float inputX = MoveInput.x;
             int inputDirection = Mathf.Approximately(inputX, 0f) ? 0 : (inputX > 0f ? 1 : -1);
@@ -602,12 +620,12 @@ namespace Runtime.Player.Movement.States
                 rate = settings.HorizontalAcceleration;
             }
 
-            float nextX = Mathf.Lerp(Velocity.x, target, rate * Time.fixedDeltaTime);
+            float nextX = Mathf.Lerp(Velocity.x, target, rate * deltaTime);
             Velocity = new Vector2(nextX, Velocity.y);
             Rigidbody.linearVelocity = new Vector2(Velocity.x, Rigidbody.linearVelocityY);
         }
 
-        public void HandleJumpAscent()
+        public void HandleJumpAscent(float deltaTime)
         {
             ApexPoint = Mathf.InverseLerp(Stats.InitialJumpVelocity, 0f, VerticalVelocity);
 
@@ -619,7 +637,7 @@ namespace Runtime.Player.Movement.States
                     TimePastApexThreshold = 0f;
                 }
 
-                TimePastApexThreshold += Time.fixedDeltaTime;
+                TimePastApexThreshold += deltaTime;
                 if (TimePastApexThreshold < Stats.ApexHangTime)
                 {
                     VerticalVelocity = 0f;
@@ -631,7 +649,7 @@ namespace Runtime.Player.Movement.States
             }
             else
             {
-                VerticalVelocity += Stats.Gravity * Time.fixedDeltaTime;
+                VerticalVelocity += Stats.Gravity * deltaTime;
                 IsPastApexThreshold = false;
             }
         }
