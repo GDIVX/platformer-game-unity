@@ -29,7 +29,6 @@ namespace Runtime.Player.Movement.Tools.Editor
 
             GUILayout.EndArea();
             GUI.backgroundColor = Color.white;
-
             Handles.EndGUI();
         }
 
@@ -86,12 +85,51 @@ namespace Runtime.Player.Movement.Tools.Editor
             base.OnInspectorGUI();
 
             GUILayout.Space(10);
+            GUI.backgroundColor = new Color(0.8f, 1f, 0.8f);
+
+            if (GUILayout.Button("⬇ Snap to Ground", GUILayout.Height(22)))
+            {
+                SnapToGround((MovementVisualizer)target);
+            }
+
+            GUILayout.Space(5);
             GUI.backgroundColor = new Color(0.6f, 0.9f, 1f);
+
             if (GUILayout.Button("➕ Duplicate Here", GUILayout.Height(22)))
             {
                 DuplicateHere((MovementVisualizer)target);
             }
+
             GUI.backgroundColor = Color.white;
+        }
+
+        private static void SnapToGround(MovementVisualizer visualizer)
+        {
+            if (visualizer == null) return;
+
+            SerializedObject so = new SerializedObject(visualizer);
+            var statsProp = so.FindProperty("_movementStats");
+            if (statsProp == null || statsProp.objectReferenceValue == null)
+            {
+                Debug.LogWarning("⚠ MovementVisualizer has no PlayerMovementStats assigned. Cannot raycast to ground.");
+                return;
+            }
+
+            var stats = statsProp.objectReferenceValue as PlayerMovementStats;
+            Vector3 origin = visualizer.transform.position + Vector3.up * 5f;
+
+            if (Physics2D.Raycast(origin, Vector2.down, 100f, stats.GroundLayer))
+            {
+                RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, 100f, stats.GroundLayer);
+                Undo.RecordObject(visualizer.transform, "Snap Movement Visualizer to Ground");
+                visualizer.transform.position = hit.point;
+                EditorUtility.SetDirty(visualizer);
+                Debug.Log($"✅ Snapped '{visualizer.name}' to ground at {hit.point}");
+            }
+            else
+            {
+                Debug.LogWarning("⚠ No ground detected beneath visualizer within 100 units.");
+            }
         }
 
         private static void DuplicateHere(MovementVisualizer visualizer)
