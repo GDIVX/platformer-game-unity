@@ -251,7 +251,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -12}
+  m_LocalPosition: {x: 29.000702, y: -24.984642, z: -12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -459,7 +459,7 @@ Transform:
   m_GameObject: {fileID: 1191507197}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0000010728836, y: 0, z: -10}
+  m_LocalPosition: {x: 29.000704, y: -24.984642, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -550,7 +550,7 @@ Transform:
   m_GameObject: {fileID: 721844717}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 29.000702, y: -24.984642, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -584,7 +584,7 @@ Transform:
   m_GameObject: {fileID: 1378950747}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 29.000702, y: -24.984642, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -754,8 +754,8 @@ MonoBehaviour:
   _showRunJumpArc: 1
   _stopOnCollision: 1
   _drawRight: 1
-  _arcResolution: 10
-  _visualizationSteps: 100
+  _arcResolution: 20
+  _visualizationSteps: 125
   _showFreefall: 1
   _airInfluence: 0.4
   _freefallColor: {r: 0.3, g: 0.7, b: 1, a: 0.5}
@@ -763,12 +763,10 @@ MonoBehaviour:
   _showLongWallJump: 1
   _wallJumpColor: {r: 0.4, g: 0.9, b: 1, a: 0.8}
   _longWallJumpColor: {r: 0.2, g: 1, b: 1, a: 0.6}
-  _wallSides: 2
   _showLandingMarker: 1
   _landingMarkerSize: 0.1
   _fadeArcWithDistance: 1
   _fadeDistance: 20
-  _showReachEnvelope: 1
 --- !u!50 &1544233369
 Rigidbody2D:
   serializedVersion: 5
