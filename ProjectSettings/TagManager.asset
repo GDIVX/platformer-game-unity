@@ -50,6 +50,9 @@ TagManager:
   - name: Entities
     uniqueID: 223594277
     locked: 0
+  - name: Player
+    uniqueID: 869689199
+    locked: 0
   - name: Facade
     uniqueID: 2906233121
     locked: 0
