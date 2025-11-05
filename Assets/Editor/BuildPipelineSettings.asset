@@ -23,7 +23,7 @@ MonoBehaviour:
     SerializationNodes: []
   buildRoot: ../builds
   scenesFolder: Assets/Scenes
-  mainSceneName: Main
+  mainSceneName: Boot
   gameName: DanDanDaniel
   useCodecks: 1
   codecksEnvVar: CODECKS_ACCESS_KEY

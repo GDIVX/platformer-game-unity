@@ -188,6 +188,7 @@ namespace CICD.Editor
                     case VersionBump.Minor:
                         liveVersion.IncrementMinor();
                         break;
+                    case VersionBump.Patch:
                     default:
                         liveVersion.IncrementPatch();
                         break;
