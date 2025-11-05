@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Runtime.Player.Movement.PlayerMovementStats
   MaxWalkSpeed: 10
   GroundAcceleration: 7
-  GroundDeceleration: 20
+  GroundDeceleration: 4
   AirAcceleration: 5
   AirDeceleration: 3
   MinSpeedThreshold: 0.005
@@ -37,7 +37,7 @@ MonoBehaviour:
     <useAttachedTriggers>k__BackingField: 0
   DirectionBufferDuration: 0.15
   StickinessOnLanding: 0.1
-  WallDetectionRayLength: 0.35
+  WallDetectionRayLength: 0.2
   WallDetectionHeightScale: 0.85
   DebugShowWallChecks: 1
   _wallSlide:
@@ -51,29 +51,29 @@ MonoBehaviour:
     WallJumpUpwardBoost: 1.5
     LongWallJumpUpwardMultiplier: 3
     LongWallJumpHorizontalMultiplier: 2
-    WallDetectionHorizontalDistance: 0.25
-    WallJumpDownwardCancelMultiplier: 1
+    WallDetectionHorizontalDistance: 0.02
+    WallJumpDownwardCancelMultiplier: 0.2
     WallDetectionVerticalShrink: 0.15
   MaxRunSpeed: 20
   GroundLayer:
     serializedVersion: 2
     m_Bits: 64
-  GroundDetectionRayLength: 0.02
+  GroundDetectionRayLength: 0.05
   HeadDetectionRayLength: 0.02
   HeadWidth: 0.75
   HeadNudgeDistance: 0.02
   HeadNudgeSteps: 0
   JumpHeight: 8
-  MaxRiseSpeed: 80
+  MaxRiseSpeed: 100
   GravityOnReleaseMultiplier: 3
   JumpHeightCompensationFactor: 1.1
-  TimeToJumpApex: 0.35
+  TimeToJumpApex: 0.45
   MaxFallSpeed: 50
   NumberOfJumpsAllowed: 1
   TimeForUpwardsCancel: 0.08
-  ApexThreshold: 0.5
-  ApexHangTime: 0.125
-  JumpBufferTime: 0.35
-  JumpCoyoteTime: 0.125
+  ApexThreshold: 0.45
+  ApexHangTime: 0.05
+  JumpBufferTime: 0.155
+  JumpCoyoteTime: 0.0125
   DebugShowIsGrounded: 1
   DebugShowHeadBumpBox: 1
