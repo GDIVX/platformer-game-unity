@@ -19,12 +19,12 @@ MonoBehaviour:
   AirDeceleration: 3
   MinSpeedThreshold: 0.005
   SlideMovement:
-    <maxIterations>k__BackingField: 20
-    <surfaceSlideAngle>k__BackingField: 30
-    <gravitySlipAngle>k__BackingField: 45
+    <maxIterations>k__BackingField: 5
+    <surfaceSlideAngle>k__BackingField: 45
+    <gravitySlipAngle>k__BackingField: 75
     <surfaceUp>k__BackingField: {x: 0, y: 0}
     <surfaceAnchor>k__BackingField: {x: 0, y: 0}
-    <gravity>k__BackingField: {x: 0, y: -8}
+    <gravity>k__BackingField: {x: 0, y: -9.8}
     <startPosition>k__BackingField: {x: 0, y: 0}
     <selectedCollider>k__BackingField: {fileID: 0}
     <layerMask>k__BackingField:
