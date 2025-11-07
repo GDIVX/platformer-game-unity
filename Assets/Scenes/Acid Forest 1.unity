@@ -4256,7 +4256,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3343910078814354849, guid: a706edd83621f80438d23fabfdc54795, type: 3}
       propertyPath: _fadeDuration
-      value: 0.25
+      value: 0.35
       objectReference: {fileID: 0}
     - target: {fileID: 6434656568133806630, guid: a706edd83621f80438d23fabfdc54795, type: 3}
       propertyPath: m_Size.x
@@ -4264,7 +4264,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6434656568133806630, guid: a706edd83621f80438d23fabfdc54795, type: 3}
       propertyPath: m_Size.y
-      value: 8.72234
+      value: 22.843983
       objectReference: {fileID: 0}
     - target: {fileID: 6434656568133806630, guid: a706edd83621f80438d23fabfdc54795, type: 3}
       propertyPath: m_Offset.x
@@ -4272,7 +4272,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6434656568133806630, guid: a706edd83621f80438d23fabfdc54795, type: 3}
       propertyPath: m_Offset.y
-      value: 3.5586872
+      value: -3.5021343
       objectReference: {fileID: 0}
     - target: {fileID: 6891138140333649152, guid: a706edd83621f80438d23fabfdc54795, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6914,6 +6914,10 @@ PrefabInstance:
     - target: {fileID: 3343910078814354849, guid: a706edd83621f80438d23fabfdc54795, type: 3}
       propertyPath: _weight
       value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3343910078814354849, guid: a706edd83621f80438d23fabfdc54795, type: 3}
+      propertyPath: _fadeDuration
+      value: 0.35
       objectReference: {fileID: 0}
     - target: {fileID: 6434656568133806630, guid: a706edd83621f80438d23fabfdc54795, type: 3}
       propertyPath: m_Size.x

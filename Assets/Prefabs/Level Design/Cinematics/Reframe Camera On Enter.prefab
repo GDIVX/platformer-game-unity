@@ -47,7 +47,7 @@ BoxCollider2D:
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -92,10 +92,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 031ce3f2f29e6254d89d4c6c6eb409e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraFramingZone
-  _targetGroup: {fileID: 0}
   _targetTransform: {fileID: 6891138140333649152}
   _weight: 5
   _radius: 5
+  _positionMode: 0
+  _rotationMode: 0
+  _updateMethod: 2
+  _fadeDuration: 0.25
+  _ease: 7
 --- !u!1 &4761800912068410381
 GameObject:
   m_ObjectHideFlags: 0
@@ -107,7 +111,7 @@ GameObject:
   - component: {fileID: 6891138140333649152}
   m_Layer: 0
   m_Name: Target
-  m_TagString: Untagged
+  m_TagString: CameraTarget
   m_Icon: {fileID: 4162164826716764455, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

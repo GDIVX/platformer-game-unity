@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using DG.Tweening;
+using NUnit.Framework;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -16,10 +18,17 @@ namespace Runtime.Player.Camera
         [Header("Target Settings")] [SerializeField]
         private Transform _targetTransform;
 
-        [SerializeField, Range(0f, 20f)] private float _weight = 1f;
-        [SerializeField, Range(0f, 20f)] private float _radius = 2f;
+        [SerializeField, UnityEngine.Range(0f, 20f)]
+        private float _weight = 1f;
 
-        [Header("Tween Settings")] [SerializeField, Range(0f, 5f)]
+        [SerializeField, UnityEngine.Range(0f, 20f)]
+        private float _radius = 2f;
+
+        [SerializeField] private CinemachineTargetGroup.PositionModes _positionMode;
+        [SerializeField] private CinemachineTargetGroup.RotationModes _rotationMode;
+        [SerializeField] private CinemachineTargetGroup.UpdateMethods _updateMethod;
+
+        [Header("Tween Settings")] [SerializeField, UnityEngine.Range(0f, 5f)]
         private float _fadeDuration = 0.25f;
 
         [SerializeField] private Ease _ease = Ease.OutQuad;
@@ -59,6 +68,9 @@ namespace Runtime.Player.Camera
             if (FindTargetIndex() == -1)
             {
                 _targetGroup.AddMember(_targetTransform, 0f, 0f);
+                _targetGroup.PositionMode = _positionMode;
+                _targetGroup.RotationMode = _rotationMode;
+                _targetGroup.UpdateMethod = _updateMethod;
             }
 
             TweenTo(_weight, _radius, null);
@@ -71,6 +83,22 @@ namespace Runtime.Player.Camera
             if (!_isActive) return;
 
             _isActive = false;
+
+            //clear other targets 
+            var toRemove = new List<CinemachineTargetGroup.Target>();
+            _targetGroup.Targets.ForEach(target =>
+            {
+                var obj = target.Object;
+                if (obj == _targetTransform) return;
+                if (!obj.CompareTag("CameraTarget")) return;
+                if (obj.CompareTag("Player")) return;
+
+                toRemove.Add(target);
+            });
+            foreach (var target in toRemove)
+            {
+                _targetGroup.RemoveMember(target.Object);
+            }
 
             TweenTo(0f, 0f, () =>
             {
