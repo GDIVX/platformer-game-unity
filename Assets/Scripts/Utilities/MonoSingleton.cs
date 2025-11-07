@@ -12,6 +12,7 @@ namespace Utilities
             if (Instance == null)
             {
                 Instance = this as T;
+                DontDestroyOnLoad(this);
             }
             else
             {

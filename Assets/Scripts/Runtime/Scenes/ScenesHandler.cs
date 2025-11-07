@@ -13,8 +13,11 @@ namespace Runtime.Scenes
     /// </summary>
     public class ScenesHandler : MonoSingleton<ScenesHandler>
     {
+        
+        
         #region Public API
 
+        
         /// <summary>
         /// Load a scene normally (single). Replaces current scene.
         /// </summary>
