@@ -420,7 +420,13 @@ namespace Runtime.Player.Movement.States
                 float maxSpeed = RunHeld ? Stats.MaxRunSpeed : Stats.MaxWalkSpeed;
                 TargetVelocity = desired * maxSpeed;
 
+
                 Velocity = Vector2.Lerp(Velocity, TargetVelocity, acceleration * Time.fixedDeltaTime);
+                if (IsGoingToCollide() && CanStep())
+                {
+                    Velocity = new Vector2(Velocity.x, Stats.StepHeight);
+                }
+
                 _isFullyStopped = false;
             }
             else
@@ -443,6 +449,71 @@ namespace Runtime.Player.Movement.States
 
             _isFullyStopped = isFullyStopped;
         }
+
+        private bool CanStep()
+        {
+            // This method checks if we can "step up" a small ledge rather than collide
+            if (!FeetCollider)
+                return false;
+
+            Bounds bounds = FeetCollider.bounds;
+            float direction = Mathf.Sign(Velocity.x);
+
+            // Step height limit
+            float stepHeight = Stats.StepHeight;
+            float stepCheckDistance = 0.1f; // horizontal offset from feet
+
+            Vector2 lowerRayOrigin = new Vector2(bounds.center.x + direction * (bounds.extents.x + stepCheckDistance),
+                bounds.min.y + 0.05f);
+            Vector2 upperRayOrigin = lowerRayOrigin + Vector2.up * stepHeight;
+
+            // First, detect a blocking wall at foot level
+            RaycastHit2D lowerHit =
+                Physics2D.Raycast(lowerRayOrigin, Vector2.right * direction, 0.1f, Stats.GroundLayer);
+            if (!lowerHit)
+                return false;
+
+            // Then check that the upper ray is *not* blocked
+            RaycastHit2D upperHit =
+                Physics2D.Raycast(upperRayOrigin, Vector2.right * direction, 0.2f, Stats.GroundLayer);
+            if (upperHit)
+                return false;
+
+            // Finally, do a downward ray from above the ledge to ensure ground to stand on
+            Vector2 stepCheckOrigin = upperRayOrigin + Vector2.right * 0.15f;
+            RaycastHit2D stepHit =
+                Physics2D.Raycast(stepCheckOrigin, Vector2.down, stepHeight + 0.1f, Stats.GroundLayer);
+
+            if (!stepHit) return false;
+            // Move the player upward by the ledge height
+            Transform.position += Vector3.up * (stepHit.point.y - bounds.min.y);
+            return true;
+
+        }
+
+
+        private bool IsGoingToCollide()
+        {
+            // Predict next horizontal movement based on current velocity
+            if (Mathf.Approximately(Velocity.x, 0f))
+                return false;
+
+            float direction = Mathf.Sign(Velocity.x);
+            Vector2 origin = FeetCollider.bounds.center;
+            Vector2 size = FeetCollider.bounds.size;
+
+            // Slightly shrink to avoid false positives on edges
+            size.x *= 0.9f;
+            size.y *= 0.5f;
+
+            // Ray length proportional to velocity magnitude and frame time
+            float rayLength = Mathf.Abs(Velocity.x) * Time.fixedDeltaTime + 0.05f;
+
+            RaycastHit2D hit =
+                Physics2D.BoxCast(origin, size, 0f, Vector2.right * direction, rayLength, Stats.GroundLayer);
+            return hit.collider != null && hit.normal.y < 0.5f; // if not slope, it's a wall
+        }
+
 
         public void ApplyVerticalVelocity()
         {

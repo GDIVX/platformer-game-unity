@@ -13,8 +13,9 @@ namespace Runtime.Player.Movement
         [Range(0.25f, 50f)] public float AirAcceleration = 5f;
         [Range(0.25f, 50f)] public float AirDeceleration = 5f;
         [Range(0, 1)] public float MinSpeedThreshold = 0.01f;
+        public float StepHeight = 0.125f;
         public Rigidbody2D.SlideMovement SlideMovement;
-        public float DirectionBufferDuration = 0.15f; 
+        public float DirectionBufferDuration = 0.15f;
 
 
         [Header("Landing")] [Range(0, 1)] public float StickinessOnLanding = 0.1f;
@@ -23,9 +24,9 @@ namespace Runtime.Player.Movement
         [Range(0.1f, 1f)] public float WallDetectionHeightScale = 0.9f;
         public bool DebugShowWallChecks = false;
 
-        [Header("Wall Slide")] [SerializeField] private WallSlideSettings _wallSlide = new();
-        
-        
+        [Header("Wall Slide")] [SerializeField]
+        private WallSlideSettings _wallSlide = new();
+
 
         [Header("Run")] [Range(1f, 100f)] public float MaxRunSpeed = 12.5f;
 
@@ -65,7 +66,6 @@ namespace Runtime.Player.Movement
 
         [Header("Debug")] public bool DebugShowIsGrounded = false;
         public bool DebugShowHeadBumpBox = false;
-
 
 
         [ShowInInspector, ReadOnly] public float Gravity { get; private set; }
@@ -126,8 +126,10 @@ namespace Runtime.Player.Movement
 
             [FoldoutGroup("Jump"), LabelText("Long Jump Upward Multiplier"), Range(0.5f, 5f)]
             public float LongWallJumpUpwardMultiplier = 1.25f;
+
             [FoldoutGroup("Jump"), LabelText("Long Jump Horizontal Multiplier"), Range(0.5f, 5f)]
             public float LongWallJumpHorizontalMultiplier = 1.5f;
+
             [FoldoutGroup("Detection"), LabelText("Horizontal Distance"), Range(0f, 1f)]
             public float WallDetectionHorizontalDistance = 0.25f;
 
@@ -136,13 +138,9 @@ namespace Runtime.Player.Movement
 
             [FoldoutGroup("Detection"), LabelText("Vertical Shrink"), Range(0f, 1f)]
             public float WallDetectionVerticalShrink = 0.1f;
-            
 
 
-
-
-            [ShowInInspector, ReadOnly]
-            public float CalculatedGravity { get; private set; }
+            [ShowInInspector, ReadOnly] public float CalculatedGravity { get; private set; }
 
 
             public void CalculateDerivedValues(float baseGravity)
