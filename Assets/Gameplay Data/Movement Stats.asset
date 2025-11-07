@@ -10,14 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f63dd10489cb74c459163379b7e5ed43, type: 3}
-  m_Name: PlayerMovementStats
+  m_Name: Movement Stats
   m_EditorClassIdentifier: Assembly-CSharp::Runtime.Player.Movement.PlayerMovementStats
-  MaxWalkSpeed: 10
-  GroundAcceleration: 5
-  GroundDeceleration: 4
-  AirAcceleration: 5
-  AirDeceleration: 3
-  MinSpeedThreshold: 0.005
+  MaxWalkSpeed: 8
+  GroundAcceleration: 25
+  GroundDeceleration: 35
+  AirAcceleration: 10
+  AirDeceleration: 10
+  MinSpeedThreshold: 0.2
+  StepHeight: 0.05
   SlideMovement:
     <maxIterations>k__BackingField: 5
     <surfaceSlideAngle>k__BackingField: 45
@@ -35,45 +36,45 @@ MonoBehaviour:
     <useNoMove>k__BackingField: 1
     <useSimulationMove>k__BackingField: 0
     <useAttachedTriggers>k__BackingField: 0
-  DirectionBufferDuration: 0.15
-  StickinessOnLanding: 0.1
-  WallDetectionRayLength: 0.2
-  WallDetectionHeightScale: 0.85
+  DirectionBufferDuration: 0.1
+  StickinessOnLanding: 0.15
+  WallDetectionRayLength: 0.1
+  WallDetectionHeightScale: 0.9
   DebugShowWallChecks: 1
   _wallSlide:
-    StickDuration: 0.3
-    GravityMultiplier: 0
-    HorizontalFriction: 1.6
-    HorizontalAcceleration: 4
+    StickDuration: 0.2
+    GravityMultiplier: 0.5
+    HorizontalFriction: 20
+    HorizontalAcceleration: 15
     MinSlideSpeed: 1.5
-    MaxSlideSpeed: 12
-    WallJumpHorizontalPush: 15
-    WallJumpUpwardBoost: 5
-    LongWallJumpUpwardMultiplier: 3
-    LongWallJumpHorizontalMultiplier: 2
+    MaxSlideSpeed: 6
+    WallJumpHorizontalPush: 12
+    WallJumpUpwardBoost: 4
+    LongWallJumpUpwardMultiplier: 1.25
+    LongWallJumpHorizontalMultiplier: 1.4
     WallDetectionHorizontalDistance: 0.2
-    WallJumpDownwardCancelMultiplier: 0.2
+    WallJumpDownwardCancelMultiplier: 0
     WallDetectionVerticalShrink: 0.15
-  MaxRunSpeed: 20
+  MaxRunSpeed: 13.5
   GroundLayer:
     serializedVersion: 2
     m_Bits: 64
-  GroundDetectionRayLength: 0.05
+  GroundDetectionRayLength: 0.02
   HeadDetectionRayLength: 0.02
   HeadWidth: 0.75
-  HeadNudgeDistance: 0.02
-  HeadNudgeSteps: 0
-  JumpHeight: 8
+  HeadNudgeDistance: 0.4
+  HeadNudgeSteps: 3
+  JumpHeight: 6
   MaxRiseSpeed: 100
-  GravityOnReleaseMultiplier: 1.5
-  JumpHeightCompensationFactor: 1.1
-  TimeToJumpApex: 0.45
-  MaxFallSpeed: 50
+  GravityOnReleaseMultiplier: 2
+  JumpHeightCompensationFactor: 1
+  TimeToJumpApex: 0.35
+  MaxFallSpeed: 35
   NumberOfJumpsAllowed: 1
-  TimeForUpwardsCancel: 0.08
-  ApexThreshold: 0.45
-  ApexHangTime: 0.05
-  JumpBufferTime: 0.155
-  JumpCoyoteTime: 0.0125
+  TimeForUpwardsCancel: 0.05
+  ApexThreshold: 0.9
+  ApexHangTime: 0.075
+  JumpBufferTime: 0.083
+  JumpCoyoteTime: 0.015
   DebugShowIsGrounded: 1
   DebugShowHeadBumpBox: 1

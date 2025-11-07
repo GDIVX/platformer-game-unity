@@ -54,8 +54,7 @@ namespace Runtime.Player.Movement
         [Header("Jump Cut")] [Range(0.02f, 0.3f)]
         public float TimeForUpwardsCancel = 0.027f;
 
-        [Header("Jump Apex")] [Range(0.5f, 0.3f)]
-        public float ApexThreshold = 0.97f;
+        [Header("Jump Apex")] [Range(0, 1f)] public float ApexThreshold = 0.97f;
 
         [Range(0.01f, 1f)] public float ApexHangTime = 0.075f;
 
@@ -70,7 +69,7 @@ namespace Runtime.Player.Movement
 
         [ShowInInspector, ReadOnly] public float Gravity { get; private set; }
         [ShowInInspector, ReadOnly] public float InitialJumpVelocity { get; private set; }
-        [ShowInInspector, ReadOnly] public float AdjustmentFactor { get; private set; }
+        // [ShowInInspector, ReadOnly] public float AdjustmentFactor { get; private set; }
 
         public WallSlideSettings WallSlide => _wallSlide;
 
@@ -81,21 +80,11 @@ namespace Runtime.Player.Movement
 
         private void CalculateValues()
         {
-            AdjustmentFactor = JumpHeight * JumpHeightCompensationFactor;
-            CalculateGravity();
-            CalculateInitialJumpVelocity();
+            Gravity = -(2f * JumpHeight) / Mathf.Pow(TimeToJumpApex, 2f);
+            InitialJumpVelocity = 2f * JumpHeight / TimeToJumpApex * JumpHeightCompensationFactor;
             _wallSlide?.CalculateDerivedValues(Gravity);
         }
 
-        private void CalculateGravity()
-        {
-            Gravity = -(2f * AdjustmentFactor) / Mathf.Pow(TimeToJumpApex, 2f);
-        }
-
-        private void CalculateInitialJumpVelocity()
-        {
-            InitialJumpVelocity = Mathf.Abs(Gravity) * TimeToJumpApex;
-        }
 
         [Serializable]
         public class WallSlideSettings
