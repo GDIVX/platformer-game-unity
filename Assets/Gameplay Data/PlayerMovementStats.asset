@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PlayerMovementStats
   m_EditorClassIdentifier: Assembly-CSharp::Runtime.Player.Movement.PlayerMovementStats
   MaxWalkSpeed: 10
-  GroundAcceleration: 7
+  GroundAcceleration: 5
   GroundDeceleration: 4
   AirAcceleration: 5
   AirDeceleration: 3
@@ -42,16 +42,16 @@ MonoBehaviour:
   DebugShowWallChecks: 1
   _wallSlide:
     StickDuration: 0.3
-    GravityMultiplier: 3
+    GravityMultiplier: 0
     HorizontalFriction: 1.6
     HorizontalAcceleration: 4
     MinSlideSpeed: 1.5
     MaxSlideSpeed: 12
-    WallJumpHorizontalPush: 12
-    WallJumpUpwardBoost: 1.5
+    WallJumpHorizontalPush: 15
+    WallJumpUpwardBoost: 5
     LongWallJumpUpwardMultiplier: 3
     LongWallJumpHorizontalMultiplier: 2
-    WallDetectionHorizontalDistance: 0.02
+    WallDetectionHorizontalDistance: 0.2
     WallJumpDownwardCancelMultiplier: 0.2
     WallDetectionVerticalShrink: 0.15
   MaxRunSpeed: 20
@@ -65,7 +65,7 @@ MonoBehaviour:
   HeadNudgeSteps: 0
   JumpHeight: 8
   MaxRiseSpeed: 100
-  GravityOnReleaseMultiplier: 3
+  GravityOnReleaseMultiplier: 1.5
   JumpHeightCompensationFactor: 1.1
   TimeToJumpApex: 0.45
   MaxFallSpeed: 50
