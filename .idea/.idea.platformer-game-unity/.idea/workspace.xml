@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d54d5fb3-25d1-4a54-88f3-3183bb0f20ba" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Utilities/Timer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Utilities/Timer.cs.meta" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="d54d5fb3-25d1-4a54-88f3-3183bb0f20ba" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -127,7 +123,7 @@
       <workItem from="1762285191762" duration="4319000" />
       <workItem from="1762295302026" duration="268000" />
       <workItem from="1762344093127" duration="5430000" />
-      <workItem from="1762517181004" duration="336000" />
+      <workItem from="1762517181004" duration="901000" />
     </task>
     <servers />
   </component>
