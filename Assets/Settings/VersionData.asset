@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CICD.VersionData
   major: 0
   minor: 0
-  patch: 4
+  patch: 5
