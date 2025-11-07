@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using DG.Tweening;
-using NUnit.Framework;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -9,28 +8,23 @@ namespace Runtime.Player.Camera
 {
     /// <summary>
     /// A trigger zone that smoothly adds/removes a transform from a CinemachineTargetGroup.
-    /// Uses DOTween to fade weight/radius in and out, so the camera eases toward this zone.
+    /// Uses DOTween to fade weight/radius in and out for smooth camera blending.
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
     [AddComponentMenu("Camera/Camera Framing Zone (Tweened)")]
     public class CameraFramingZone : MonoBehaviour
     {
-        [Header("Target Settings")] [SerializeField]
-        private Transform _targetTransform;
-
-        [SerializeField, UnityEngine.Range(0f, 20f)]
-        private float _weight = 1f;
-
-        [SerializeField, UnityEngine.Range(0f, 20f)]
-        private float _radius = 2f;
+        [Header("Target Settings")]
+        [SerializeField] private Transform _targetTransform;
+        [SerializeField, Range(0f, 20f)] private float _weight = 1f;
+        [SerializeField, Range(0f, 20f)] private float _radius = 2f;
 
         [SerializeField] private CinemachineTargetGroup.PositionModes _positionMode;
         [SerializeField] private CinemachineTargetGroup.RotationModes _rotationMode;
         [SerializeField] private CinemachineTargetGroup.UpdateMethods _updateMethod;
 
-        [Header("Tween Settings")] [SerializeField, UnityEngine.Range(0f, 5f)]
-        private float _fadeDuration = 0.25f;
-
+        [Header("Tween Settings")]
+        [SerializeField, Range(0f, 5f)] private float _fadeDuration = 0.25f;
         [SerializeField] private Ease _ease = Ease.OutQuad;
 
         private CinemachineTargetGroup _targetGroup;
@@ -38,11 +32,16 @@ namespace Runtime.Player.Camera
         private Tween _radiusTween;
         private bool _isActive;
 
+        // Allow injection for testing
+        public void Initialize(CinemachineTargetGroup group)
+        {
+            _targetGroup = group;
+        }
+
         private void Awake()
         {
             if (_targetTransform == null)
                 _targetTransform = transform;
-
 
             var col = GetComponent<Collider2D>();
             col.isTrigger = true;
@@ -50,21 +49,23 @@ namespace Runtime.Player.Camera
 
         private void Start()
         {
-            _targetGroup = FindFirstObjectByType<CinemachineTargetGroup>();
-            if (_targetGroup != null) return;
-            Debug.LogWarning($"[{nameof(CameraFramingZone)}] No CinemachineTargetGroup found. Disabling.");
-            enabled = false;
+            if (_targetGroup == null)
+                _targetGroup = FindFirstObjectByType<CinemachineTargetGroup>();
+
+            if (_targetGroup == null)
+            {
+                Debug.LogWarning($"[{nameof(CameraFramingZone)}] No CinemachineTargetGroup found. Disabling.");
+                enabled = false;
+            }
         }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (!_targetGroup) return;
-            if (!other.CompareTag("Player")) return;
-            if (_isActive) return;
+            if (!_targetGroup || !other.CompareTag("Player") || _isActive)
+                return;
 
             _isActive = true;
 
-            // Add the member if it isn't already in the group
             if (FindTargetIndex() == -1)
             {
                 _targetGroup.AddMember(_targetTransform, 0f, 0f);
@@ -78,71 +79,60 @@ namespace Runtime.Player.Camera
 
         private void OnTriggerExit2D(Collider2D other)
         {
-            if (!_targetGroup) return;
-            if (!other.CompareTag("Player")) return;
-            if (!_isActive) return;
+            if (!_targetGroup || !other.CompareTag("Player") || !_isActive)
+                return;
 
             _isActive = false;
-
-            //clear other targets 
-            var toRemove = new List<CinemachineTargetGroup.Target>();
-            _targetGroup.Targets.ForEach(target =>
-            {
-                var obj = target.Object;
-                if (obj == _targetTransform) return;
-                if (!obj.CompareTag("CameraTarget")) return;
-                if (obj.CompareTag("Player")) return;
-
-                toRemove.Add(target);
-            });
-            foreach (var target in toRemove)
-            {
-                _targetGroup.RemoveMember(target.Object);
-            }
-
+            RemoveNonPlayerCameraTargets();
             TweenTo(0f, 0f, () =>
             {
-                // Only remove if it’s still there
                 int idx = FindTargetIndex();
                 if (idx != -1)
                     _targetGroup.RemoveMember(_targetTransform);
             });
         }
 
-        /// <summary>
-        /// Tween weight+radius on the target group member.
-        /// </summary>
+        private void RemoveNonPlayerCameraTargets()
+        {
+            var toRemove = new List<CinemachineTargetGroup.Target>();
+            foreach (var target in _targetGroup.Targets)
+            {
+                var obj = target.Object;
+                if (obj == null) continue;
+                if (obj == _targetTransform) continue;
+                if (obj.CompareTag("Player")) continue;
+                if (obj.CompareTag("CameraTarget"))
+                    toRemove.Add(target);
+            }
+
+            foreach (var t in toRemove)
+                _targetGroup.RemoveMember(t.Object);
+        }
+
         private void TweenTo(float targetWeight, float targetRadius, TweenCallback onComplete)
         {
             int idx = FindTargetIndex();
-            if (idx == -1)
-                return;
+            if (idx == -1) return;
 
-            _weightTween?.Kill();
-            _radiusTween?.Kill();
+            _weightTween?.Kill(false);
+            _radiusTween?.Kill(false);
 
             _weightTween = DOTween.To(
-                    () => GetMemberWeight(idx),
-                    w => SetMemberWeight(idx, w),
-                    targetWeight,
-                    _fadeDuration
-                )
-                .SetEase(_ease);
+                () => GetMemberWeight(idx),
+                w => SetMemberWeight(idx, w),
+                targetWeight,
+                _fadeDuration
+            ).SetEase(_ease);
 
             _radiusTween = DOTween.To(
-                    () => GetMemberRadius(idx),
-                    r => SetMemberRadius(idx, r),
-                    targetRadius,
-                    _fadeDuration
-                )
-                .SetEase(_ease)
-                .OnComplete(onComplete);
+                () => GetMemberRadius(idx),
+                r => SetMemberRadius(idx, r),
+                targetRadius,
+                _fadeDuration
+            ).SetEase(_ease)
+             .OnComplete(onComplete);
         }
 
-        /// <summary>
-        /// Find the index of our transform in the target group.
-        /// Returns -1 if not found.
-        /// </summary>
         private int FindTargetIndex()
         {
             var targets = _targetGroup.Targets;
@@ -151,16 +141,12 @@ namespace Runtime.Player.Camera
                 if (targets[i].Object == _targetTransform)
                     return i;
             }
-
             return -1;
         }
 
-        // --- Helpers to read/write the struct in the list ---
-
         private float GetMemberWeight(int index)
         {
-            var t = _targetGroup.Targets[index];
-            return t.Weight;
+            return _targetGroup.Targets[index].Weight;
         }
 
         private void SetMemberWeight(int index, float weight)
@@ -172,8 +158,7 @@ namespace Runtime.Player.Camera
 
         private float GetMemberRadius(int index)
         {
-            var t = _targetGroup.Targets[index];
-            return t.Radius;
+            return _targetGroup.Targets[index].Radius;
         }
 
         private void SetMemberRadius(int index, float radius)
