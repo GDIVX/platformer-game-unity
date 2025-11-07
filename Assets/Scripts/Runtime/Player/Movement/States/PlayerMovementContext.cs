@@ -160,7 +160,9 @@ namespace Runtime.Player.Movement.States
 
         [FoldoutGroup("Walls"), ShowInInspector, ReadOnly]
         public float DirectionBufferTimer { get; private set; }
-        [ShowInInspector, ReadOnly , FoldoutGroup("Walls")]public bool WantsToMoveAwayFromWall { get; private set; }
+
+        [ShowInInspector, ReadOnly, FoldoutGroup("Walls")]
+        public bool WantsToMoveAwayFromWall { get; private set; }
 
 
         // ---------------------------- //
@@ -257,7 +259,6 @@ namespace Runtime.Player.Movement.States
         }
 
 
-
         public void UpdateDirectionBuffer(float deltaTime)
         {
             if (WallDirection == 0)
@@ -268,7 +269,8 @@ namespace Runtime.Player.Movement.States
             }
 
             // Player is holding opposite direction of wall
-            bool movingAway = Mathf.Approximately(Mathf.Sign(MoveInput.x), -WallDirection) && Mathf.Abs(MoveInput.x) > 0.25f;
+            bool movingAway = Mathf.Approximately(Mathf.Sign(MoveInput.x), -WallDirection) &&
+                              Mathf.Abs(MoveInput.x) > 0.25f;
 
             if (movingAway)
             {
@@ -407,6 +409,13 @@ namespace Runtime.Player.Movement.States
             {
                 TurnCheck(MoveInput);
 
+                if (IsTouchingWall && !IsGrounded)
+                {
+                    if (!(JumpBufferTimer > 0)) return;
+                    PerformWallJump(true);
+                    return;
+                }
+
                 var desired = new Vector2(MoveInput.x, 0f);
                 float maxSpeed = RunHeld ? Stats.MaxRunSpeed : Stats.MaxWalkSpeed;
                 TargetVelocity = desired * maxSpeed;
@@ -467,16 +476,19 @@ namespace Runtime.Player.Movement.States
             ClearWallHit();
         }
 
-        public void InitiateJump(int jumpIncrements, float? initialVerticalVelocityOverride = null)
+        public void InitiateJump(int jumpIncrements, float? initialVerticalVelocityOverride = null,
+            bool countJumps = true)
         {
             if (!IsJumping)
             {
                 IsJumping = true;
             }
 
+            if (countJumps)
+                JumpsCount += jumpIncrements;
+
             ConsumeJumpBuffer();
             JumpReleasedDuringBuffer = false;
-            JumpsCount += jumpIncrements;
             float targetVertical = initialVerticalVelocityOverride ?? Stats.InitialJumpVelocity;
             VerticalVelocity = targetVertical;
             FastFallTime = 0f;
@@ -520,7 +532,7 @@ namespace Runtime.Player.Movement.States
             float finalHorizontalSpeed = Mathf.Max(horizontalPush, currentAwaySpeed) * pushDirection;
             Velocity = new Vector2(finalHorizontalSpeed, Velocity.y);
 
-            InitiateJump(1, targetVerticalVelocity);
+            InitiateJump(1, targetVerticalVelocity, false);
 
             Rigidbody.linearVelocity = new Vector2(Velocity.x, VerticalVelocity);
 
