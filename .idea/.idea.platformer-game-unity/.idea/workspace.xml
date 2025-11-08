@@ -5,8 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d54d5fb3-25d1-4a54-88f3-3183bb0f20ba" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Camera/VelocityToImpulseForceShaper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Camera/VelocityToImpulseForceShaper.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/States/PlayerMovementContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/Movement/States/PlayerMovementContext.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Tests/PlayerMovementStateMachineTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Tests/PlayerMovementStateMachineTests.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,7 +50,7 @@
     "Attach to Unity Editor.Attach to Unity Editor.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "#23 on codex/refactor-player-movement-system",
+    "git-widget-placeholder": "#24 on codex/refactor-playermovementstat…menta",
     "ignore.virus.scanning.warn.message": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
