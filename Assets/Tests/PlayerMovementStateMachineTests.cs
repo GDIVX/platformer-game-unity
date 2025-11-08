@@ -1,7 +1,9 @@
 using NUnit.Framework;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 using Runtime.Player.Movement;
+using Runtime.Player.Movement.Abilities;
 using Runtime.Player.Movement.States;
 
 namespace Tests.EditMode
@@ -45,6 +47,7 @@ namespace Tests.EditMode
                 new UnityEvent<float>());
 
             _stateMachine = new PlayerMovementStateMachine(_context);
+            RegisterDefaultStates(_stateMachine, _context);
             _stateMachine.Initialize<GroundedState>();
         }
 
@@ -53,6 +56,30 @@ namespace Tests.EditMode
         {
             Object.DestroyImmediate(_stats);
             Object.DestroyImmediate(_player);
+        }
+
+        private static void RegisterDefaultStates(PlayerMovementStateMachine stateMachine, PlayerMovementContext context)
+        {
+            stateMachine.RegisterState(new GroundedState(context, stateMachine));
+            stateMachine.RegisterState(new SlidingState(context, stateMachine));
+            stateMachine.RegisterState(new JumpingState(context, stateMachine));
+            stateMachine.RegisterState(new FallingState(context, stateMachine));
+            stateMachine.RegisterState(new FastFallingState(context, stateMachine));
+            stateMachine.RegisterState(new WallSlideState(context, stateMachine));
+        }
+
+        private PlayerMovement CreatePlayerMovementComponent()
+        {
+            var movement = _player.AddComponent<PlayerMovement>();
+            movement.OnJump = new UnityEvent();
+            movement.OnFall = new UnityEvent();
+            movement.OnMoveStart = new UnityEvent();
+            movement.OnMoveStopped = new UnityEvent();
+            movement.OnMoveFullyStopped = new UnityEvent();
+            movement.OnTurn = new UnityEvent<bool>();
+            movement.OnLanded = new UnityEvent<float>();
+            movement.InitializeMovement(_stats, _feetCollider, _bodyCollider);
+            return movement;
         }
 
         // [Test]
@@ -148,6 +175,103 @@ namespace Tests.EditMode
             _stateMachine.FixedTick();
 
             Assert.AreEqual(2, _fallEventInvocations);
+        }
+
+        [Test]
+        public void EnableAbility_AddsStateAndAllowsTransition()
+        {
+            var playerMovement = CreatePlayerMovementComponent();
+            var ability = ScriptableObject.CreateInstance<TestMovementAbility>();
+
+            try
+            {
+                Assert.IsNull(playerMovement.StateMachine.GetState<TestAbilityState>());
+
+                bool enabled = playerMovement.EnableAbility(ability);
+                Assert.IsTrue(enabled);
+
+                Assert.IsNotNull(playerMovement.StateMachine.GetState<TestAbilityState>());
+
+                playerMovement.StateMachine.ChangeState<TestAbilityState>();
+
+                Assert.IsInstanceOf<TestAbilityState>(playerMovement.StateMachine.CurrentState);
+            }
+            finally
+            {
+                playerMovement.DisableAbility(ability);
+                ScriptableObject.DestroyImmediate(ability);
+            }
+        }
+
+        [Test]
+        public void DisableAbility_RemovesStateAndTransitionsContinueToWork()
+        {
+            var playerMovement = CreatePlayerMovementComponent();
+            var ability = ScriptableObject.CreateInstance<TestMovementAbility>();
+
+            try
+            {
+                playerMovement.EnableAbility(ability);
+                playerMovement.StateMachine.ChangeState<TestAbilityState>();
+                Assert.IsInstanceOf<TestAbilityState>(playerMovement.StateMachine.CurrentState);
+
+                playerMovement.DisableAbility(ability);
+
+                Assert.IsNull(playerMovement.StateMachine.GetState<TestAbilityState>());
+
+                playerMovement.StateMachine.ChangeState<FallingState>();
+                Assert.IsInstanceOf<FallingState>(playerMovement.StateMachine.CurrentState);
+            }
+            finally
+            {
+                ScriptableObject.DestroyImmediate(ability);
+            }
+        }
+
+        private class TestMovementAbility : ScriptableObject, IMovementAbility
+        {
+            public void Initialize(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
+            {
+            }
+
+            public IEnumerable<IPlayerMovementState> CreateStates(
+                PlayerMovementContext context,
+                PlayerMovementStateMachine stateMachine)
+            {
+                yield return new TestAbilityState(context, stateMachine);
+            }
+
+            public IEnumerable<IPlayerMovementModifier> CreateModifiers(PlayerMovementContext context)
+            {
+                return Array.Empty<IPlayerMovementModifier>();
+            }
+
+            public IEnumerable<Func<PlayerMovementContext, bool>> CreateActivationConditions(
+                PlayerMovementContext context)
+            {
+                return Array.Empty<Func<PlayerMovementContext, bool>>();
+            }
+
+            public void OnAbilityEnabled(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
+            {
+            }
+
+            public void OnAbilityDisabled(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
+            {
+            }
+        }
+
+        private class TestAbilityState : PlayerMovementStateBase
+        {
+            public TestAbilityState(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
+                : base(context, stateMachine)
+            {
+            }
+
+            public override void OnEnter()
+            {
+                Context.RuntimeData.IsFalling = false;
+            }
         }
     }
 }

@@ -5,23 +5,94 @@ namespace Runtime.Player.Movement.States
 {
     public class PlayerMovementStateMachine
     {
-        private readonly Dictionary<Type, IPlayerMovementState> _states;
+        private readonly List<IPlayerMovementState> _registeredStates = new List<IPlayerMovementState>();
+        private readonly Dictionary<Type, IPlayerMovementState> _stateLookup = new Dictionary<Type, IPlayerMovementState>();
 
         public PlayerMovementStateMachine(PlayerMovementContext context)
         {
-            _states = new Dictionary<Type, IPlayerMovementState>
-            {
-                { typeof(GroundedState), new GroundedState(context, this) },
-                { typeof(SlidingState), new SlidingState(context, this) },
-                { typeof(JumpingState), new JumpingState(context, this) },
-                { typeof(FallingState), new FallingState(context, this) },
-                { typeof(FastFallingState), new FastFallingState(context, this) },
-                { typeof(WallSlideState), new WallSlideState(context, this) }
-            };
+            Context = context;
         }
 
         public IPlayerMovementState CurrentState { get; private set; }
         public IPlayerMovementState PreviousState { get; private set; }
+        public PlayerMovementContext Context { get; }
+
+        public IReadOnlyList<IPlayerMovementState> RegisteredStates => _registeredStates;
+
+        public bool RegisterState(IPlayerMovementState state)
+        {
+            if (state == null)
+            {
+                return false;
+            }
+
+            var type = state.GetType();
+            if (_stateLookup.ContainsKey(type))
+            {
+                return false;
+            }
+
+            _registeredStates.Add(state);
+            _stateLookup[type] = state;
+            return true;
+        }
+
+        public bool RegisterStates(IEnumerable<IPlayerMovementState> states)
+        {
+            if (states == null)
+            {
+                return false;
+            }
+
+            bool anyRegistered = false;
+            foreach (var state in states)
+            {
+                anyRegistered |= RegisterState(state);
+            }
+
+            return anyRegistered;
+        }
+
+        public bool UnregisterState<TState>() where TState : class, IPlayerMovementState
+        {
+            return UnregisterState(typeof(TState));
+        }
+
+        public bool UnregisterState(Type stateType)
+        {
+            if (stateType == null)
+            {
+                return false;
+            }
+
+            if (!_stateLookup.TryGetValue(stateType, out var state))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(CurrentState, state))
+            {
+                CurrentState.OnExit();
+                CurrentState = null;
+            }
+
+            if (ReferenceEquals(PreviousState, state))
+            {
+                PreviousState = null;
+            }
+
+            _stateLookup.Remove(stateType);
+            _registeredStates.Remove(state);
+            return true;
+        }
+
+        public void ClearStates()
+        {
+            _registeredStates.Clear();
+            _stateLookup.Clear();
+            CurrentState = null;
+            PreviousState = null;
+        }
 
         public void Initialize<TState>() where TState : class, IPlayerMovementState
         {
@@ -60,7 +131,7 @@ namespace Runtime.Player.Movement.States
 
         public TState GetState<TState>() where TState : class, IPlayerMovementState
         {
-            return _states.TryGetValue(typeof(TState), out var state) ? state as TState : null;
+            return _stateLookup.TryGetValue(typeof(TState), out var state) ? state as TState : null;
         }
     }
 }

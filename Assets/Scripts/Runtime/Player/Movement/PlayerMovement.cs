@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
+using Runtime.Player.Movement.Abilities;
 using Runtime.Player.Movement.States;
 using Runtime.Player.Movement.Tools;
 
@@ -8,7 +12,8 @@ namespace Runtime.Player.Movement
 {
     public class PlayerMovement : MonoBehaviour
     {
-        [Header("References")] [SerializeField]
+        [Header("References")]
+        [SerializeField]
         private PlayerMovementStats _movementStats;
 
         [SerializeField] private Collider2D _feetCollider;
@@ -21,10 +26,33 @@ namespace Runtime.Player.Movement
         [FoldoutGroup("Events")] public UnityEvent OnMoveFullyStopped;
         [FoldoutGroup("Events")] public UnityEvent<bool> OnTurn;
         [FoldoutGroup("Events")] public UnityEvent<float> OnLanded;
+
+        [Header("Abilities")]
+        [SerializeField]
+        private ScriptableObject[] _abilityAssets;
+
         [ShowInInspector, ReadOnly] public PlayerMovementContext Context { get; private set; }
+
+        public PlayerMovementStateMachine StateMachine => _stateMachine;
+
+        private readonly List<IMovementAbility> _configuredAbilities = new List<IMovementAbility>();
+        private readonly Dictionary<IMovementAbility, AbilityRuntimeData> _abilityRuntimeData = new Dictionary<IMovementAbility, AbilityRuntimeData>();
+        private readonly List<ScriptableObject> _abilityAssetInstances = new List<ScriptableObject>();
 
         private Rigidbody2D _rb;
         private PlayerMovementStateMachine _stateMachine;
+
+        private void Awake()
+        {
+            _rb = GetComponent<Rigidbody2D>();
+
+            if (_movementStats == null)
+            {
+                return;
+            }
+
+            InitializeMovement(_movementStats, _feetCollider, _bodyCollider);
+        }
 
         private void OnEnable()
         {
@@ -32,11 +60,98 @@ namespace Runtime.Player.Movement
             {
                 _movementStats.SlideMovement.selectedCollider = _feetCollider;
             }
+
+            if (_stateMachine != null && Context != null)
+            {
+                EnableConfiguredAbilities();
+            }
         }
 
-        private void Awake()
+        private void OnDisable()
         {
-            _rb = GetComponent<Rigidbody2D>();
+            DisableAllAbilities();
+        }
+
+        private void OnDestroy()
+        {
+            DestroyAbilityAssetInstances();
+        }
+
+        public void InitializeMovement(PlayerMovementStats stats, Collider2D feetCollider, Collider2D bodyCollider)
+        {
+            DisableAllAbilities();
+            DestroyAbilityAssetInstances();
+
+            _movementStats = stats;
+            _feetCollider = feetCollider;
+            _bodyCollider = bodyCollider;
+
+            if (_movementStats == null)
+            {
+                Context = null;
+                _stateMachine = null;
+                return;
+            }
+
+            if (_movementStats != null)
+            {
+                _movementStats.SlideMovement.selectedCollider = _feetCollider;
+            }
+
+            if (_rb == null)
+            {
+                _rb = GetComponent<Rigidbody2D>();
+            }
+
+            BuildContext();
+            BuildStateMachine();
+        }
+
+        public bool EnableAbility(IMovementAbility ability)
+        {
+            if (ability == null)
+            {
+                return false;
+            }
+
+            if (!_configuredAbilities.Contains(ability))
+            {
+                _configuredAbilities.Add(ability);
+            }
+
+            return EnableAbilityInternal(ability);
+        }
+
+        public void DisableAbility(IMovementAbility ability)
+        {
+            if (ability == null)
+            {
+                return;
+            }
+
+            DisableAbilityInternal(ability);
+        }
+
+        public IReadOnlyList<Func<PlayerMovementContext, bool>> GetActivationConditions(IMovementAbility ability)
+        {
+            if (ability == null)
+            {
+                return Array.Empty<Func<PlayerMovementContext, bool>>();
+            }
+
+            return _abilityRuntimeData.TryGetValue(ability, out var runtimeData)
+                ? runtimeData.ActivationConditions
+                : Array.Empty<Func<PlayerMovementContext, bool>>();
+        }
+
+        private void BuildContext()
+        {
+            if (_movementStats == null)
+            {
+                Context = null;
+                return;
+            }
+
             Context = new PlayerMovementContext(
                 _movementStats,
                 _rb,
@@ -52,13 +167,242 @@ namespace Runtime.Player.Movement
                 OnLanded);
 
             CollisionCheck();
+        }
+
+        private void BuildStateMachine()
+        {
+            if (Context == null)
+            {
+                _stateMachine = null;
+                return;
+            }
+
             _stateMachine = new PlayerMovementStateMachine(Context);
+            RegisterDefaultStates();
+            PrepareConfiguredAbilities(true);
+            EnableConfiguredAbilities();
             _stateMachine.Initialize<GroundedState>();
+        }
+
+        private void RegisterDefaultStates()
+        {
+            if (_stateMachine == null)
+            {
+                return;
+            }
+
+            _stateMachine.RegisterState(new GroundedState(Context, _stateMachine));
+            _stateMachine.RegisterState(new SlidingState(Context, _stateMachine));
+            _stateMachine.RegisterState(new JumpingState(Context, _stateMachine));
+            _stateMachine.RegisterState(new FallingState(Context, _stateMachine));
+            _stateMachine.RegisterState(new FastFallingState(Context, _stateMachine));
+            _stateMachine.RegisterState(new WallSlideState(Context, _stateMachine));
+        }
+
+        private void PrepareConfiguredAbilities(bool rebuildAssets)
+        {
+            _configuredAbilities.Clear();
+
+            foreach (var ability in GetComponents<IMovementAbility>())
+            {
+                if (ability != null)
+                {
+                    _configuredAbilities.Add(ability);
+                }
+            }
+
+            if (!rebuildAssets)
+            {
+                foreach (var instance in _abilityAssetInstances.OfType<IMovementAbility>())
+                {
+                    _configuredAbilities.Add(instance);
+                }
+
+                return;
+            }
+
+            DestroyAbilityAssetInstances();
+
+            if (_abilityAssets == null || _abilityAssets.Length == 0)
+            {
+                return;
+            }
+
+            foreach (var abilityAsset in _abilityAssets)
+            {
+                if (abilityAsset == null || abilityAsset is not IMovementAbility)
+                {
+                    continue;
+                }
+
+                var instance = Instantiate(abilityAsset);
+                if (instance is ScriptableObject scriptableInstance)
+                {
+                    _abilityAssetInstances.Add(scriptableInstance);
+                }
+
+                if (instance is IMovementAbility abilityInstance)
+                {
+                    _configuredAbilities.Add(abilityInstance);
+                }
+            }
+        }
+
+        private void EnableConfiguredAbilities()
+        {
+            if (_stateMachine == null)
+            {
+                return;
+            }
+
+            foreach (var ability in _configuredAbilities)
+            {
+                EnableAbilityInternal(ability);
+            }
+        }
+
+        private bool EnableAbilityInternal(IMovementAbility ability)
+        {
+            if (ability == null || _stateMachine == null)
+            {
+                return false;
+            }
+
+            if (_abilityRuntimeData.ContainsKey(ability))
+            {
+                return false;
+            }
+
+            ability.Initialize(Context, _stateMachine);
+
+            var runtimeData = new AbilityRuntimeData();
+
+            var states = ability.CreateStates(Context, _stateMachine);
+            if (states != null)
+            {
+                foreach (var state in states)
+                {
+                    if (state == null)
+                    {
+                        continue;
+                    }
+
+                    if (_stateMachine.RegisterState(state))
+                    {
+                        runtimeData.States.Add(state);
+                    }
+                }
+            }
+
+            var modifiers = ability.CreateModifiers(Context);
+            if (modifiers != null)
+            {
+                foreach (var modifier in modifiers)
+                {
+                    if (modifier == null)
+                    {
+                        continue;
+                    }
+
+                    modifier.Apply(Context);
+                    runtimeData.Modifiers.Add(modifier);
+                }
+            }
+
+            var activationConditions = ability.CreateActivationConditions(Context);
+            if (activationConditions != null)
+            {
+                foreach (var condition in activationConditions)
+                {
+                    if (condition == null)
+                    {
+                        continue;
+                    }
+
+                    runtimeData.ActivationConditions.Add(condition);
+                }
+            }
+
+            ability.OnAbilityEnabled(Context, _stateMachine);
+            _abilityRuntimeData[ability] = runtimeData;
+            return true;
+        }
+
+        private void DisableAbilityInternal(IMovementAbility ability)
+        {
+            if (ability == null)
+            {
+                return;
+            }
+
+            if (!_abilityRuntimeData.TryGetValue(ability, out var runtimeData))
+            {
+                return;
+            }
+
+            foreach (var modifier in runtimeData.Modifiers)
+            {
+                modifier?.Remove(Context);
+            }
+
+            foreach (var state in runtimeData.States)
+            {
+                if (state == null)
+                {
+                    continue;
+                }
+
+                _stateMachine?.UnregisterState(state.GetType());
+            }
+
+            ability.OnAbilityDisabled(Context, _stateMachine);
+            _abilityRuntimeData.Remove(ability);
+        }
+
+        private void DisableAllAbilities()
+        {
+            if (_abilityRuntimeData.Count == 0)
+            {
+                return;
+            }
+
+            var abilities = _abilityRuntimeData.Keys.ToArray();
+            foreach (var ability in abilities)
+            {
+                DisableAbilityInternal(ability);
+            }
+        }
+
+        private void DestroyAbilityAssetInstances()
+        {
+            if (_abilityAssetInstances.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var instance in _abilityAssetInstances)
+            {
+                if (instance == null)
+                {
+                    continue;
+                }
+
+                if (Application.isPlaying)
+                {
+                    Destroy(instance);
+                }
+                else
+                {
+                    DestroyImmediate(instance);
+                }
+            }
+
+            _abilityAssetInstances.Clear();
         }
 
         private void Update()
         {
-            if (Context == null)
+            if (Context == null || _stateMachine == null)
             {
                 return;
             }
@@ -71,7 +415,7 @@ namespace Runtime.Player.Movement
 
         private void FixedUpdate()
         {
-            if (Context == null)
+            if (Context == null || _stateMachine == null)
             {
                 return;
             }
@@ -82,6 +426,11 @@ namespace Runtime.Player.Movement
 
         private void ReadInput()
         {
+            if (Context == null)
+            {
+                return;
+            }
+
             Context.SetInput(
                 InputManager.Movement,
                 InputManager.RunHeld,
@@ -92,6 +441,11 @@ namespace Runtime.Player.Movement
 
         private void CollisionCheck()
         {
+            if (_movementStats == null)
+            {
+                return;
+            }
+
             CheckIfGrounded();
             CheckIfBumpedHead();
             CheckWallContact();
@@ -99,7 +453,7 @@ namespace Runtime.Player.Movement
 
         private void CheckIfGrounded()
         {
-            if (_feetCollider == null)
+            if (_feetCollider == null || _movementStats == null)
             {
                 return;
             }
@@ -141,7 +495,7 @@ namespace Runtime.Player.Movement
 
         private void CheckIfBumpedHead()
         {
-            if (_feetCollider == null || _bodyCollider == null)
+            if (_feetCollider == null || _bodyCollider == null || _movementStats == null)
             {
                 return;
             }
@@ -185,6 +539,11 @@ namespace Runtime.Player.Movement
 
         private void CheckWallContact()
         {
+            if (_movementStats == null)
+            {
+                return;
+            }
+
             if (_bodyCollider == null)
             {
                 Context.Wall.ClearWallHit(true);
@@ -199,112 +558,59 @@ namespace Runtime.Player.Movement
             float heightScale = Mathf.Clamp01(_movementStats.WallDetectionHeightScale);
             if (wallSettings != null && _bodyCollider != null)
             {
-                Bounds bounds = _bodyCollider.bounds;
-                float shrink = Mathf.Clamp(wallSettings.WallDetectionVerticalShrink, 0f, bounds.size.y * 0.95f);
-                if (bounds.size.y > 0f)
-                {
-                    heightScale = Mathf.Clamp01(Mathf.Max(0.05f, (bounds.size.y - shrink) / bounds.size.y));
-                }
-            }
+                float verticalShrink = Mathf.Clamp01(wallSettings.WallDetectionVerticalShrink);
+                float colliderHeight = _bodyCollider.bounds.size.y * (1f - verticalShrink);
+                float colliderCenterY = _bodyCollider.bounds.center.y;
 
-            RaycastHit2D rightHit = CastForWall(Vector2.right, castDistance, heightScale);
-            if (rightHit.collider != null && (rightHit.collider == _bodyCollider || rightHit.collider == _feetCollider))
-            {
-                rightHit = default;
-            }
+                Vector2 castOriginRight = new Vector2(_bodyCollider.bounds.max.x, colliderCenterY);
+                Vector2 castOriginLeft = new Vector2(_bodyCollider.bounds.min.x, colliderCenterY);
+                Vector2 castSize = new Vector2(castDistance, colliderHeight * heightScale);
 
-            if (rightHit.collider != null)
-            {
-                Context.Wall.SetWallHit(true, rightHit);
-            }
-            else
-            {
-                Context.Wall.ClearWallHit(true);
-            }
-
-            RaycastHit2D leftHit = CastForWall(Vector2.left, castDistance, heightScale);
-            if (leftHit.collider != null && (leftHit.collider == _bodyCollider || leftHit.collider == _feetCollider))
-            {
-                leftHit = default;
-            }
-
-            if (leftHit.collider != null)
-            {
-                Context.Wall.SetWallHit(false, leftHit);
-            }
-            else
-            {
-                Context.Wall.ClearWallHit(false);
-            }
-
-#if UNITY_EDITOR
-            if (_movementStats.DebugShowWallChecks)
-            {
-                DrawWallDebug(castDistance, heightScale);
-            }
-#endif
-        }
-
-        private RaycastHit2D CastForWall(Vector2 direction, float distance, float heightScale)
-        {
-            Bounds bounds = _bodyCollider.bounds;
-            heightScale = Mathf.Clamp(heightScale, 0.05f, 1f);
-
-            if (_bodyCollider is CapsuleCollider2D capsuleCollider)
-            {
-                Vector3 lossyScale = capsuleCollider.transform.lossyScale;
-                Vector2 capsuleSize = new Vector2(
-                    capsuleCollider.size.x * Mathf.Abs(lossyScale.x),
-                    capsuleCollider.size.y * Mathf.Abs(lossyScale.y));
-
-                if (capsuleCollider.direction == CapsuleDirection2D.Vertical)
-                {
-                    capsuleSize.y *= heightScale;
-                }
-                else
-                {
-                    capsuleSize.x *= heightScale;
-                }
-
-                return Physics2D.CapsuleCast(
-                    bounds.center,
-                    capsuleSize,
-                    capsuleCollider.direction,
-                    capsuleCollider.transform.eulerAngles.z,
-                    direction,
-                    distance,
+                RaycastHit2D rightHit = Physics2D.BoxCast(
+                    castOriginRight,
+                    castSize,
+                    0f,
+                    Vector2.right,
+                    castDistance,
                     _movementStats.GroundLayer);
+
+                RaycastHit2D leftHit = Physics2D.BoxCast(
+                    castOriginLeft,
+                    castSize,
+                    0f,
+                    Vector2.left,
+                    castDistance,
+                    _movementStats.GroundLayer);
+
+                Context.Wall.SetWallHit(rightHit, true);
+                Context.Wall.SetWallHit(leftHit, false);
             }
+            else
+            {
+                Vector2 castOriginRight = new Vector2(_bodyCollider.bounds.max.x, _bodyCollider.bounds.center.y);
+                Vector2 castOriginLeft = new Vector2(_bodyCollider.bounds.min.x, _bodyCollider.bounds.center.y);
 
-            Vector2 castSize = new Vector2(bounds.size.x, bounds.size.y * heightScale);
-            return Physics2D.BoxCast(
-                bounds.center,
-                castSize,
-                0f,
-                direction,
-                distance,
-                _movementStats.GroundLayer);
+                RaycastHit2D rightHit = Physics2D.Raycast(
+                    castOriginRight,
+                    Vector2.right,
+                    castDistance,
+                    _movementStats.GroundLayer);
+                RaycastHit2D leftHit = Physics2D.Raycast(
+                    castOriginLeft,
+                    Vector2.left,
+                    castDistance,
+                    _movementStats.GroundLayer);
+
+                Context.Wall.SetWallHit(rightHit, true);
+                Context.Wall.SetWallHit(leftHit, false);
+            }
         }
 
-#if UNITY_EDITOR
-        private void DrawWallDebug(float distance, float heightScale)
+        private class AbilityRuntimeData
         {
-            Bounds bounds = _bodyCollider.bounds;
-            float halfHeight = bounds.extents.y * heightScale;
-
-            Vector2 rightTop = new Vector2(bounds.max.x, bounds.center.y + halfHeight);
-            Vector2 rightBottom = new Vector2(bounds.max.x, bounds.center.y - halfHeight);
-            Vector2 leftTop = new Vector2(bounds.min.x, bounds.center.y + halfHeight);
-            Vector2 leftBottom = new Vector2(bounds.min.x, bounds.center.y - halfHeight);
-
-                Color rightColor = Context.RuntimeData.IsTouchingRightWall ? Color.green : Color.red;
-                Color leftColor = Context.RuntimeData.IsTouchingLeftWall ? Color.green : Color.red;
-
-            Debug.DrawRay(rightTop, Vector2.right * distance, rightColor);
-            Debug.DrawRay(rightBottom, Vector2.right * distance, rightColor);
-            Debug.DrawRay(leftTop, Vector2.left * distance, leftColor);
-            Debug.DrawRay(leftBottom, Vector2.left * distance, leftColor);
+            public readonly List<IPlayerMovementState> States = new List<IPlayerMovementState>();
+            public readonly List<IPlayerMovementModifier> Modifiers = new List<IPlayerMovementModifier>();
+            public readonly List<Func<PlayerMovementContext, bool>> ActivationConditions = new List<Func<PlayerMovementContext, bool>>();
         }
-#endif
     }
 }
