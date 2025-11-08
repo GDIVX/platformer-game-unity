@@ -53,8 +53,8 @@ namespace Tests
             var context = movement.Context;
             var stateMachine = GetPrivateField<PlayerMovementStateMachine>(movement, "_stateMachine");
 
-            context.SetGroundHit(new RaycastHit2D());
-            context.InitiateJump(1);
+            context.Wall.SetGroundHit(new RaycastHit2D());
+            context.Jump.InitiateJump(1);
             stateMachine.ChangeState<JumpingState>();
 
             Vector2 startPoint = new Vector2(feet.bounds.center.x, feet.bounds.min.y);
@@ -88,7 +88,8 @@ namespace Tests
                 InvokePrivateMethod(movement, "CollisionCheck");
                 stateMachine.FixedTick();
 
-                Vector2 frameVelocity = new Vector2(context.Velocity.x, context.VerticalVelocity);
+                var data = context.RuntimeData;
+                Vector2 frameVelocity = new Vector2(data.Velocity.x, data.VerticalVelocity);
                 Vector2 newPosition = (Vector2)context.Transform.position + frameVelocity * dt;
                 context.Transform.position = newPosition;
                 rb.position = newPosition;
@@ -110,7 +111,8 @@ namespace Tests
             float deltaX = Mathf.Abs(expectedLanding.x - actualLanding.x);
             float deltaY = Mathf.Abs(expectedLanding.y - actualLanding.y);
             float totalDelta = Vector2.Distance(expectedLanding, actualLanding);
-            Vector2 lastVelocity = new Vector2(context.Velocity.x, context.VerticalVelocity);
+            var runtimeData = context.RuntimeData;
+            Vector2 lastVelocity = new Vector2(runtimeData.Velocity.x, runtimeData.VerticalVelocity);
 
             string report =
                 $"[JumpArc Simulator Validation]\n" +

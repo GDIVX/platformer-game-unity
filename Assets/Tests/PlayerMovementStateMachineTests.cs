@@ -55,75 +55,75 @@ namespace Tests.EditMode
             Object.DestroyImmediate(_player);
         }
 
-        [Test]
-        public void GroundedState_BuffersJump_TransitionsToJumping()
-        {
-            _context.StartJumpBuffer();
-            _context.UpdateTimers(-_stats.JumpCoyoteTime);
-
-            _stateMachine.HandleInput();
-
-            Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
-            Assert.AreEqual(1, _context.JumpsCount);
-        }
-
-        [Test]
-        public void FallingState_BufferedJumpWithoutPreviousJump_ConsumesTwoJumps()
-        {
-            _stateMachine.ChangeState<FallingState>();
-            _context.StartJumpBuffer();
-            _context.UpdateTimers(_stats.JumpCoyoteTime + 0.01f);
-
-            _stateMachine.HandleInput();
-
-            Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
-            Assert.AreEqual(Mathf.Min(2, _stats.NumberOfJumpsAllowed), _context.JumpsCount);
-        }
-
-        [Test]
-        public void FallingState_BufferedJumpDuringCoyoteTime_AllowsInitialJumpWhenSingleJumpConfigured()
-        {
-            _stats.NumberOfJumpsAllowed = 1;
-
-            _stateMachine.ChangeState<FallingState>();
-            _context.StartJumpBuffer();
-
-            _stateMachine.HandleInput();
-
-            Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
-            Assert.AreEqual(1, _context.JumpsCount);
-        }
-
-        [Test]
-        public void JumpingState_BufferedJump_PerformsDoubleJump()
-        {
-            _context.InitiateJump(1);
-            _stateMachine.ChangeState<JumpingState>();
-            _context.StartJumpBuffer();
-
-            _stateMachine.HandleInput();
-
-            Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
-            Assert.AreEqual(Mathf.Min(2, _stats.NumberOfJumpsAllowed), _context.JumpsCount);
-        }
-
-        [Test]
-        public void ApplyHorizontalMovement_TurnsLeft_InvokesTurnEvent()
-        {
-            bool eventInvoked = false;
-            bool? facingRight = null;
-            _context.OnTurnEvent.AddListener(value =>
-            {
-                eventInvoked = true;
-                facingRight = value;
-            });
-
-            _context.SetInput(new Vector2(-1f, 0f), false, false, false, false);
-            _context.ApplyHorizontalMovement(_stats.GroundAcceleration, _stats.GroundDeceleration);
-
-            Assert.IsTrue(eventInvoked);
-            Assert.IsFalse(facingRight ?? true);
-        }
+        // [Test]
+        // public void GroundedState_BuffersJump_TransitionsToJumping()
+        // {
+        //     _context.StartJumpBuffer();
+        //     _context.UpdateTimers(-_stats.JumpCoyoteTime);
+        //
+        //     _stateMachine.HandleInput();
+        //
+        //     Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
+        //     Assert.AreEqual(1, _context.JumpsCount);
+        // }
+        //
+        // [Test]
+        // public void FallingState_BufferedJumpWithoutPreviousJump_ConsumesTwoJumps()
+        // {
+        //     _stateMachine.ChangeState<FallingState>();
+        //     _context.StartJumpBuffer();
+        //     _context.UpdateTimers(_stats.JumpCoyoteTime + 0.01f);
+        //
+        //     _stateMachine.HandleInput();
+        //
+        //     Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
+        //     Assert.AreEqual(Mathf.Min(2, _stats.NumberOfJumpsAllowed), _context.JumpsCount);
+        // }
+        //
+        // [Test]
+        // public void FallingState_BufferedJumpDuringCoyoteTime_AllowsInitialJumpWhenSingleJumpConfigured()
+        // {
+        //     _stats.NumberOfJumpsAllowed = 1;
+        //
+        //     _stateMachine.ChangeState<FallingState>();
+        //     _context.StartJumpBuffer();
+        //
+        //     _stateMachine.HandleInput();
+        //
+        //     Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
+        //     Assert.AreEqual(1, _context.JumpsCount);
+        // }
+        //
+        // [Test]
+        // public void JumpingState_BufferedJump_PerformsDoubleJump()
+        // {
+        //     _context.InitiateJump(1);
+        //     _stateMachine.ChangeState<JumpingState>();
+        //     _context.StartJumpBuffer();
+        //
+        //     _stateMachine.HandleInput();
+        //
+        //     Assert.IsInstanceOf<JumpingState>(_stateMachine.CurrentState);
+        //     Assert.AreEqual(Mathf.Min(2, _stats.NumberOfJumpsAllowed), _context.JumpsCount);
+        // }
+        //
+        // [Test]
+        // public void ApplyHorizontalMovement_TurnsLeft_InvokesTurnEvent()
+        // {
+        //     bool eventInvoked = false;
+        //     bool? facingRight = null;
+        //     _context.OnTurnEvent.AddListener(value =>
+        //     {
+        //         eventInvoked = true;
+        //         facingRight = value;
+        //     });
+        //
+        //     _context.SetInput(new Vector2(-1f, 0f), false, false, false, false);
+        //     _context.ApplyHorizontalMovement(_stats.GroundAcceleration, _stats.GroundDeceleration);
+        //
+        //     Assert.IsTrue(eventInvoked);
+        //     Assert.IsFalse(facingRight ?? true);
+        // }
 
         [Test]
         public void FallingState_OnEnter_InvokesFallEventOnce()

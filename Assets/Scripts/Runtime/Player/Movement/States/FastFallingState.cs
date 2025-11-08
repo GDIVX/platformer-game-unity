@@ -11,30 +11,33 @@ namespace Runtime.Player.Movement.States
 
         public override void OnEnter()
         {
-            Context.IsFastFalling = true;
-            Context.IsJumping = false;
-            Context.NotifyFallStarted();
-            Context.InvokeFallEvent();
+            var data = Context.RuntimeData;
+            data.IsFastFalling = true;
+            data.IsJumping = false;
+            Context.Jump.NotifyFallStarted();
+            Context.Jump.InvokeFallEvent();
         }
 
         public override void HandleInput()
         {
-            if (Context.ShouldStartWallSlide())
+            var data = Context.RuntimeData;
+
+            if (Context.Wall.ShouldStartWallSlide())
             {
-                Context.IsFastFalling = false;
+                data.IsFastFalling = false;
                 StateMachine.ChangeState<WallSlideState>();
                 return;
             }
 
-            if (Context.JumpBufferTimer > 0f && Context.JumpsCount < Context.Stats.NumberOfJumpsAllowed)
+            if (data.JumpBufferTimer > 0f && data.JumpsCount < Context.Stats.NumberOfJumpsAllowed)
             {
-                Context.IsFastFalling = false;
-                Context.InitiateJump(1);
+                data.IsFastFalling = false;
+                Context.Jump.InitiateJump(1);
                 StateMachine.ChangeState<JumpingState>();
                 return;
             }
 
-            if (Context.IsGrounded && Context.VerticalVelocity <= 0f)
+            if (data.IsGrounded && data.VerticalVelocity <= 0f)
             {
                 StateMachine.ChangeState<GroundedState>();
             }
@@ -42,20 +45,26 @@ namespace Runtime.Player.Movement.States
 
         public override void FixedTick()
         {
-            Context.ApplyHorizontalMovement(Context.Stats.AirAcceleration, Context.Stats.AirDeceleration);
+            float fixedDeltaTime = Time.fixedDeltaTime;
+            Context.Horizontal.ApplyMovement(
+                Context.Stats.AirAcceleration,
+                Context.Stats.AirDeceleration,
+                fixedDeltaTime);
 
-            if (Context.ShouldStartWallSlide())
+            var data = Context.RuntimeData;
+
+            if (Context.Wall.ShouldStartWallSlide())
             {
-                Context.IsFastFalling = false;
+                data.IsFastFalling = false;
                 StateMachine.ChangeState<WallSlideState>();
                 return;
             }
 
-            Context.ApplyFastFall(Time.fixedDeltaTime);
-            Context.ClampVerticalVelocity();
-            Context.ApplyVerticalVelocity();
+            Context.Jump.ApplyFastFall(fixedDeltaTime);
+            Context.Jump.ClampVerticalVelocity();
+            Context.Jump.ApplyVerticalVelocity();
 
-            if (Context.IsGrounded && Context.VerticalVelocity <= 0f)
+            if (data.IsGrounded && data.VerticalVelocity <= 0f)
             {
                 StateMachine.ChangeState<GroundedState>();
             }

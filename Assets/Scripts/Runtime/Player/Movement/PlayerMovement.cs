@@ -115,12 +115,12 @@ namespace Runtime.Player.Movement
                 _movementStats.GroundDetectionRayLength,
                 _movementStats.GroundLayer);
 
-            Context.SetGroundHit(groundHit);
+            Context.Wall.SetGroundHit(groundHit);
 
 #if UNITY_EDITOR
             if (_movementStats.DebugShowIsGrounded)
             {
-                Color rayColor = Context.IsGrounded ? Color.green : Color.red;
+                Color rayColor = Context.RuntimeData.IsGrounded ? Color.green : Color.red;
                 Debug.DrawRay(
                     new Vector2(boxCastOrigin.x - boxCastSize.x / 2, boxCastOrigin.y),
                     Vector2.down * _movementStats.GroundDetectionRayLength,
@@ -159,12 +159,12 @@ namespace Runtime.Player.Movement
                 _movementStats.HeadDetectionRayLength,
                 _movementStats.GroundLayer);
 
-            Context.SetHeadHit(headHit);
+            Context.Wall.SetHeadHit(headHit);
 
 #if UNITY_EDITOR
             if (_movementStats.DebugShowHeadBumpBox)
             {
-                Color rayColor = Context.BumpedHead ? Color.green : Color.red;
+                Color rayColor = Context.RuntimeData.BumpedHead ? Color.green : Color.red;
                 Debug.DrawRay(
                     new Vector2(boxCastOrigin.x - boxCastSize.x / 2, boxCastOrigin.y),
                     Vector2.up * _movementStats.HeadDetectionRayLength,
@@ -187,8 +187,8 @@ namespace Runtime.Player.Movement
         {
             if (_bodyCollider == null)
             {
-                Context.ClearWallHit(true);
-                Context.ClearWallHit(false);
+                Context.Wall.ClearWallHit(true);
+                Context.Wall.ClearWallHit(false);
                 return;
             }
 
@@ -215,11 +215,11 @@ namespace Runtime.Player.Movement
 
             if (rightHit.collider != null)
             {
-                Context.SetWallHit(true, rightHit);
+                Context.Wall.SetWallHit(true, rightHit);
             }
             else
             {
-                Context.ClearWallHit(true);
+                Context.Wall.ClearWallHit(true);
             }
 
             RaycastHit2D leftHit = CastForWall(Vector2.left, castDistance, heightScale);
@@ -230,11 +230,11 @@ namespace Runtime.Player.Movement
 
             if (leftHit.collider != null)
             {
-                Context.SetWallHit(false, leftHit);
+                Context.Wall.SetWallHit(false, leftHit);
             }
             else
             {
-                Context.ClearWallHit(false);
+                Context.Wall.ClearWallHit(false);
             }
 
 #if UNITY_EDITOR
@@ -297,8 +297,8 @@ namespace Runtime.Player.Movement
             Vector2 leftTop = new Vector2(bounds.min.x, bounds.center.y + halfHeight);
             Vector2 leftBottom = new Vector2(bounds.min.x, bounds.center.y - halfHeight);
 
-            Color rightColor = Context.IsTouchingRightWall ? Color.green : Color.red;
-            Color leftColor = Context.IsTouchingLeftWall ? Color.green : Color.red;
+                Color rightColor = Context.RuntimeData.IsTouchingRightWall ? Color.green : Color.red;
+                Color leftColor = Context.RuntimeData.IsTouchingLeftWall ? Color.green : Color.red;
 
             Debug.DrawRay(rightTop, Vector2.right * distance, rightColor);
             Debug.DrawRay(rightBottom, Vector2.right * distance, rightColor);
