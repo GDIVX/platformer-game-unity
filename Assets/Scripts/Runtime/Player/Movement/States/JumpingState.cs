@@ -11,31 +11,34 @@ namespace Runtime.Player.Movement.States
 
         public override void OnEnter()
         {
-            Context.IsJumping = true;
-            Context.IsFalling = false;
+            var data = Context.RuntimeData;
+            data.IsJumping = true;
+            data.IsFalling = false;
         }
 
         public override void HandleInput()
         {
-            if (Context.JumpReleased)
+            var data = Context.RuntimeData;
+
+            if (data.JumpReleased)
             {
-                Context.AttemptJumpCut();
+                Context.Jump.AttemptJumpCut();
             }
 
-            if (Context.JumpBufferTimer > 0f && Context.JumpsCount < Context.Stats.NumberOfJumpsAllowed)
+            if (data.JumpBufferTimer > 0f && data.JumpsCount < Context.Stats.NumberOfJumpsAllowed)
             {
-                Context.IsFastFalling = false;
-                Context.InitiateJump(1);
+                data.IsFastFalling = false;
+                Context.Jump.InitiateJump(1);
                 return;
             }
 
-            if (Context.IsFastFalling)
+            if (data.IsFastFalling)
             {
                 StateMachine.ChangeState<FastFallingState>();
                 return;
             }
 
-            if (Context.VerticalVelocity < 0f)
+            if (data.VerticalVelocity < 0f)
             {
                 StateMachine.ChangeState<FallingState>();
             }
@@ -43,11 +46,13 @@ namespace Runtime.Player.Movement.States
 
         public override void Tick()
         {
-            if (Context.BumpedHead)
+            var data = Context.RuntimeData;
+
+            if (data.BumpedHead)
             {
-                if (!Context.TryEdgeNudge())
+                if (!Context.Jump.TryEdgeNudge())
                 {
-                    Context.IsFastFalling = true;
+                    data.IsFastFalling = true;
                 }
             }
         }
@@ -55,36 +60,41 @@ namespace Runtime.Player.Movement.States
         public override void FixedTick()
         {
             float fixedDeltaTime = Time.fixedDeltaTime;
-            Context.ApplyHorizontalMovement(Context.Stats.AirAcceleration, Context.Stats.AirDeceleration);
+            Context.Horizontal.ApplyMovement(
+                Context.Stats.AirAcceleration,
+                Context.Stats.AirDeceleration,
+                fixedDeltaTime);
 
-            if (Context.VerticalVelocity >= 0f)
+            var data = Context.RuntimeData;
+
+            if (data.VerticalVelocity >= 0f)
             {
-                Context.HandleJumpAscent(fixedDeltaTime);
+                Context.Jump.HandleJumpAscent(fixedDeltaTime);
             }
-            else if (!Context.IsFastFalling)
+            else if (!data.IsFastFalling)
             {
-                Context.VerticalVelocity += Context.Stats.Gravity * Context.Stats.GravityOnReleaseMultiplier *
-                                            fixedDeltaTime;
+                data.VerticalVelocity += Context.Stats.Gravity * Context.Stats.GravityOnReleaseMultiplier *
+                                         fixedDeltaTime;
             }
-            else if (Context.VerticalVelocity < 0f)
+            else if (data.VerticalVelocity < 0f)
             {
-                Context.IsFalling = true;
+                data.IsFalling = true;
             }
 
-            Context.ClampVerticalVelocity();
-            Context.ApplyVerticalVelocity();
+            Context.Jump.ClampVerticalVelocity();
+            Context.Jump.ApplyVerticalVelocity();
 
-            if (Context.IsGrounded && Context.VerticalVelocity <= 0f)
+            if (data.IsGrounded && data.VerticalVelocity <= 0f)
             {
                 StateMachine.ChangeState<GroundedState>();
                 return;
             }
 
-            if (Context.IsFastFalling)
+            if (data.IsFastFalling)
             {
                 StateMachine.ChangeState<FastFallingState>();
             }
-            else if (Context.VerticalVelocity < 0f)
+            else if (data.VerticalVelocity < 0f)
             {
                 StateMachine.ChangeState<FallingState>();
             }

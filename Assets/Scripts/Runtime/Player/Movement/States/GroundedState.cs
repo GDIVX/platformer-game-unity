@@ -11,38 +11,42 @@ namespace Runtime.Player.Movement.States
 
         public override void OnEnter()
         {
+            var data = Context.RuntimeData;
+
             if (StateMachine.PreviousState != null &&
                 StateMachine.PreviousState is not GroundedState and not SlidingState)
             {
-                Context.ApplyLanding();
+                Context.Jump.ApplyLanding();
             }
 
-            Context.IsJumping = false;
-            Context.IsFalling = false;
-            Context.IsFastFalling = false;
+            data.IsJumping = false;
+            data.IsFalling = false;
+            data.IsFastFalling = false;
         }
 
         public override void HandleInput()
         {
-            if (Context.JumpBufferTimer > 0f && (Context.IsGrounded || Context.CoyoteTimer > 0f))
+            var data = Context.RuntimeData;
+
+            if (data.JumpBufferTimer > 0f && (data.IsGrounded || data.CoyoteTimer > 0f))
             {
-                if (Context.JumpReleasedDuringBuffer)
+                if (data.JumpReleasedDuringBuffer)
                 {
-                    Context.FastFallReleaseSpeed = Context.VerticalVelocity;
+                    data.FastFallReleaseSpeed = data.VerticalVelocity;
                 }
 
-                Context.InitiateJump(1);
+                Context.Jump.InitiateJump(1);
                 StateMachine.ChangeState<JumpingState>();
                 return;
             }
 
-            if (!Context.IsGrounded)
+            if (!data.IsGrounded)
             {
                 StateMachine.ChangeState<FallingState>();
                 return;
             }
 
-            if (Context.ShouldSlide())
+            if (Context.Horizontal.ShouldSlide())
             {
                 StateMachine.ChangeState<SlidingState>();
             }
@@ -50,16 +54,20 @@ namespace Runtime.Player.Movement.States
 
         public override void FixedTick()
         {
-            Context.ApplyHorizontalMovement(Context.Stats.GroundAcceleration, Context.Stats.GroundDeceleration);
-            Context.ClampVerticalVelocity();
-            Context.ApplyVerticalVelocity();
+            float fixedDeltaTime = Time.fixedDeltaTime;
+            Context.Horizontal.ApplyMovement(
+                Context.Stats.GroundAcceleration,
+                Context.Stats.GroundDeceleration,
+                fixedDeltaTime);
+            Context.Jump.ClampVerticalVelocity();
+            Context.Jump.ApplyVerticalVelocity();
 
             if (Context.Stats.SlideMovement.maxIterations <= 0)
             {
                 Context.Stats.SlideMovement.maxIterations = 50;
             }
 
-            Context.Rigidbody.Slide(Context.Velocity, Time.fixedDeltaTime, Context.Stats.SlideMovement);
+            Context.Rigidbody.Slide(Context.RuntimeData.Velocity, fixedDeltaTime, Context.Stats.SlideMovement);
         }
     }
 }

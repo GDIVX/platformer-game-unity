@@ -11,31 +11,33 @@ namespace Runtime.Player.Movement.States
 
         public override void HandleInput()
         {
-            if (!Context.IsGrounded)
+            var data = Context.RuntimeData;
+
+            if (!data.IsGrounded)
             {
                 StateMachine.ChangeState<FallingState>();
                 return;
             }
 
-            if (Context.MoveInput != Vector2.zero)
+            if (data.MoveInput != Vector2.zero)
             {
                 StateMachine.ChangeState<GroundedState>();
                 return;
             }
 
-            if (Context.JumpBufferTimer > 0f)
+            if (data.JumpBufferTimer > 0f)
             {
-                if (Context.JumpReleasedDuringBuffer)
+                if (data.JumpReleasedDuringBuffer)
                 {
-                    Context.FastFallReleaseSpeed = Context.VerticalVelocity;
+                    data.FastFallReleaseSpeed = data.VerticalVelocity;
                 }
 
-                Context.InitiateJump(1);
+                Context.Jump.InitiateJump(1);
                 StateMachine.ChangeState<JumpingState>();
                 return;
             }
 
-            if (!Context.ShouldSlide())
+            if (!Context.Horizontal.ShouldSlide())
             {
                 StateMachine.ChangeState<GroundedState>();
             }
@@ -43,11 +45,15 @@ namespace Runtime.Player.Movement.States
 
         public override void FixedTick()
         {
-            Context.ApplyHorizontalMovement(Context.Stats.GroundAcceleration, Context.Stats.GroundDeceleration);
-            Context.ClampVerticalVelocity();
-            Context.ApplyVerticalVelocity();
+            float fixedDeltaTime = Time.fixedDeltaTime;
+            Context.Horizontal.ApplyMovement(
+                Context.Stats.GroundAcceleration,
+                Context.Stats.GroundDeceleration,
+                fixedDeltaTime);
+            Context.Jump.ClampVerticalVelocity();
+            Context.Jump.ApplyVerticalVelocity();
 
-            Context.Rigidbody.Slide(Context.Velocity, Time.fixedDeltaTime, Context.Stats.SlideMovement);
+            Context.Rigidbody.Slide(Context.RuntimeData.Velocity, fixedDeltaTime, Context.Stats.SlideMovement);
         }
     }
 }
