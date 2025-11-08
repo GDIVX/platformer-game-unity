@@ -5,6 +5,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
 using Runtime.Player.Movement.Abilities;
+using Runtime.Player.Movement.Events;
 using Runtime.Player.Movement.States;
 using Runtime.Player.Movement.Tools;
 
@@ -15,6 +16,9 @@ namespace Runtime.Player.Movement
         [Header("References")]
         [SerializeField]
         private PlayerMovementStats _movementStats;
+
+        [SerializeField]
+        private MovementEventBus _movementEventBus;
 
         [SerializeField] private Collider2D _feetCollider;
         [SerializeField] private Collider2D _bodyCollider;
@@ -157,7 +161,8 @@ namespace Runtime.Player.Movement
                 OnMoveStopped,
                 OnMoveFullyStopped,
                 OnTurn,
-                OnLanded);
+                OnLanded,
+                _movementEventBus);
 
             CollisionCheck();
         }

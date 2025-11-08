@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using Runtime.Player.Movement.Events;
 using Runtime.Player.Movement;
 using Runtime.Player.Movement.Abilities;
 using Runtime.Player.Movement.States;
@@ -46,7 +47,8 @@ namespace Tests.EditMode
                 new UnityEvent(),
                 new UnityEvent(),
                 new UnityEvent<bool>(),
-                new UnityEvent<float>());
+                new UnityEvent<float>(),
+                null);
 
             _stateMachine = new PlayerMovementStateMachine(_context);
             RegisterDefaultStates(_stateMachine, _context);
@@ -82,6 +84,15 @@ namespace Tests.EditMode
             movement.OnLanded = new UnityEvent<float>();
             movement.InitializeMovement(_stats, _feetCollider, _bodyCollider);
             return movement;
+        }
+
+        private static void SetMovementEventBus(PlayerMovement movement, MovementEventBus eventBus)
+        {
+            var field = typeof(PlayerMovement).GetField(
+                "_movementEventBus",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            field?.SetValue(movement, eventBus);
         }
 
         // [Test]
@@ -206,6 +217,49 @@ namespace Tests.EditMode
         }
 
         [Test]
+        public void EnableAbility_RaisesMovementBusEvents()
+        {
+            var playerMovement = CreatePlayerMovementComponent();
+            var ability = ScriptableObject.CreateInstance<TestMovementAbility>();
+            var eventBus = ScriptableObject.CreateInstance<MovementEventBus>();
+
+            bool flyStarted = false;
+            bool flyEnded = false;
+            bool glideStarted = false;
+            bool glideEnded = false;
+            bool dashStarted = false;
+            bool dashEnded = false;
+
+            eventBus.FlyStarted.AddListener(() => flyStarted = true);
+            eventBus.FlyEnded.AddListener(() => flyEnded = true);
+            eventBus.GlideStarted.AddListener(() => glideStarted = true);
+            eventBus.GlideEnded.AddListener(() => glideEnded = true);
+            eventBus.DashStarted.AddListener(() => dashStarted = true);
+            eventBus.DashEnded.AddListener(() => dashEnded = true);
+
+            try
+            {
+                SetMovementEventBus(playerMovement, eventBus);
+                playerMovement.InitializeMovement(_stats, _feetCollider, _bodyCollider);
+
+                Assert.IsTrue(playerMovement.EnableAbility(ability));
+
+                Assert.IsTrue(flyStarted);
+                Assert.IsTrue(flyEnded);
+                Assert.IsTrue(glideStarted);
+                Assert.IsTrue(glideEnded);
+                Assert.IsTrue(dashStarted);
+                Assert.IsTrue(dashEnded);
+            }
+            finally
+            {
+                playerMovement.DisableAbility(ability);
+                Object.DestroyImmediate(ability);
+                Object.DestroyImmediate(eventBus);
+            }
+        }
+
+        [Test]
         public void DisableAbility_RemovesStateAndTransitionsContinueToWork()
         {
             var playerMovement = CreatePlayerMovementComponent();
@@ -257,6 +311,12 @@ namespace Tests.EditMode
 
             public void OnAbilityEnabled(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
             {
+                context.RaiseFlyStarted();
+                context.RaiseFlyEnded();
+                context.RaiseGlideStarted();
+                context.RaiseGlideEnded();
+                context.RaiseDashStarted();
+                context.RaiseDashEnded();
             }
 
             public void OnAbilityDisabled(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)

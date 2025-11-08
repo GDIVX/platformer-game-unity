@@ -10313,6 +10313,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   _movementStats: {fileID: 11400000, guid: cd4dd93a22fe473498ea57d571d841a0, type: 2}
+  _movementEventBus: {fileID: 11400000, guid: 443eef3f82f9a194295170f58cb6f3d3, type: 2}
   _feetCollider: {fileID: 1382383813}
   _bodyCollider: {fileID: 648492758}
   OnJump:
@@ -10361,6 +10362,10 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  _serializedAbilities: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!114 &1544233368
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
 using System;
 using Runtime.Player.Movement;
+using Runtime.Player.Movement.Events;
 using Runtime.Player.Movement.Controllers;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -22,7 +23,8 @@ namespace Runtime.Player.Movement.States
             UnityEvent onMoveStopped,
             UnityEvent onMoveFullyStopped,
             UnityEvent<bool> onTurn,
-            UnityEvent<float> onLanded)
+            UnityEvent<float> onLanded,
+            MovementEventBus movementEventBus)
         {
             Stats = stats;
             Rigidbody = rigidbody;
@@ -36,6 +38,7 @@ namespace Runtime.Player.Movement.States
             OnMoveFullyStoppedEvent = onMoveFullyStopped;
             OnTurnEvent = onTurn;
             OnLandedEvent = onLanded;
+            EventBus = movementEventBus;
 
             RuntimeData = new PlayerMovementRuntimeData
             {
@@ -87,6 +90,7 @@ namespace Runtime.Player.Movement.States
         public UnityEvent OnMoveStoppedEvent { get; }
         public UnityEvent OnMoveFullyStoppedEvent { get; }
         public UnityEvent<float> OnLandedEvent { get; }
+        public MovementEventBus EventBus { get; }
 
         [ShowInInspector, ReadOnly] public PlayerMovementRuntimeData RuntimeData { get; }
 
@@ -107,6 +111,36 @@ namespace Runtime.Player.Movement.States
         {
             Jump.UpdateTimers(deltaTime);
             Wall.UpdateTimers(deltaTime);
+        }
+
+        public void RaiseFlyStarted()
+        {
+            EventBus?.RaiseFlyStarted();
+        }
+
+        public void RaiseFlyEnded()
+        {
+            EventBus?.RaiseFlyEnded();
+        }
+
+        public void RaiseGlideStarted()
+        {
+            EventBus?.RaiseGlideStarted();
+        }
+
+        public void RaiseGlideEnded()
+        {
+            EventBus?.RaiseGlideEnded();
+        }
+
+        public void RaiseDashStarted()
+        {
+            EventBus?.RaiseDashStarted();
+        }
+
+        public void RaiseDashEnded()
+        {
+            EventBus?.RaiseDashEnded();
         }
     }
 }
