@@ -19,8 +19,7 @@ namespace Runtime.Player.Movement
         public float DirectionBufferDuration = 0.15f;
 
 
-        [Header("Flight")]
-        [Range(0f, 30f)] public float FlyDuration = 3f;
+        [Header("Flight")] [Range(0f, 30f)] public float FlyDuration = 3f;
 
         [Range(0f, 200f)] public float FlyLift = 35f;
 
@@ -35,8 +34,7 @@ namespace Runtime.Player.Movement
 
         [Header("Landing")] [Range(0, 1)] public float StickinessOnLanding = 0.1f;
 
-        [Header("Glide"), SerializeField]
-        private GlideSettings _glide = new();
+        [Header("Glide"), SerializeField] private GlideSettings _glide = new();
 
         [SerializeField, HideInInspector, FormerlySerializedAs("GlideFallSpeedMultiplier")]
         private float _legacyGlideFallSpeedMultiplier = 0.35f;
@@ -53,8 +51,7 @@ namespace Runtime.Player.Movement
         [SerializeField, HideInInspector, FormerlySerializedAs("MaxGlideDuration")]
         private float _legacyMaxGlideDuration = 1.5f;
 
-        [SerializeField, HideInInspector]
-        private bool _glideSettingsMigrated = false;
+        [SerializeField, HideInInspector] private bool _glideSettingsMigrated = false;
 
         [Header("Wall Checks")] public float WallDetectionRayLength = 0.1f;
         [Range(0.1f, 1f)] public float WallDetectionHeightScale = 0.9f;
@@ -66,9 +63,7 @@ namespace Runtime.Player.Movement
 
         [Header("Run")] [Range(1f, 100f)] public float MaxRunSpeed = 12.5f;
 
-        [Header("Dash")]
-        [Range(0f, 200f)]
-        public float DashForwardBurstSpeed = 25f;
+        [Header("Dash")] [Range(0f, 200f)] public float DashForwardBurstSpeed = 25f;
 
         [Range(0f, 5f)] public float DashDuration = 0.2f;
         [Range(0f, 5f)] public float DashGroundCooldown = 0.75f;
@@ -218,15 +213,13 @@ namespace Runtime.Player.Movement
         {
             [Range(0f, 1f)] public float FallSpeedMultiplier = 0.35f;
 
-            [FoldoutGroup("Glide/Horizontal"), Range(0.01f, 50f)]
             public float HorizontalAcceleration = 5f;
 
-            [FoldoutGroup("Glide/Horizontal"), Range(0.01f, 50f)]
             public float HorizontalDeceleration = 10f;
 
-            [FoldoutGroup("Glide/Duration")] public bool LimitDuration = false;
+            public bool LimitDuration = false;
 
-            [FoldoutGroup("Glide/Duration"), ShowIf(nameof(LimitDuration)), MinValue(0f)]
+            [ShowIf(nameof(LimitDuration)), MinValue(0f)]
             public float MaxDuration = 1.5f;
         }
     }

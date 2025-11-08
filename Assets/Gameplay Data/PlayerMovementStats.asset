@@ -44,6 +44,18 @@ MonoBehaviour:
   FlyExitHangDuration: 0.25
   FlyRegenerationRate: 1
   StickinessOnLanding: 0.15
+  _glide:
+    FallSpeedMultiplier: 0.35
+    HorizontalAcceleration: 5
+    HorizontalDeceleration: 10
+    LimitDuration: 0
+    MaxDuration: 1.5
+  _legacyGlideFallSpeedMultiplier: 0.35
+  _legacyGlideHorizontalAcceleration: 5
+  _legacyGlideHorizontalDeceleration: 10
+  _legacyLimitGlideDuration: 0
+  _legacyMaxGlideDuration: 1.5
+  _glideSettingsMigrated: 1
   WallDetectionRayLength: 0.1
   WallDetectionHeightScale: 0.9
   DebugShowWallChecks: 1
