@@ -37,6 +37,12 @@ MonoBehaviour:
     <useSimulationMove>k__BackingField: 0
     <useAttachedTriggers>k__BackingField: 0
   DirectionBufferDuration: 0.1
+  FlyDuration: 1.5
+  FlyLift: 115
+  FlyAirAccelerationOverride: 12
+  FlyAirDecelerationOverride: 25
+  FlyExitHangDuration: 0.25
+  FlyRegenerationRate: 1
   StickinessOnLanding: 0.15
   WallDetectionRayLength: 0.1
   WallDetectionHeightScale: 0.9
