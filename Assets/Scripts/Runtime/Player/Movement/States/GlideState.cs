@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Runtime.Player.Movement.States
 {
-    public class FallingState : PlayerMovementStateBase
+    public class GlideState : PlayerMovementStateBase
     {
-        public FallingState(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
+        public GlideState(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
             : base(context, stateMachine)
         {
         }
@@ -13,9 +13,25 @@ namespace Runtime.Player.Movement.States
         public override void OnEnter()
         {
             var data = Context.RuntimeData;
-            data.IsJumping = data.JumpsCount > 0;
-            Context.Jump.NotifyFallStarted();
-            Context.Jump.InvokeFallEvent();
+            var glideData = data.Glide;
+            glideData.IsGliding = true;
+            glideData.ElapsedTime = 0f;
+            data.IsFalling = true;
+            Context.RaiseGlideStarted();
+        }
+
+        public override void OnExit()
+        {
+            var data = Context.RuntimeData;
+            var glideData = data.Glide;
+
+            if (!glideData.IsGliding)
+            {
+                return;
+            }
+
+            glideData.Reset();
+            Context.RaiseGlideEnded();
         }
 
         public override void HandleInput()
@@ -60,9 +76,9 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
-            if (ShouldStartGlide(data))
+            if (!data.JumpHeld)
             {
-                StateMachine.ChangeState<GlideState>();
+                StateMachine.ChangeState<FallingState>();
                 return;
             }
 
@@ -81,13 +97,32 @@ namespace Runtime.Player.Movement.States
         public override void FixedTick()
         {
             float fixedDeltaTime = Time.fixedDeltaTime;
+            var data = Context.RuntimeData;
+            var glideData = data.Glide;
+
+            float acceleration = glideData.Acceleration > 0f
+                ? glideData.Acceleration
+                : Context.Stats.AirAcceleration;
+            float deceleration = glideData.Deceleration > 0f
+                ? glideData.Deceleration
+                : Context.Stats.AirDeceleration;
+
             Context.Horizontal.ApplyMovement(
-                Context.Stats.AirAcceleration,
-                Context.Stats.AirDeceleration,
+                acceleration,
+                deceleration,
                 fixedDeltaTime);
+
             Context.Jump.ApplyFall(fixedDeltaTime);
-            Context.Jump.ClampVerticalVelocity();
+
+            float multiplier = glideData.FallSpeedMultiplier > 0f
+                ? glideData.FallSpeedMultiplier
+                : 1f;
+            float maxFallSpeed = Context.Stats.MaxFallSpeed * multiplier;
+            float maxRiseSpeed = Context.Stats.MaxRiseSpeed;
+            data.VerticalVelocity = Mathf.Clamp(data.VerticalVelocity, -maxFallSpeed, maxRiseSpeed);
             Context.Jump.ApplyVerticalVelocity();
+
+            glideData.ElapsedTime += fixedDeltaTime;
 
             if (Context.Wall.ShouldStartWallSlide())
             {
@@ -95,11 +130,21 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
-            var data = Context.RuntimeData;
-
-            if (ShouldStartGlide(data))
+            if (glideData.MaxDuration > 0f && glideData.ElapsedTime >= glideData.MaxDuration)
             {
-                StateMachine.ChangeState<GlideState>();
+                StateMachine.ChangeState<FallingState>();
+                return;
+            }
+
+            if (!data.JumpHeld)
+            {
+                StateMachine.ChangeState<FallingState>();
+                return;
+            }
+
+            if (data.IsFastFalling)
+            {
+                StateMachine.ChangeState<FastFallingState>();
                 return;
             }
 
@@ -107,27 +152,6 @@ namespace Runtime.Player.Movement.States
             {
                 StateMachine.ChangeState<GroundedState>();
             }
-        }
-
-        private bool ShouldStartGlide(PlayerMovementRuntimeData data)
-        {
-            if (data == null)
-            {
-                return false;
-            }
-
-            if (!data.JumpHeld || data.IsGrounded || data.VerticalVelocity >= 0f || data.IsFastFalling)
-            {
-                return false;
-            }
-
-            var glideData = data.Glide;
-            if (glideData == null)
-            {
-                return false;
-            }
-
-            return StateMachine.GetState<GlideState>() != null;
         }
     }
 }

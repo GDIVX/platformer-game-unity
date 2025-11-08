@@ -1,6 +1,7 @@
 using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Runtime.Player.Movement
 {
@@ -19,6 +20,27 @@ namespace Runtime.Player.Movement
 
 
         [Header("Landing")] [Range(0, 1)] public float StickinessOnLanding = 0.1f;
+
+        [Header("Glide"), SerializeField]
+        private GlideSettings _glide = new();
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("GlideFallSpeedMultiplier")]
+        private float _legacyGlideFallSpeedMultiplier = 0.35f;
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("GlideHorizontalAcceleration")]
+        private float _legacyGlideHorizontalAcceleration = 5f;
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("GlideHorizontalDeceleration")]
+        private float _legacyGlideHorizontalDeceleration = 10f;
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("LimitGlideDuration")]
+        private bool _legacyLimitGlideDuration = false;
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("MaxGlideDuration")]
+        private float _legacyMaxGlideDuration = 1.5f;
+
+        [SerializeField, HideInInspector]
+        private bool _glideSettingsMigrated = false;
 
         [Header("Wall Checks")] public float WallDetectionRayLength = 0.1f;
         [Range(0.1f, 1f)] public float WallDetectionHeightScale = 0.9f;
@@ -72,11 +94,21 @@ namespace Runtime.Player.Movement
         // [ShowInInspector, ReadOnly] public float AdjustmentFactor { get; private set; }
 
         public WallSlideSettings WallSlide => _wallSlide;
+        public GlideSettings Glide => _glide;
 
         private void OnEnable()
         {
+            MigrateLegacyGlideSettings();
             CalculateValues();
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            MigrateLegacyGlideSettings();
+            CalculateValues();
+        }
+#endif
 
         private void CalculateValues()
         {
@@ -136,6 +168,41 @@ namespace Runtime.Player.Movement
             {
                 CalculatedGravity = baseGravity * GravityMultiplier;
             }
+        }
+
+        private void MigrateLegacyGlideSettings()
+        {
+            if (_glideSettingsMigrated)
+            {
+                return;
+            }
+
+            _glide ??= new GlideSettings();
+
+            _glide.FallSpeedMultiplier = _legacyGlideFallSpeedMultiplier;
+            _glide.HorizontalAcceleration = _legacyGlideHorizontalAcceleration;
+            _glide.HorizontalDeceleration = _legacyGlideHorizontalDeceleration;
+            _glide.LimitDuration = _legacyLimitGlideDuration;
+            _glide.MaxDuration = _legacyMaxGlideDuration;
+
+            _glideSettingsMigrated = true;
+        }
+
+        [Serializable]
+        public class GlideSettings
+        {
+            [Range(0f, 1f)] public float FallSpeedMultiplier = 0.35f;
+
+            [FoldoutGroup("Glide/Horizontal"), Range(0.01f, 50f)]
+            public float HorizontalAcceleration = 5f;
+
+            [FoldoutGroup("Glide/Horizontal"), Range(0.01f, 50f)]
+            public float HorizontalDeceleration = 10f;
+
+            [FoldoutGroup("Glide/Duration")] public bool LimitDuration = false;
+
+            [FoldoutGroup("Glide/Duration"), ShowIf(nameof(LimitDuration)), MinValue(0f)]
+            public float MaxDuration = 1.5f;
         }
     }
 }
