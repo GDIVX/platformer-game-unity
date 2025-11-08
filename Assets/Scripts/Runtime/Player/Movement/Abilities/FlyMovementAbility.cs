@@ -5,12 +5,13 @@ using UnityEngine;
 
 namespace Runtime.Player.Movement.Abilities
 {
-    [Serializable]
-    public class FlyMovementAbility : IMovementAbility
+    [CreateAssetMenu(menuName = "Player/Movement/Abilities/Fly", fileName = "FlyMovementAbility")]
+
+    public class FlyMovementAbility : MovementAbility
     {
         private FlyState _flyState;
 
-        public void Initialize(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
+        public override void Initialize(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
         {
             if (context == null)
             {
@@ -28,7 +29,7 @@ namespace Runtime.Player.Movement.Abilities
             data.IsFlying = false;
         }
 
-        public IEnumerable<IPlayerMovementState> CreateStates(
+        public override IEnumerable<IPlayerMovementState> CreateStates(
             PlayerMovementContext context,
             PlayerMovementStateMachine stateMachine)
         {
@@ -42,24 +43,19 @@ namespace Runtime.Player.Movement.Abilities
             return new[] { _flyState };
         }
 
-        public IEnumerable<IPlayerMovementModifier> CreateModifiers(PlayerMovementContext context)
+        public override IEnumerable<IPlayerMovementModifier> CreateModifiers(PlayerMovementContext context)
         {
             return Array.Empty<IPlayerMovementModifier>();
         }
 
-        public IEnumerable<Func<PlayerMovementContext, bool>> CreateActivationConditions(PlayerMovementContext context)
+        public override IEnumerable<Func<PlayerMovementContext, bool>> CreateActivationConditions(PlayerMovementContext context)
         {
             return Array.Empty<Func<PlayerMovementContext, bool>>();
         }
 
-        public void OnAbilityEnabled(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
+        public override void OnAbilityEnabled(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
         {
-            if (context == null)
-            {
-                return;
-            }
-
-            var data = context.RuntimeData;
+            var data = context?.RuntimeData;
             if (data == null)
             {
                 return;
@@ -69,7 +65,7 @@ namespace Runtime.Player.Movement.Abilities
             data.FlightHangTimer = 0f;
         }
 
-        public void OnAbilityDisabled(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
+        public override void OnAbilityDisabled(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
         {
             if (context == null)
             {
