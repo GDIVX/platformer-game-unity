@@ -4,6 +4,12 @@ namespace Runtime.Player.Movement.States
 {
     public class WallSlideState : PlayerMovementStateBase
     {
+        private const float JumpBufferIncreaseTolerance = 0.0001f;
+
+        private bool _hasPendingWallJump;
+        private float _pendingWallJumpWaitTimer;
+        private float _lastJumpBufferTime;
+
         public WallSlideState(PlayerMovementContext context, PlayerMovementStateMachine stateMachine)
             : base(context, stateMachine)
         {
@@ -15,20 +21,21 @@ namespace Runtime.Player.Movement.States
             Context.IsFalling = true;
             Context.IsFastFalling = false;
             Context.IsJumping = false;
+
+            ResetPendingWallJump();
         }
 
         public override void OnExit()
         {
             Context.IsWallSliding = false;
+
+            ResetPendingWallJump();
         }
 
         public override void HandleInput()
         {
-            if (Context.JumpBufferTimer > 0f && Context.WallDirection != 0)
+            if (TryHandleBufferedWallJump())
             {
-                bool longJump = Context.WantsToMoveAwayFromWall;
-                Context.PerformWallJump(longJump);
-                StateMachine.ChangeState<JumpingState>();
                 return;
             }
 
@@ -77,6 +84,84 @@ namespace Runtime.Player.Movement.States
             Context.ApplyWallSlideHorizontal(settings, fixedDeltaTime);
             Context.ApplyWallSlideVertical(settings, fixedDeltaTime);
             Context.ApplyVerticalVelocity();
+        }
+
+        private bool TryHandleBufferedWallJump()
+        {
+            bool hasWall = Context.WallDirection != 0;
+            bool jumpBuffered = Context.JumpBufferTimer > 0f;
+            bool awayIntent = Context.WantsToMoveAwayFromWall || Context.DirectionBufferTimer > 0f;
+
+            if (!hasWall)
+            {
+                ResetPendingWallJump();
+                return false;
+            }
+
+            if (jumpBuffered && awayIntent)
+            {
+                PerformBufferedWallJump(true);
+                return true;
+            }
+
+            if (!_hasPendingWallJump)
+            {
+                if (!jumpBuffered)
+                {
+                    return false;
+                }
+
+                StartPendingWallJump();
+            }
+            else if (jumpBuffered && Context.JumpBufferTimer > _lastJumpBufferTime + JumpBufferIncreaseTolerance)
+            {
+                StartPendingWallJump();
+            }
+
+            if (awayIntent)
+            {
+                PerformBufferedWallJump(true);
+                return true;
+            }
+
+            float consumedBuffer = Mathf.Max(0f, _lastJumpBufferTime - Context.JumpBufferTimer);
+            if (consumedBuffer > 0f || !jumpBuffered)
+            {
+                _pendingWallJumpWaitTimer = Mathf.Max(0f, _pendingWallJumpWaitTimer - consumedBuffer);
+            }
+
+            _lastJumpBufferTime = Context.JumpBufferTimer;
+
+            if (_pendingWallJumpWaitTimer <= 0f || !jumpBuffered)
+            {
+                PerformBufferedWallJump(false);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void StartPendingWallJump()
+        {
+            _hasPendingWallJump = true;
+            _lastJumpBufferTime = Context.JumpBufferTimer;
+
+            float waitWindow = Mathf.Max(0f, Context.Stats.DirectionBufferDuration);
+            _pendingWallJumpWaitTimer = Mathf.Min(waitWindow, Context.JumpBufferTimer);
+        }
+
+        private void PerformBufferedWallJump(bool isLong)
+        {
+            ResetPendingWallJump();
+            Context.PerformWallJump(isLong);
+            StateMachine.ChangeState<JumpingState>();
+        }
+
+        private void ResetPendingWallJump()
+        {
+            _hasPendingWallJump = false;
+            _pendingWallJumpWaitTimer = 0f;
+            _lastJumpBufferTime = 0f;
         }
     }
 }
