@@ -14,7 +14,7 @@ namespace Runtime.Player.Camera
 
         public void ShapedForce()
         {
-            var airTime = _playerMovement.Context.AirTime;
+            var airTime = _playerMovement.Context.RuntimeData.AirTime;
             var relation = Mathf.InverseLerp(0, _maxAirTime, airTime);
             var relativeForce = _curve.Evaluate(relation);
             OnShapedForce.Invoke(relativeForce);

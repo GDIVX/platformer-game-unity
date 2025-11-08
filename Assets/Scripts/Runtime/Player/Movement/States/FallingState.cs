@@ -11,58 +11,61 @@ namespace Runtime.Player.Movement.States
 
         public override void OnEnter()
         {
-            Context.IsJumping = Context.JumpsCount > 0;
-            Context.NotifyFallStarted();
-            Context.InvokeFallEvent();
+            var data = Context.RuntimeData;
+            data.IsJumping = data.JumpsCount > 0;
+            Context.Jump.NotifyFallStarted();
+            Context.Jump.InvokeFallEvent();
         }
 
         public override void HandleInput()
         {
-            if (Context.JumpBufferTimer > 0f)
+            var data = Context.RuntimeData;
+
+            if (data.JumpBufferTimer > 0f)
             {
-                if (Context.CoyoteTimer > 0f && Context.JumpsCount == 0)
+                if (data.CoyoteTimer > 0f && data.JumpsCount == 0)
                 {
-                    if (Context.JumpReleasedDuringBuffer)
+                    if (data.JumpReleasedDuringBuffer)
                     {
-                        Context.FastFallReleaseSpeed = Context.VerticalVelocity;
+                        data.FastFallReleaseSpeed = data.VerticalVelocity;
                     }
 
-                    Context.IsFastFalling = false;
-                    Context.InitiateJump(1);
+                    data.IsFastFalling = false;
+                    Context.Jump.InitiateJump(1);
                     StateMachine.ChangeState<JumpingState>();
                     return;
                 }
 
-                if (Context.JumpsCount == 0 && Context.Stats.NumberOfJumpsAllowed >= 2)
+                if (data.JumpsCount == 0 && Context.Stats.NumberOfJumpsAllowed >= 2)
                 {
-                    Context.IsFastFalling = false;
-                    Context.InitiateJump(2);
+                    data.IsFastFalling = false;
+                    Context.Jump.InitiateJump(2);
                     StateMachine.ChangeState<JumpingState>();
                     return;
                 }
 
-                if (Context.JumpsCount > 0 && Context.JumpsCount < Context.Stats.NumberOfJumpsAllowed)
+                if (data.JumpsCount > 0 && data.JumpsCount < Context.Stats.NumberOfJumpsAllowed)
                 {
-                    Context.IsFastFalling = false;
-                    Context.InitiateJump(1);
+                    data.IsFastFalling = false;
+                    Context.Jump.InitiateJump(1);
                     StateMachine.ChangeState<JumpingState>();
                     return;
                 }
             }
 
-            if (Context.ShouldStartWallSlide())
+            if (Context.Wall.ShouldStartWallSlide())
             {
                 StateMachine.ChangeState<WallSlideState>();
                 return;
             }
 
-            if (Context.IsFastFalling)
+            if (data.IsFastFalling)
             {
                 StateMachine.ChangeState<FastFallingState>();
                 return;
             }
 
-            if (Context.IsGrounded && Context.VerticalVelocity <= 0f)
+            if (data.IsGrounded && data.VerticalVelocity <= 0f)
             {
                 StateMachine.ChangeState<GroundedState>();
             }
@@ -70,18 +73,23 @@ namespace Runtime.Player.Movement.States
 
         public override void FixedTick()
         {
-            Context.ApplyHorizontalMovement(Context.Stats.AirAcceleration, Context.Stats.AirDeceleration);
-            Context.ApplyFall(Time.fixedDeltaTime);
-            Context.ClampVerticalVelocity();
-            Context.ApplyVerticalVelocity();
+            float fixedDeltaTime = Time.fixedDeltaTime;
+            Context.Horizontal.ApplyMovement(
+                Context.Stats.AirAcceleration,
+                Context.Stats.AirDeceleration,
+                fixedDeltaTime);
+            Context.Jump.ApplyFall(fixedDeltaTime);
+            Context.Jump.ClampVerticalVelocity();
+            Context.Jump.ApplyVerticalVelocity();
 
-            if (Context.ShouldStartWallSlide())
+            if (Context.Wall.ShouldStartWallSlide())
             {
                 StateMachine.ChangeState<WallSlideState>();
                 return;
             }
 
-            if (Context.IsGrounded && Context.VerticalVelocity <= 0f)
+            var data = Context.RuntimeData;
+            if (data.IsGrounded && data.VerticalVelocity <= 0f)
             {
                 StateMachine.ChangeState<GroundedState>();
             }
