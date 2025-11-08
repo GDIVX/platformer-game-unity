@@ -88,17 +88,14 @@ namespace Runtime.Player.Movement.States
         public UnityEvent OnMoveFullyStoppedEvent { get; }
         public UnityEvent<float> OnLandedEvent { get; }
 
-        [ShowInInspector, ReadOnly]
-        public PlayerMovementRuntimeData RuntimeData { get; }
+        [ShowInInspector, ReadOnly] public PlayerMovementRuntimeData RuntimeData { get; }
 
-        [ShowInInspector, ReadOnly]
-        public HorizontalMovementController Horizontal { get; }
+        [ShowInInspector, ReadOnly] public HorizontalMovementController Horizontal { get; }
 
-        [ShowInInspector, ReadOnly]
-        public JumpController Jump { get; }
+        [ShowInInspector, ReadOnly] public JumpController Jump { get; }
 
-        [ShowInInspector, ReadOnly]
-        public WallInteractionController Wall { get; }
+        [ShowInInspector, ReadOnly] public WallInteractionController Wall { get; }
+
 
         public void SetInput(Vector2 moveInput, bool runHeld, bool jumpPressed, bool jumpHeld, bool jumpReleased)
         {
