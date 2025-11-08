@@ -21,6 +21,11 @@ namespace Runtime.Player.Movement.States
         {
             var data = Context.RuntimeData;
 
+            if (TryEnterDashState())
+            {
+                return;
+            }
+
             if (data.JumpBufferTimer > 0f)
             {
                 if (data.CoyoteTimer > 0f && data.JumpsCount == 0)

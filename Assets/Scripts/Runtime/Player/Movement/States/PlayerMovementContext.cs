@@ -111,6 +111,32 @@ namespace Runtime.Player.Movement.States
         {
             Jump.UpdateTimers(deltaTime);
             Wall.UpdateTimers(deltaTime);
+
+            var data = RuntimeData;
+            if (data == null)
+            {
+                return;
+            }
+
+            if (data.DashTimer > 0f)
+            {
+                data.DashTimer = Mathf.Max(0f, data.DashTimer - deltaTime);
+            }
+
+            if (data.DashCooldownTimer > 0f)
+            {
+                data.DashCooldownTimer = Mathf.Max(0f, data.DashCooldownTimer - deltaTime);
+            }
+
+            if (data.AirDashCooldownTimer > 0f)
+            {
+                data.AirDashCooldownTimer = Mathf.Max(0f, data.AirDashCooldownTimer - deltaTime);
+            }
+
+            if (data.DashStopTimer > 0f)
+            {
+                data.DashStopTimer = Mathf.Max(0f, data.DashStopTimer - deltaTime);
+            }
         }
 
         public void RaiseFlyStarted()

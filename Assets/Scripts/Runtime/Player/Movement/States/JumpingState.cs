@@ -20,6 +20,11 @@ namespace Runtime.Player.Movement.States
         {
             var data = Context.RuntimeData;
 
+            if (TryEnterDashState())
+            {
+                return;
+            }
+
             if (data.JumpReleased)
             {
                 Context.Jump.AttemptJumpCut();

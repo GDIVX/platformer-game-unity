@@ -135,5 +135,35 @@ namespace Runtime.Player.Movement
 
         [FoldoutGroup("Input"), ShowInInspector, ReadOnly]
         public bool JumpReleased { get; set; }
+
+        // ---------------------------- //
+        // ────────── DASH ──────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public bool IsDashing { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public bool DashRequested { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public bool DashRequestFromGround { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public int DashDirection { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float DashTimer { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float DashCooldownTimer { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float AirDashCooldownTimer { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public int AirDashCount { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float DashStopTimer { get; set; }
     }
 }
