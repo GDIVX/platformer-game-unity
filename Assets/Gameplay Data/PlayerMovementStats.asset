@@ -56,6 +56,13 @@ MonoBehaviour:
     WallJumpDownwardCancelMultiplier: 0
     WallDetectionVerticalShrink: 0.15
   MaxRunSpeed: 13.5
+  DashForwardBurstSpeed: 25
+  DashDuration: 0.15
+  DashGroundCooldown: 0.5
+  DashAirDashLimit: 1
+  DashAirDashCooldown: 0.5
+  DashPostDashStopDuration: 0.05
+  DashDoubleTapWindow: 0.2
   GroundLayer:
     serializedVersion: 2
     m_Bits: 64

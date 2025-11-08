@@ -30,6 +30,17 @@ namespace Runtime.Player.Movement
 
         [Header("Run")] [Range(1f, 100f)] public float MaxRunSpeed = 12.5f;
 
+        [Header("Dash")]
+        [Range(0f, 200f)]
+        public float DashForwardBurstSpeed = 25f;
+
+        [Range(0f, 5f)] public float DashDuration = 0.2f;
+        [Range(0f, 5f)] public float DashGroundCooldown = 0.75f;
+        [Range(0, 5)] public int DashAirDashLimit = 1;
+        [Range(0f, 5f)] public float DashAirDashCooldown = 0.75f;
+        [Range(0f, 1f)] public float DashPostDashStopDuration = 0.1f;
+        [Range(0f, 1f)] public float DashDoubleTapWindow = 0.2f;
+
         [Header("Grounded/Collision Checks")] public LayerMask GroundLayer;
         public float GroundDetectionRayLength = 0.02f;
         public float HeadDetectionRayLength = 0.02f;

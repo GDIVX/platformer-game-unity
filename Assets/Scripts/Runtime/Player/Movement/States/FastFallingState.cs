@@ -22,6 +22,11 @@ namespace Runtime.Player.Movement.States
         {
             var data = Context.RuntimeData;
 
+            if (TryEnterDashState())
+            {
+                return;
+            }
+
             if (Context.Wall.ShouldStartWallSlide())
             {
                 data.IsFastFalling = false;
