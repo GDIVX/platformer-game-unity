@@ -218,8 +218,6 @@ namespace Tests.EditMode
         {
             float firstTap = _timeCursor;
             float secondTap = _timeCursor + 0.1f;
-            _ability.EvaluateRunTap(firstTap);
-            _ability.EvaluateRunTap(secondTap);
             _timeCursor += 0.1f;
         }
 

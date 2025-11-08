@@ -122,6 +122,7 @@ namespace Runtime.Player.Movement.States
 
             float speed = Context.Stats.DashForwardBurstSpeed * _dashDirection;
             Vector2 velocity = new Vector2(speed, 0f);
+            Context.RuntimeData.VerticalVelocity = 0;
             rb.linearVelocity = velocity;
 
             var data = Context.RuntimeData;
