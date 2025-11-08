@@ -30,5 +30,22 @@ namespace Runtime.Player.Movement.States
         public virtual void FixedTick()
         {
         }
+
+        protected bool TryEnterDashState()
+        {
+            var data = Context?.RuntimeData;
+            if (data == null || !data.DashRequested)
+            {
+                return false;
+            }
+
+            bool changed = StateMachine?.ChangeState(typeof(DashState)) ?? false;
+            if (!changed && data != null)
+            {
+                data.DashRequested = false;
+            }
+
+            return changed;
+        }
     }
 }

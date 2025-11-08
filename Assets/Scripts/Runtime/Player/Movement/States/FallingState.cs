@@ -22,6 +22,11 @@ namespace Runtime.Player.Movement.States
         {
             var data = Context.RuntimeData;
 
+            if (TryEnterDashState())
+            {
+                return;
+            }
+
             if (data.JumpBufferTimer > 0f)
             {
                 if (data.CoyoteTimer > 0f && data.JumpsCount == 0)
@@ -63,6 +68,15 @@ namespace Runtime.Player.Movement.States
             if (ShouldStartGlide(data))
             {
                 StateMachine.ChangeState<GlideState>();
+            }
+            
+            if (data.JumpHeld &&
+                data.JumpsCount >= Context.Stats.NumberOfJumpsAllowed &&
+                data.FlightTimeRemaining > 0f &&
+                data.FlightHangTimer <= 0f &&
+                StateMachine.GetState<FlyState>() != null)
+            {
+                StateMachine.ChangeState<FlyState>();
                 return;
             }
 

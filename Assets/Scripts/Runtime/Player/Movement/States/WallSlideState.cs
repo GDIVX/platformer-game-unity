@@ -27,6 +27,11 @@ namespace Runtime.Player.Movement.States
         {
             var data = Context.RuntimeData;
 
+            if (TryEnterDashState())
+            {
+                return;
+            }
+
             if (data.JumpBufferTimer > 0f && data.WallDirection != 0)
             {
                 bool longJump = data.WantsToMoveAwayFromWall;

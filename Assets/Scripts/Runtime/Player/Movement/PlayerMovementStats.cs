@@ -19,6 +19,20 @@ namespace Runtime.Player.Movement
         public float DirectionBufferDuration = 0.15f;
 
 
+        [Header("Flight")]
+        [Range(0f, 30f)] public float FlyDuration = 3f;
+
+        [Range(0f, 200f)] public float FlyLift = 35f;
+
+        [Range(0f, 100f)] public float FlyAirAccelerationOverride = 12f;
+
+        [Range(0f, 100f)] public float FlyAirDecelerationOverride = 25f;
+
+        [Range(0f, 3f)] public float FlyExitHangDuration = 0.25f;
+
+        [Range(0f, 30f)] public float FlyRegenerationRate = 2f;
+
+
         [Header("Landing")] [Range(0, 1)] public float StickinessOnLanding = 0.1f;
 
         [Header("Glide"), SerializeField]
@@ -51,6 +65,17 @@ namespace Runtime.Player.Movement
 
 
         [Header("Run")] [Range(1f, 100f)] public float MaxRunSpeed = 12.5f;
+
+        [Header("Dash")]
+        [Range(0f, 200f)]
+        public float DashForwardBurstSpeed = 25f;
+
+        [Range(0f, 5f)] public float DashDuration = 0.2f;
+        [Range(0f, 5f)] public float DashGroundCooldown = 0.75f;
+        [Range(0, 5)] public int DashAirDashLimit = 1;
+        [Range(0f, 5f)] public float DashAirDashCooldown = 0.75f;
+        [Range(0f, 1f)] public float DashPostDashStopDuration = 0.1f;
+        [Range(0f, 1f)] public float DashDoubleTapWindow = 0.2f;
 
         [Header("Grounded/Collision Checks")] public LayerMask GroundLayer;
         public float GroundDetectionRayLength = 0.02f;

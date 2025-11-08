@@ -72,6 +72,22 @@ namespace Runtime.Player.Movement
         // ---------------------------- //
         [ShowInInspector, ReadOnly]
         public GlideRuntimeData Glide { get; } = new GlideRuntimeData();
+        // ───────── FLIGHT ─────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightTimeRemaining { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightTimeMax { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightRegenProgress { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightHangTimer { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public bool IsFlying { get; set; }
 
         // ---------------------------- //
         // ───────── GROUND ─────────── //
@@ -169,5 +185,34 @@ namespace Runtime.Player.Movement
                 ElapsedTime = 0f;
             }
         }
+        // ---------------------------- //
+        // ────────── DASH ──────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public bool IsDashing { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public bool DashRequested { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public bool DashRequestFromGround { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public int DashDirection { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float DashTimer { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float DashCooldownTimer { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float AirDashCooldownTimer { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public int AirDashCount { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float DashStopTimer { get; set; }
     }
 }

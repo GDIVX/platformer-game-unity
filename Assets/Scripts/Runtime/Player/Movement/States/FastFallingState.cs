@@ -22,10 +22,26 @@ namespace Runtime.Player.Movement.States
         {
             var data = Context.RuntimeData;
 
+            if (TryEnterDashState())
+            {
+                return;
+            }
+
             if (Context.Wall.ShouldStartWallSlide())
             {
                 data.IsFastFalling = false;
                 StateMachine.ChangeState<WallSlideState>();
+                return;
+            }
+
+            if (data.JumpHeld &&
+                data.JumpsCount >= Context.Stats.NumberOfJumpsAllowed &&
+                data.FlightTimeRemaining > 0f &&
+                data.FlightHangTimer <= 0f &&
+                StateMachine.GetState<FlyState>() != null)
+            {
+                data.IsFastFalling = false;
+                StateMachine.ChangeState<FlyState>();
                 return;
             }
 
