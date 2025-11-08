@@ -38,7 +38,8 @@ namespace Tests.EditMode
                 new UnityEvent(),
                 new UnityEvent(),
                 new UnityEvent<bool>(),
-                new UnityEvent<float>());
+                new UnityEvent<float>(),
+                null);
         }
 
         [TearDown]
