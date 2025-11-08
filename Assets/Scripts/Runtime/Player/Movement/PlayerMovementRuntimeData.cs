@@ -68,6 +68,24 @@ namespace Runtime.Player.Movement
         public float FastFallReleaseSpeed { get; set; }
 
         // ---------------------------- //
+        // ───────── FLIGHT ─────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightTimeRemaining { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightTimeMax { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightRegenProgress { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightHangTimer { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public bool IsFlying { get; set; }
+
+        // ---------------------------- //
         // ───────── GROUND ─────────── //
         // ---------------------------- //
         [FoldoutGroup("Ground"), ShowInInspector, ReadOnly]

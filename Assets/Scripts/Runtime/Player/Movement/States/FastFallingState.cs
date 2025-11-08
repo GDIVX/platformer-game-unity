@@ -34,6 +34,17 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
+            if (data.JumpHeld &&
+                data.JumpsCount >= Context.Stats.NumberOfJumpsAllowed &&
+                data.FlightTimeRemaining > 0f &&
+                data.FlightHangTimer <= 0f &&
+                StateMachine.GetState<FlyState>() != null)
+            {
+                data.IsFastFalling = false;
+                StateMachine.ChangeState<FlyState>();
+                return;
+            }
+
             if (data.JumpBufferTimer > 0f && data.JumpsCount < Context.Stats.NumberOfJumpsAllowed)
             {
                 data.IsFastFalling = false;

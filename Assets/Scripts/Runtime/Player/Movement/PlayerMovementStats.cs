@@ -18,6 +18,20 @@ namespace Runtime.Player.Movement
         public float DirectionBufferDuration = 0.15f;
 
 
+        [Header("Flight")]
+        [Range(0f, 30f)] public float FlyDuration = 3f;
+
+        [Range(0f, 200f)] public float FlyLift = 35f;
+
+        [Range(0f, 100f)] public float FlyAirAccelerationOverride = 12f;
+
+        [Range(0f, 100f)] public float FlyAirDecelerationOverride = 25f;
+
+        [Range(0f, 3f)] public float FlyExitHangDuration = 0.25f;
+
+        [Range(0f, 30f)] public float FlyRegenerationRate = 2f;
+
+
         [Header("Landing")] [Range(0, 1)] public float StickinessOnLanding = 0.1f;
 
         [Header("Wall Checks")] public float WallDetectionRayLength = 0.1f;

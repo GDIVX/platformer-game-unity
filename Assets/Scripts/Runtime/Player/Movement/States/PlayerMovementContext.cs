@@ -76,6 +76,8 @@ namespace Runtime.Player.Movement.States
                 Jump);
 
             Jump.ConfigureDependencies(Wall, Horizontal);
+
+            InitializeFlightRuntimeData();
         }
 
         public PlayerMovementStats Stats { get; }
@@ -112,31 +114,44 @@ namespace Runtime.Player.Movement.States
             Jump.UpdateTimers(deltaTime);
             Wall.UpdateTimers(deltaTime);
 
+            UpdateDashTimers(deltaTime);
+            UpdateFlightTimers(deltaTime);
+        }
+
+        public void RefillFlightTime()
+        {
+            SetFlightTimeRemaining(RuntimeData.FlightTimeMax);
+        }
+
+        public void SetFlightTimeRemaining(float time)
+        {
             var data = RuntimeData;
             if (data == null)
             {
                 return;
             }
 
-            if (data.DashTimer > 0f)
+            float max = SyncFlightTimeMaxWithStats();
+            if (max <= 0f)
             {
-                data.DashTimer = Mathf.Max(0f, data.DashTimer - deltaTime);
+                data.FlightTimeRemaining = 0f;
+                data.FlightRegenProgress = 0f;
+                return;
             }
 
-            if (data.DashCooldownTimer > 0f)
+            data.FlightTimeRemaining = Mathf.Clamp(time, 0f, max);
+            data.FlightRegenProgress = Mathf.Clamp01(data.FlightTimeRemaining / max);
+        }
+
+        public void AddFlightTime(float delta)
+        {
+            var data = RuntimeData;
+            if (data == null)
             {
-                data.DashCooldownTimer = Mathf.Max(0f, data.DashCooldownTimer - deltaTime);
+                return;
             }
 
-            if (data.AirDashCooldownTimer > 0f)
-            {
-                data.AirDashCooldownTimer = Mathf.Max(0f, data.AirDashCooldownTimer - deltaTime);
-            }
-
-            if (data.DashStopTimer > 0f)
-            {
-                data.DashStopTimer = Mathf.Max(0f, data.DashStopTimer - deltaTime);
-            }
+            SetFlightTimeRemaining(data.FlightTimeRemaining + delta);
         }
 
         public void RaiseFlyStarted()
@@ -167,6 +182,116 @@ namespace Runtime.Player.Movement.States
         public void RaiseDashEnded()
         {
             EventBus?.RaiseDashEnded();
+        }
+
+        private void UpdateDashTimers(float deltaTime)
+        {
+            var data = RuntimeData;
+            if (data == null)
+            {
+                return;
+            }
+
+            if (data.DashTimer > 0f)
+            {
+                data.DashTimer = Mathf.Max(0f, data.DashTimer - deltaTime);
+            }
+
+            if (data.DashCooldownTimer > 0f)
+            {
+                data.DashCooldownTimer = Mathf.Max(0f, data.DashCooldownTimer - deltaTime);
+            }
+
+            if (data.AirDashCooldownTimer > 0f)
+            {
+                data.AirDashCooldownTimer = Mathf.Max(0f, data.AirDashCooldownTimer - deltaTime);
+            }
+
+            if (data.DashStopTimer > 0f)
+            {
+                data.DashStopTimer = Mathf.Max(0f, data.DashStopTimer - deltaTime);
+            }
+        }
+
+        private void UpdateFlightTimers(float deltaTime)
+        {
+            var data = RuntimeData;
+            if (data == null)
+            {
+                return;
+            }
+
+            float flightTimeMax = SyncFlightTimeMaxWithStats();
+
+            if (flightTimeMax <= 0f)
+            {
+                data.FlightTimeRemaining = 0f;
+                data.FlightRegenProgress = 0f;
+                data.FlightHangTimer = 0f;
+                data.IsFlying = false;
+                return;
+            }
+
+            if (data.IsFlying)
+            {
+                data.FlightHangTimer = 0f;
+                data.FlightTimeRemaining = Mathf.Max(0f, data.FlightTimeRemaining - deltaTime);
+            }
+            else
+            {
+                if (data.FlightHangTimer > 0f)
+                {
+                    data.FlightHangTimer = Mathf.Max(0f, data.FlightHangTimer - deltaTime);
+                }
+
+                if (data.FlightHangTimer <= 0f && data.FlightTimeRemaining < flightTimeMax)
+                {
+                    float regenRate = Stats != null ? Mathf.Max(0f, Stats.FlyRegenerationRate) : 0f;
+                    if (regenRate > 0f)
+                    {
+                        data.FlightTimeRemaining = Mathf.Min(
+                            flightTimeMax,
+                            data.FlightTimeRemaining + regenRate * deltaTime);
+                    }
+                }
+            }
+
+            data.FlightRegenProgress = flightTimeMax > 0f
+                ? Mathf.Clamp01(data.FlightTimeRemaining / flightTimeMax)
+                : 0f;
+        }
+
+        private void InitializeFlightRuntimeData()
+        {
+            var data = RuntimeData;
+            if (data == null)
+            {
+                return;
+            }
+
+            float max = SyncFlightTimeMaxWithStats();
+            data.FlightTimeRemaining = max;
+            data.FlightRegenProgress = max > 0f ? 1f : 0f;
+            data.FlightHangTimer = 0f;
+            data.IsFlying = false;
+        }
+
+        private float SyncFlightTimeMaxWithStats()
+        {
+            var data = RuntimeData;
+            if (data == null)
+            {
+                return 0f;
+            }
+
+            float targetMax = Mathf.Max(0f, Stats != null ? Stats.FlyDuration : 0f);
+            if (!Mathf.Approximately(data.FlightTimeMax, targetMax))
+            {
+                data.FlightTimeMax = targetMax;
+                data.FlightTimeRemaining = Mathf.Clamp(data.FlightTimeRemaining, 0f, targetMax);
+            }
+
+            return data.FlightTimeMax;
         }
     }
 }
