@@ -68,6 +68,10 @@ namespace Runtime.Player.Movement
         public float FastFallReleaseSpeed { get; set; }
 
         // ---------------------------- //
+        // ───────── GLIDE ──────────── //
+        // ---------------------------- //
+        [ShowInInspector, ReadOnly]
+        public GlideRuntimeData Glide { get; } = new GlideRuntimeData();
         // ───────── FLIGHT ─────────── //
         // ---------------------------- //
         [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
@@ -154,6 +158,33 @@ namespace Runtime.Player.Movement
         [FoldoutGroup("Input"), ShowInInspector, ReadOnly]
         public bool JumpReleased { get; set; }
 
+        [Serializable]
+        public class GlideRuntimeData
+        {
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public bool IsGliding { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float ElapsedTime { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float MaxDuration { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float Acceleration { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float Deceleration { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float FallSpeedMultiplier { get; set; }
+
+            public void Reset()
+            {
+                IsGliding = false;
+                ElapsedTime = 0f;
+            }
+        }
         // ---------------------------- //
         // ────────── DASH ──────────── //
         // ---------------------------- //
