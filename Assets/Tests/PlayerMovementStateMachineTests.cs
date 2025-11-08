@@ -217,6 +217,7 @@ namespace Tests.EditMode
 
                 playerMovement.DisableAbility(ability);
 
+                Assert.IsInstanceOf<GroundedState>(playerMovement.StateMachine.CurrentState);
                 Assert.IsNull(playerMovement.StateMachine.GetState<TestAbilityState>());
 
                 playerMovement.StateMachine.ChangeState<FallingState>();

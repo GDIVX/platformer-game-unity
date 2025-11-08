@@ -96,22 +96,41 @@ namespace Runtime.Player.Movement.States
 
         public void Initialize<TState>() where TState : class, IPlayerMovementState
         {
-            CurrentState = GetState<TState>();
-            CurrentState?.OnEnter();
+            Initialize(typeof(TState));
+        }
+
+        public bool Initialize(Type stateType)
+        {
+            var state = GetState(stateType);
+            if (state == null)
+            {
+                return false;
+            }
+
+            CurrentState = state;
+            PreviousState = null;
+            CurrentState.OnEnter();
+            return true;
         }
 
         public void ChangeState<TState>() where TState : class, IPlayerMovementState
         {
-            var nextState = GetState<TState>();
+            ChangeState(typeof(TState));
+        }
+
+        public bool ChangeState(Type stateType)
+        {
+            var nextState = GetState(stateType);
             if (nextState == null || ReferenceEquals(nextState, CurrentState))
             {
-                return;
+                return false;
             }
 
             CurrentState?.OnExit();
             PreviousState = CurrentState;
             CurrentState = nextState;
             CurrentState.OnEnter();
+            return true;
         }
 
         public void HandleInput()
@@ -131,7 +150,17 @@ namespace Runtime.Player.Movement.States
 
         public TState GetState<TState>() where TState : class, IPlayerMovementState
         {
-            return _stateLookup.TryGetValue(typeof(TState), out var state) ? state as TState : null;
+            return GetState(typeof(TState)) as TState;
+        }
+
+        public IPlayerMovementState GetState(Type stateType)
+        {
+            if (stateType == null)
+            {
+                return null;
+            }
+
+            return _stateLookup.TryGetValue(stateType, out var state) ? state : null;
         }
     }
 }

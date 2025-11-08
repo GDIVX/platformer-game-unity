@@ -28,8 +28,8 @@ namespace Runtime.Player.Movement
         [FoldoutGroup("Events")] public UnityEvent<float> OnLanded;
 
         [Header("Abilities")]
-        [SerializeField]
-        private ScriptableObject[] _abilityAssets;
+        [SerializeReference]
+        private List<IMovementAbility> _serializedAbilities = new List<IMovementAbility>();
 
         [ShowInInspector, ReadOnly] public PlayerMovementContext Context { get; private set; }
 
@@ -37,7 +37,6 @@ namespace Runtime.Player.Movement
 
         private readonly List<IMovementAbility> _configuredAbilities = new List<IMovementAbility>();
         private readonly Dictionary<IMovementAbility, AbilityRuntimeData> _abilityRuntimeData = new Dictionary<IMovementAbility, AbilityRuntimeData>();
-        private readonly List<ScriptableObject> _abilityAssetInstances = new List<ScriptableObject>();
 
         private Rigidbody2D _rb;
         private PlayerMovementStateMachine _stateMachine;
@@ -72,15 +71,9 @@ namespace Runtime.Player.Movement
             DisableAllAbilities();
         }
 
-        private void OnDestroy()
-        {
-            DestroyAbilityAssetInstances();
-        }
-
         public void InitializeMovement(PlayerMovementStats stats, Collider2D feetCollider, Collider2D bodyCollider)
         {
             DisableAllAbilities();
-            DestroyAbilityAssetInstances();
 
             _movementStats = stats;
             _feetCollider = feetCollider;
@@ -179,7 +172,7 @@ namespace Runtime.Player.Movement
 
             _stateMachine = new PlayerMovementStateMachine(Context);
             RegisterDefaultStates();
-            PrepareConfiguredAbilities(true);
+            PrepareConfiguredAbilities();
             EnableConfiguredAbilities();
             _stateMachine.Initialize<GroundedState>();
         }
@@ -199,7 +192,7 @@ namespace Runtime.Player.Movement
             _stateMachine.RegisterState(new WallSlideState(Context, _stateMachine));
         }
 
-        private void PrepareConfiguredAbilities(bool rebuildAssets)
+        private void PrepareConfiguredAbilities()
         {
             _configuredAbilities.Clear();
 
@@ -211,40 +204,24 @@ namespace Runtime.Player.Movement
                 }
             }
 
-            if (!rebuildAssets)
-            {
-                foreach (var instance in _abilityAssetInstances.OfType<IMovementAbility>())
-                {
-                    _configuredAbilities.Add(instance);
-                }
-
-                return;
-            }
-
-            DestroyAbilityAssetInstances();
-
-            if (_abilityAssets == null || _abilityAssets.Length == 0)
+            if (_serializedAbilities == null || _serializedAbilities.Count == 0)
             {
                 return;
             }
 
-            foreach (var abilityAsset in _abilityAssets)
+            foreach (var ability in _serializedAbilities)
             {
-                if (abilityAsset == null || abilityAsset is not IMovementAbility)
+                if (ability == null)
                 {
                     continue;
                 }
 
-                var instance = Instantiate(abilityAsset);
-                if (instance is ScriptableObject scriptableInstance)
+                if (_configuredAbilities.Contains(ability))
                 {
-                    _abilityAssetInstances.Add(scriptableInstance);
+                    continue;
                 }
 
-                if (instance is IMovementAbility abilityInstance)
-                {
-                    _configuredAbilities.Add(abilityInstance);
-                }
+                _configuredAbilities.Add(ability);
             }
         }
 
@@ -352,11 +329,22 @@ namespace Runtime.Player.Movement
                     continue;
                 }
 
-                _stateMachine?.UnregisterState(state.GetType());
+                var stateMachine = _stateMachine;
+                if (stateMachine == null)
+                {
+                    continue;
+                }
+
+                stateMachine.UnregisterState(state.GetType());
             }
 
             ability.OnAbilityDisabled(Context, _stateMachine);
             _abilityRuntimeData.Remove(ability);
+
+            if (_stateMachine != null && _stateMachine.CurrentState == null)
+            {
+                RestoreDefaultStateIfNoneActive();
+            }
         }
 
         private void DisableAllAbilities()
@@ -373,31 +361,32 @@ namespace Runtime.Player.Movement
             }
         }
 
-        private void DestroyAbilityAssetInstances()
+        private void RestoreDefaultStateIfNoneActive()
         {
-            if (_abilityAssetInstances.Count == 0)
+            var stateMachine = _stateMachine;
+            if (stateMachine == null || stateMachine.CurrentState != null)
             {
                 return;
             }
 
-            foreach (var instance in _abilityAssetInstances)
+            if (stateMachine.GetState<GroundedState>() != null)
             {
-                if (instance == null)
+                stateMachine.ChangeState<GroundedState>();
+                return;
+            }
+
+            foreach (var state in stateMachine.RegisteredStates)
+            {
+                if (state == null)
                 {
                     continue;
                 }
 
-                if (Application.isPlaying)
+                if (stateMachine.ChangeState(state.GetType()))
                 {
-                    Destroy(instance);
-                }
-                else
-                {
-                    DestroyImmediate(instance);
+                    return;
                 }
             }
-
-            _abilityAssetInstances.Clear();
         }
 
         private void Update()
@@ -582,8 +571,8 @@ namespace Runtime.Player.Movement
                     castDistance,
                     _movementStats.GroundLayer);
 
-                Context.Wall.SetWallHit(rightHit, true);
-                Context.Wall.SetWallHit(leftHit, false);
+                Context.Wall.SetWallHit(true, rightHit);
+                Context.Wall.SetWallHit(false, leftHit);
             }
             else
             {
@@ -601,8 +590,8 @@ namespace Runtime.Player.Movement
                     castDistance,
                     _movementStats.GroundLayer);
 
-                Context.Wall.SetWallHit(rightHit, true);
-                Context.Wall.SetWallHit(leftHit, false);
+                Context.Wall.SetWallHit(true, rightHit);
+                Context.Wall.SetWallHit(false, leftHit);
             }
         }
 
