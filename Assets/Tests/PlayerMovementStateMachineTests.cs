@@ -1,10 +1,12 @@
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using Runtime.Player.Movement;
 using Runtime.Player.Movement.Abilities;
 using Runtime.Player.Movement.States;
+using Object = UnityEngine.Object;
 
 namespace Tests.EditMode
 {
@@ -199,7 +201,7 @@ namespace Tests.EditMode
             finally
             {
                 playerMovement.DisableAbility(ability);
-                ScriptableObject.DestroyImmediate(ability);
+                Object.DestroyImmediate(ability);
             }
         }
 
@@ -225,7 +227,7 @@ namespace Tests.EditMode
             }
             finally
             {
-                ScriptableObject.DestroyImmediate(ability);
+                Object.DestroyImmediate(ability);
             }
         }
 
