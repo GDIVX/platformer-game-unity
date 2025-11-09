@@ -1,6 +1,7 @@
 using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Runtime.Player.Movement
 {
@@ -18,7 +19,39 @@ namespace Runtime.Player.Movement
         public float DirectionBufferDuration = 0.15f;
 
 
+        [Header("Flight")] [Range(0f, 30f)] public float FlyDuration = 3f;
+
+        [Range(0f, 200f)] public float FlyLift = 35f;
+
+        [Range(0f, 100f)] public float FlyAirAccelerationOverride = 12f;
+
+        [Range(0f, 100f)] public float FlyAirDecelerationOverride = 25f;
+
+        [Range(0f, 3f)] public float FlyExitHangDuration = 0.25f;
+
+        [Range(0f, 30f)] public float FlyRegenerationRate = 2f;
+
+
         [Header("Landing")] [Range(0, 1)] public float StickinessOnLanding = 0.1f;
+
+        [Header("Glide"), SerializeField] private GlideSettings _glide = new();
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("GlideFallSpeedMultiplier")]
+        private float _legacyGlideFallSpeedMultiplier = 0.35f;
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("GlideHorizontalAcceleration")]
+        private float _legacyGlideHorizontalAcceleration = 5f;
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("GlideHorizontalDeceleration")]
+        private float _legacyGlideHorizontalDeceleration = 10f;
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("LimitGlideDuration")]
+        private bool _legacyLimitGlideDuration = false;
+
+        [SerializeField, HideInInspector, FormerlySerializedAs("MaxGlideDuration")]
+        private float _legacyMaxGlideDuration = 1.5f;
+
+        [SerializeField, HideInInspector] private bool _glideSettingsMigrated = false;
 
         [Header("Wall Checks")] public float WallDetectionRayLength = 0.1f;
         [Range(0.1f, 1f)] public float WallDetectionHeightScale = 0.9f;
@@ -29,6 +62,15 @@ namespace Runtime.Player.Movement
 
 
         [Header("Run")] [Range(1f, 100f)] public float MaxRunSpeed = 12.5f;
+
+        [Header("Dash")] [Range(0f, 200f)] public float DashForwardBurstSpeed = 25f;
+
+        [Range(0f, 5f)] public float DashDuration = 0.2f;
+        [Range(0f, 5f)] public float DashGroundCooldown = 0.75f;
+        [Range(0, 5)] public int DashAirDashLimit = 1;
+        [Range(0f, 5f)] public float DashAirDashCooldown = 0.75f;
+        [Range(0f, 1f)] public float DashPostDashStopDuration = 0.1f;
+        [Range(0f, 1f)] public float DashDoubleTapWindow = 0.2f;
 
         [Header("Grounded/Collision Checks")] public LayerMask GroundLayer;
         public float GroundDetectionRayLength = 0.02f;
@@ -72,11 +114,21 @@ namespace Runtime.Player.Movement
         // [ShowInInspector, ReadOnly] public float AdjustmentFactor { get; private set; }
 
         public WallSlideSettings WallSlide => _wallSlide;
+        public GlideSettings Glide => _glide;
 
         private void OnEnable()
         {
+            MigrateLegacyGlideSettings();
             CalculateValues();
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            MigrateLegacyGlideSettings();
+            CalculateValues();
+        }
+#endif
 
         private void CalculateValues()
         {
@@ -136,6 +188,39 @@ namespace Runtime.Player.Movement
             {
                 CalculatedGravity = baseGravity * GravityMultiplier;
             }
+        }
+
+        private void MigrateLegacyGlideSettings()
+        {
+            if (_glideSettingsMigrated)
+            {
+                return;
+            }
+
+            _glide ??= new GlideSettings();
+
+            _glide.FallSpeedMultiplier = _legacyGlideFallSpeedMultiplier;
+            _glide.HorizontalAcceleration = _legacyGlideHorizontalAcceleration;
+            _glide.HorizontalDeceleration = _legacyGlideHorizontalDeceleration;
+            _glide.LimitDuration = _legacyLimitGlideDuration;
+            _glide.MaxDuration = _legacyMaxGlideDuration;
+
+            _glideSettingsMigrated = true;
+        }
+
+        [Serializable]
+        public class GlideSettings
+        {
+            [Range(0f, 1f)] public float FallSpeedMultiplier = 0.35f;
+
+            public float HorizontalAcceleration = 5f;
+
+            public float HorizontalDeceleration = 10f;
+
+            public bool LimitDuration = false;
+
+            [ShowIf(nameof(LimitDuration)), MinValue(0f)]
+            public float MaxDuration = 1.5f;
         }
     }
 }

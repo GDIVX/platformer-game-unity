@@ -13,12 +13,10 @@ namespace Runtime.Player.Movement
 {
     public class PlayerMovement : MonoBehaviour
     {
-        [Header("References")]
-        [SerializeField]
+        [Header("References")] [SerializeField]
         private PlayerMovementStats _movementStats;
 
-        [SerializeField]
-        private MovementEventBus _movementEventBus;
+        [SerializeField] private MovementEventBus _movementEventBus;
 
         [SerializeField] private Collider2D _feetCollider;
         [SerializeField] private Collider2D _bodyCollider;
@@ -31,16 +29,16 @@ namespace Runtime.Player.Movement
         [FoldoutGroup("Events")] public UnityEvent<bool> OnTurn;
         [FoldoutGroup("Events")] public UnityEvent<float> OnLanded;
 
-        [Header("Abilities")]
-        [SerializeReference]
-        private List<IMovementAbility> _serializedAbilities = new List<IMovementAbility>();
+        [Header("Abilities")] [SerializeField] private List<MovementAbility> _serializedAbilities;
 
         [ShowInInspector, ReadOnly] public PlayerMovementContext Context { get; private set; }
 
         public PlayerMovementStateMachine StateMachine => _stateMachine;
 
         private readonly List<IMovementAbility> _configuredAbilities = new List<IMovementAbility>();
-        private readonly Dictionary<IMovementAbility, AbilityRuntimeData> _abilityRuntimeData = new Dictionary<IMovementAbility, AbilityRuntimeData>();
+
+        private readonly Dictionary<IMovementAbility, AbilityRuntimeData> _abilityRuntimeData =
+            new Dictionary<IMovementAbility, AbilityRuntimeData>();
 
         private Rigidbody2D _rb;
         private PlayerMovementStateMachine _stateMachine;
@@ -104,6 +102,7 @@ namespace Runtime.Player.Movement
             BuildStateMachine();
         }
 
+        [Button]
         public bool EnableAbility(IMovementAbility ability)
         {
             if (ability == null)
@@ -119,6 +118,7 @@ namespace Runtime.Player.Movement
             return EnableAbilityInternal(ability);
         }
 
+        [Button]
         public void DisableAbility(IMovementAbility ability)
         {
             if (ability == null)
@@ -604,7 +604,9 @@ namespace Runtime.Player.Movement
         {
             public readonly List<IPlayerMovementState> States = new List<IPlayerMovementState>();
             public readonly List<IPlayerMovementModifier> Modifiers = new List<IPlayerMovementModifier>();
-            public readonly List<Func<PlayerMovementContext, bool>> ActivationConditions = new List<Func<PlayerMovementContext, bool>>();
+
+            public readonly List<Func<PlayerMovementContext, bool>> ActivationConditions =
+                new List<Func<PlayerMovementContext, bool>>();
         }
     }
 }

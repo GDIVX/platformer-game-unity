@@ -22,11 +22,22 @@ namespace Runtime.Player.Movement.States
             data.IsJumping = false;
             data.IsFalling = false;
             data.IsFastFalling = false;
+            data.AirDashCount = 0;
+            data.AirDashCooldownTimer = 0f;
+            if (!data.IsDashing)
+            {
+                data.DashStopTimer = 0f;
+            }
         }
 
         public override void HandleInput()
         {
             var data = Context.RuntimeData;
+
+            if (TryEnterDashState())
+            {
+                return;
+            }
 
             if (data.JumpBufferTimer > 0f && (data.IsGrounded || data.CoyoteTimer > 0f))
             {

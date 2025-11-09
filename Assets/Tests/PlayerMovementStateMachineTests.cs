@@ -26,6 +26,10 @@ namespace Tests.EditMode
         public void SetUp()
         {
             _stats = ScriptableObject.CreateInstance<PlayerMovementStats>();
+            _stats.Glide.FallSpeedMultiplier = 0.5f;
+            _stats.Glide.HorizontalAcceleration = 3f;
+            _stats.Glide.HorizontalDeceleration = 4f;
+            _stats.Glide.LimitDuration = false;
             _player = new GameObject("PlayerMovementStateMachineTests");
             _rigidbody = _player.AddComponent<Rigidbody2D>();
             _feetCollider = _player.AddComponent<BoxCollider2D>();
@@ -281,6 +285,116 @@ namespace Tests.EditMode
             }
             finally
             {
+                Object.DestroyImmediate(ability);
+            }
+        }
+
+        [Test]
+        public void GlideState_OnEnterAndExit_RaisesEvents()
+        {
+            var playerMovement = CreatePlayerMovementComponent();
+            var ability = ScriptableObject.CreateInstance<GlideMovementAbility>();
+            var eventBus = ScriptableObject.CreateInstance<MovementEventBus>();
+
+            bool glideStarted = false;
+            bool glideEnded = false;
+
+            eventBus.GlideStarted.AddListener(() => glideStarted = true);
+            eventBus.GlideEnded.AddListener(() => glideEnded = true);
+
+            try
+            {
+                SetMovementEventBus(playerMovement, eventBus);
+                playerMovement.InitializeMovement(_stats, _feetCollider, _bodyCollider);
+
+                Assert.IsTrue(playerMovement.EnableAbility(ability));
+
+                var data = playerMovement.Context.RuntimeData;
+                data.IsGrounded = false;
+                data.VerticalVelocity = -5f;
+                data.JumpHeld = true;
+
+                playerMovement.StateMachine.ChangeState<GlideState>();
+
+                Assert.IsTrue(data.Glide.IsGliding);
+                Assert.IsTrue(glideStarted);
+
+                data.JumpHeld = false;
+                playerMovement.StateMachine.HandleInput();
+
+                Assert.IsFalse(data.Glide.IsGliding);
+                Assert.IsTrue(glideEnded);
+            }
+            finally
+            {
+                playerMovement.DisableAbility(ability);
+                Object.DestroyImmediate(ability);
+                Object.DestroyImmediate(eventBus);
+            }
+        }
+
+        [Test]
+        public void GlideState_FixedTick_ClampsFallSpeed()
+        {
+            var playerMovement = CreatePlayerMovementComponent();
+            var ability = ScriptableObject.CreateInstance<GlideMovementAbility>();
+
+            try
+            {
+                playerMovement.EnableAbility(ability);
+
+                var data = playerMovement.Context.RuntimeData;
+                data.IsGrounded = false;
+                data.VerticalVelocity = -100f;
+                playerMovement.Context.SetInput(new Vector2(1f, 0f), false, false, true, false);
+
+                playerMovement.StateMachine.ChangeState<GlideState>();
+                playerMovement.StateMachine.FixedTick();
+
+                float expectedMaxFall = playerMovement.Context.Stats.MaxFallSpeed * data.Glide.FallSpeedMultiplier;
+                Assert.LessOrEqual(-data.VerticalVelocity, expectedMaxFall + 0.001f);
+                Assert.IsTrue(data.Glide.IsGliding);
+            }
+            finally
+            {
+                playerMovement.DisableAbility(ability);
+                Object.DestroyImmediate(ability);
+            }
+        }
+
+        [Test]
+        public void GlideState_FixedTick_UsesHorizontalModifier()
+        {
+            var playerMovement = CreatePlayerMovementComponent();
+            var ability = ScriptableObject.CreateInstance<GlideMovementAbility>();
+            ability.OverrideHorizontalStats = true;
+            ability.CustomGlideAcceleration = 1.5f;
+            ability.CustomGlideDeceleration = 2.5f;
+
+            try
+            {
+                playerMovement.EnableAbility(ability);
+
+                var data = playerMovement.Context.RuntimeData;
+                data.IsGrounded = false;
+                data.VerticalVelocity = -10f;
+                playerMovement.Context.SetInput(new Vector2(1f, 0f), false, false, true, false);
+
+                playerMovement.StateMachine.ChangeState<GlideState>();
+                playerMovement.StateMachine.FixedTick();
+
+                float expected = Mathf.Lerp(
+                    0f,
+                    playerMovement.Context.Stats.MaxWalkSpeed,
+                    ability.CustomGlideAcceleration * Time.fixedDeltaTime);
+
+                Assert.AreEqual(expected, data.Velocity.x, 0.0001f);
+                Assert.AreEqual(ability.CustomGlideAcceleration, data.Glide.Acceleration);
+                Assert.AreEqual(ability.CustomGlideDeceleration, data.Glide.Deceleration);
+            }
+            finally
+            {
+                playerMovement.DisableAbility(ability);
                 Object.DestroyImmediate(ability);
             }
         }

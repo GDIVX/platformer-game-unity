@@ -37,7 +37,25 @@ MonoBehaviour:
     <useSimulationMove>k__BackingField: 0
     <useAttachedTriggers>k__BackingField: 0
   DirectionBufferDuration: 0.1
+  FlyDuration: 1.5
+  FlyLift: 115
+  FlyAirAccelerationOverride: 12
+  FlyAirDecelerationOverride: 25
+  FlyExitHangDuration: 0.25
+  FlyRegenerationRate: 1
   StickinessOnLanding: 0.15
+  _glide:
+    FallSpeedMultiplier: 0.35
+    HorizontalAcceleration: 5
+    HorizontalDeceleration: 10
+    LimitDuration: 0
+    MaxDuration: 1.5
+  _legacyGlideFallSpeedMultiplier: 0.35
+  _legacyGlideHorizontalAcceleration: 5
+  _legacyGlideHorizontalDeceleration: 10
+  _legacyLimitGlideDuration: 0
+  _legacyMaxGlideDuration: 1.5
+  _glideSettingsMigrated: 1
   WallDetectionRayLength: 0.1
   WallDetectionHeightScale: 0.9
   DebugShowWallChecks: 1
@@ -56,6 +74,13 @@ MonoBehaviour:
     WallJumpDownwardCancelMultiplier: 0
     WallDetectionVerticalShrink: 0.15
   MaxRunSpeed: 13.5
+  DashForwardBurstSpeed: 22
+  DashDuration: 0.2
+  DashGroundCooldown: 0.45
+  DashAirDashLimit: 1
+  DashAirDashCooldown: 0.75
+  DashPostDashStopDuration: 0.1
+  DashDoubleTapWindow: 0.2
   GroundLayer:
     serializedVersion: 2
     m_Bits: 64

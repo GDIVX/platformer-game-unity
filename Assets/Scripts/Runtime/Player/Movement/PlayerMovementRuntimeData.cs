@@ -68,6 +68,28 @@ namespace Runtime.Player.Movement
         public float FastFallReleaseSpeed { get; set; }
 
         // ---------------------------- //
+        // ───────── GLIDE ──────────── //
+        // ---------------------------- //
+        [ShowInInspector, ReadOnly]
+        public GlideRuntimeData Glide { get; } = new GlideRuntimeData();
+        // ───────── FLIGHT ─────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightTimeRemaining { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightTimeMax { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightRegenProgress { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public float FlightHangTimer { get; set; }
+
+        [FoldoutGroup("Flight"), ShowInInspector, ReadOnly]
+        public bool IsFlying { get; set; }
+
+        // ---------------------------- //
         // ───────── GROUND ─────────── //
         // ---------------------------- //
         [FoldoutGroup("Ground"), ShowInInspector, ReadOnly]
@@ -135,5 +157,62 @@ namespace Runtime.Player.Movement
 
         [FoldoutGroup("Input"), ShowInInspector, ReadOnly]
         public bool JumpReleased { get; set; }
+
+        [Serializable]
+        public class GlideRuntimeData
+        {
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public bool IsGliding { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float ElapsedTime { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float MaxDuration { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float Acceleration { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float Deceleration { get; set; }
+
+            [FoldoutGroup("Glide"), ShowInInspector, ReadOnly]
+            public float FallSpeedMultiplier { get; set; }
+
+            public void Reset()
+            {
+                IsGliding = false;
+                ElapsedTime = 0f;
+            }
+        }
+        // ---------------------------- //
+        // ────────── DASH ──────────── //
+        // ---------------------------- //
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public bool IsDashing { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public bool DashRequested { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public bool DashRequestFromGround { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public int DashDirection { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float DashTimer { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float DashCooldownTimer { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float AirDashCooldownTimer { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public int AirDashCount { get; set; }
+
+        [FoldoutGroup("Dash"), ShowInInspector, ReadOnly]
+        public float DashStopTimer { get; set; }
     }
 }
