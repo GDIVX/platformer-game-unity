@@ -27,7 +27,7 @@ namespace Runtime.Combat
         [ShowInInspector, ReadOnly, PropertyOrder(1)]
         [ProgressBar(0, nameof(_maxHealth), ColorGetter = nameof(GetHealthBarColor))]
         [LabelText("Current Health")]
-        [SerializeField] private int _currentHealth;
+        [SerializeField] private int _currentHealth = 100;
 
         [BoxGroup("Health"), LabelWidth(100)]
         [ReadOnly, ShowInInspector, GUIColor(nameof(GetAliveColor))]
@@ -40,17 +40,17 @@ namespace Runtime.Combat
         public bool IsAlive => _isAlive;
 
         // ──────────────────────────────────────────────
-        //  EVENTS
+        //  EVENTS (NOW SAFE FOR RUNTIME CREATION)
         // ──────────────────────────────────────────────
 
         [TitleGroup("Events"), LabelWidth(120)]
-        public UnityEvent<int, int> OnHealthChanged;
+        public UnityEvent<int, int> OnHealthChanged = new UnityEvent<int, int>();
 
         [TitleGroup("Events"), LabelWidth(120)]
-        public UnityEvent OnDied;
+        public UnityEvent OnDied = new UnityEvent();
 
         [TitleGroup("Events"), LabelWidth(120)]
-        public UnityEvent OnRevived;
+        public UnityEvent OnRevived = new UnityEvent();
 
         // ──────────────────────────────────────────────
         //  INITIALIZATION
@@ -58,8 +58,9 @@ namespace Runtime.Combat
 
         private void Awake()
         {
-            _currentHealth = _maxHealth;
-            _isAlive = true;
+            // Ensure consistent state even when spawned at runtime
+            _currentHealth = Mathf.Clamp(_currentHealth <= 0 ? _maxHealth : _currentHealth, 0, _maxHealth);
+            _isAlive = _currentHealth > 0;
         }
 
         // ──────────────────────────────────────────────
@@ -74,10 +75,7 @@ namespace Runtime.Combat
 
         [Button(ButtonSizes.Medium), GUIColor(0.4f, 0.8f, 1f)]
         [PropertyOrder(91)]
-        private void ApplyModify()
-        {
-            ModifyHealth(_modifyValue);
-        }
+        private void ApplyModify() => ModifyHealth(_modifyValue);
 
         // ──────────────────────────────────────────────
         //  CORE RUNTIME LOGIC
@@ -86,68 +84,82 @@ namespace Runtime.Combat
         public void ModifyHealth(int delta)
         {
             if (!_isAlive) return;
-
-            int newValue = Mathf.Clamp(_currentHealth + delta, 0, _maxHealth);
-            if (newValue == _currentHealth) return;
-
-            _currentHealth = newValue;
-            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
-
-            if (_currentHealth > 0 || !_isAlive) return;
-
-            _isAlive = false;
-            OnDied?.Invoke();
+            ApplyHealthChange(_currentHealth + delta);
         }
 
-        [ButtonGroup("Buttons")]
-        [GUIColor(0.4f, 1f, 0.4f)]
+        [ButtonGroup("Buttons"), GUIColor(0.4f, 1f, 0.4f)]
         public void RestoreFull()
         {
-            if (!_isAlive) return;
-            _currentHealth = _maxHealth;
-            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+            if (!_isAlive || _currentHealth == _maxHealth) return;
+            ApplyHealthChange(_maxHealth);
         }
 
-        [ButtonGroup("Buttons")]
-        [GUIColor(1f, 0.3f, 0.3f)]
+        [ButtonGroup("Buttons"), GUIColor(1f, 0.3f, 0.3f)]
         public void Kill()
         {
             if (!_isAlive) return;
-            _currentHealth = 0;
-            _isAlive = false;
-            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
-            OnDied?.Invoke();
+            ApplyHealthChange(0, true);
         }
 
-        [ButtonGroup("Buttons")]
-        [GUIColor(0.3f, 0.8f, 1f)]
+        [ButtonGroup("Buttons"), GUIColor(0.3f, 0.8f, 1f)]
         public void Revive()
         {
             if (_isAlive) return;
-            _isAlive = true;
-            RestoreFull();
-            OnRevived?.Invoke();
+            ApplyHealthChange(_maxHealth, true, true);
         }
 
         // ──────────────────────────────────────────────
         //  INTERNAL HELPERS
         // ──────────────────────────────────────────────
 
-        private void OnMaxHealthChanged()
+        public void SetMaxHealth(int newMax) => InternalSetMaxHealth(newMax, newMax != _maxHealth);
+
+        private void OnMaxHealthChanged() => InternalSetMaxHealth(_maxHealth, true);
+
+        private void InternalSetMaxHealth(int requestedMax, bool forceBroadcast)
         {
-            _currentHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
-            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+            int sanitizedMax = Mathf.Max(1, requestedMax);
+            bool maxChanged = sanitizedMax != _maxHealth;
+
+            _maxHealth = sanitizedMax;
+
+            int clampedHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
+            bool healthClamped = clampedHealth != _currentHealth;
+
+            ApplyHealthChange(
+                clampedHealth,
+                forceBroadcast || maxChanged || healthClamped);
         }
+
+        private void ApplyHealthChange(int targetHealth, bool forceInvokeHealthChanged = false, bool allowReviveEvent = false)
+        {
+            int clamped = Mathf.Clamp(targetHealth, 0, _maxHealth);
+            int previousHealth = _currentHealth;
+            bool wasAlive = _isAlive;
+
+            _currentHealth = clamped;
+            _isAlive = _currentHealth > 0;
+
+            if (forceInvokeHealthChanged || previousHealth != _currentHealth)
+                OnHealthChanged.Invoke(_currentHealth, _maxHealth);
+
+            if (wasAlive && !_isAlive)
+                OnDied.Invoke();
+            else if (!wasAlive && _isAlive && allowReviveEvent)
+                OnRevived.Invoke();
+        }
+
+        // ──────────────────────────────────────────────
+        //  EDITOR VISUAL HELPERS
+        // ──────────────────────────────────────────────
 
         private Color GetHealthBarColor()
         {
-            float pct = (float)_currentHealth / _maxHealth;
+            float pct = (float)_currentHealth / Mathf.Max(1, _maxHealth);
             return Color.Lerp(Color.red, Color.green, pct);
         }
 
-        private Color GetAliveColor()
-        {
-            return _isAlive ? new Color(0.6f, 1f, 0.6f) : new Color(1f, 0.4f, 0.4f);
-        }
+        private Color GetAliveColor() =>
+            _isAlive ? new Color(0.6f, 1f, 0.6f) : new Color(1f, 0.4f, 0.4f);
     }
 }

@@ -5,7 +5,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Runtime.Player",
-        "Unity.InternalAPIEngineBridge.001"
+        "Unity.InternalAPIEngineBridge.001",
+        "Runtime.Combat"
     ],
     "includePlatforms": [
         "Editor"

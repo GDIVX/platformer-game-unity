@@ -20,9 +20,7 @@ namespace Runtime.Combat.UI
             if (_unitHealth == null)
                 _unitHealth = GetComponentInParent<UnitHealth>();
 
-            _displays = new IHealthDisplay[_displayComponents.Length];
-            for (int i = 0; i < _displayComponents.Length; i++)
-                _displays[i] = _displayComponents[i] as IHealthDisplay;
+            CacheDisplays();
         }
 
         private void OnEnable()
@@ -30,9 +28,12 @@ namespace Runtime.Combat.UI
             if (_unitHealth == null)
                 return;
 
+            CacheDisplays();
+
             // ✅ Subscribe using UnityEvent methods
             _unitHealth.OnHealthChanged.AddListener(HandleHealthChanged);
             _unitHealth.OnDied.AddListener(HandleDeath);
+            _unitHealth.OnRevived.AddListener(HandleRevived);
 
             // Initialize immediately
             UpdateDisplays(_unitHealth.CurrentHealth, _unitHealth.MaxHealth);
@@ -47,6 +48,7 @@ namespace Runtime.Combat.UI
             // ✅ Unsubscribe
             _unitHealth.OnHealthChanged.RemoveListener(HandleHealthChanged);
             _unitHealth.OnDied.RemoveListener(HandleDeath);
+            _unitHealth.OnRevived.RemoveListener(HandleRevived);
         }
 
         private void HandleHealthChanged(int current, int max)
@@ -57,6 +59,11 @@ namespace Runtime.Combat.UI
         private void HandleDeath()
         {
             SetAliveState(false);
+        }
+
+        private void HandleRevived()
+        {
+            SetAliveState(true);
         }
 
         private void UpdateDisplays(int current, int max)
@@ -74,6 +81,40 @@ namespace Runtime.Combat.UI
             {
                 if (display == null) continue;
                 display.SetAliveState(isAlive);
+            }
+        }
+
+        private void CacheDisplays()
+        {
+            if (_displayComponents == null)
+            {
+                _displays = System.Array.Empty<IHealthDisplay>();
+                return;
+            }
+
+            if (_displays != null && _displays.Length == _displayComponents.Length)
+            {
+                // Ensure cached references stay in sync with serialized array.
+                for (int i = 0; i < _displayComponents.Length; i++)
+                {
+                    if (!ReferenceEquals(_displays[i], _displayComponents[i] as IHealthDisplay))
+                    {
+                        RebuildDisplays();
+                        return;
+                    }
+                }
+                return;
+            }
+
+            RebuildDisplays();
+        }
+
+        private void RebuildDisplays()
+        {
+            _displays = new IHealthDisplay[_displayComponents.Length];
+            for (int i = 0; i < _displayComponents.Length; i++)
+            {
+                _displays[i] = _displayComponents[i] as IHealthDisplay;
             }
         }
     }
