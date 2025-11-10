@@ -1,35 +1,36 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Runtime.Combat
 {
-    /// <summary>
-    /// Represents a collider that can receive damage from a HitBox.
-    /// Manages invulnerability frames and forwards valid damage to the Health component.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider2D))]
     public class HurtBox : MonoBehaviour
     {
-        [Tooltip("The Health component that this HurtBox will affect.")]
-        [SerializeField] private UnitHealth health;
+        [Header("References")]
+        [SerializeField] private UnitHealth _health;
+        [SerializeField] private ArmorProfile _armorProfile;
 
-        [SerializeField] private List<string> _hurtBoxTags;
-        [Tooltip("How long this hurt box remains invulnerable after taking a hit.")]
-        [SerializeField] private float invulnerabilityTime = 0.5f;
+        [Header("Invulnerability")]
+        [SerializeField] private float _invulnerabilityTime = 0.5f;
 
-        
+        [Header("Events")]
+        public UnityEvent<HitBox> OnHitReceived;
+        public UnityEvent<HitBox, int> OnDamageApplied;
+        public UnityEvent OnBecameInvulnerable;
+        public UnityEvent OnInvulnerabilityEnded;
+        public UnityEvent OnKnockbackApplied;
 
         private bool _isInvulnerable;
         private float _invulnTimer;
 
         private void Awake()
         {
-            if (health == null)
-                health = GetComponentInParent<UnitHealth>();
+            if (_health == null)
+                _health = GetComponentInParent<UnitHealth>();
 
-            // Make sure collider is a trigger
             var col = GetComponent<Collider2D>();
-            if (col != null) col.isTrigger = true;
+            col.isTrigger = true;
         }
 
         private void Update()
@@ -40,54 +41,51 @@ namespace Runtime.Combat
                 SetInvulnerable(false);
         }
 
-        private void OnTriggerEnter2D(Collider2D other)
+        public bool ApplyHit(HitBox hitBox, bool isCrit)
         {
-            if (!enabled || _isInvulnerable) return;
-        
-            // Check if collider tag matches allowed tags
-            if (_hurtBoxTags != null && _hurtBoxTags.Count > 0)
+            if (_isInvulnerable || _health == null || !_health.IsAlive)
+                return false;
+
+            OnHitReceived?.Invoke(hitBox);
+
+            DamageProfile data = hitBox.Damage;
+
+            // --- DAMAGE CALCULATION ---
+            float baseDamage = _armorProfile != null
+                ? _armorProfile.CalculateEffectiveDamage(data)
+                : data.TotalBaseDamage;
+
+            if (isCrit)
+                baseDamage *= data.CritMultiplier > 0 ? data.CritMultiplier : 2f;
+
+            int finalDamage = Mathf.RoundToInt(baseDamage);
+            _health.ModifyHealth(-finalDamage);
+            OnDamageApplied?.Invoke(hitBox, finalDamage);
+
+            // --- KNOCKBACK ---
+            if (data.KnockbackForce > 0f && TryGetComponent(out Rigidbody2D rb))
             {
-                bool tagAllowed = false;
-                foreach (var tag in _hurtBoxTags)
-                {
-                    if (other.CompareTag(tag))
-                    {
-                        tagAllowed = true;
-                        break;
-                    }
-                }
-        
-                if (!tagAllowed)
-                    return;
+                Vector2 dir = ((Vector2)(transform.position - hitBox.transform.position)).normalized;
+                rb.AddForce(dir * data.KnockbackForce, ForceMode2D.Impulse);
+                OnKnockbackApplied?.Invoke();
             }
-        
-            var hitBox = other.GetComponent<HitBox>();
-            if (hitBox == null) return;
-        
-            HandleDamage(hitBox);
-        }
 
-
-        /// <summary>
-        /// Apply damage from a HitBox, with invulnerability window.
-        /// </summary>
-        private void HandleDamage(HitBox hitBox)
-        {
-            if (health == null) return;
-
-            health.ModifyHealth(-hitBox.Damage);
             SetInvulnerable(true);
+            return true;
         }
 
-        /// <summary>
-        /// Activates or deactivates invulnerability state.
-        /// </summary>
         private void SetInvulnerable(bool state)
         {
             _isInvulnerable = state;
             if (state)
-                _invulnTimer = invulnerabilityTime;
+            {
+                _invulnTimer = _invulnerabilityTime;
+                OnBecameInvulnerable?.Invoke();
+            }
+            else
+            {
+                OnInvulnerabilityEnded?.Invoke();
+            }
         }
-
     }
 }
