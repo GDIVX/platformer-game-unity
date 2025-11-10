@@ -5,6 +5,7 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Runtime.Player",
+        "Assembly-CSharp",
         "Unity.InternalAPIEngineBridge.001"
     ],
     "includePlatforms": [

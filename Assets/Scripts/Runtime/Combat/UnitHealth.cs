@@ -87,25 +87,16 @@ namespace Runtime.Combat
         {
             if (!_isAlive) return;
 
-            int newValue = Mathf.Clamp(_currentHealth + delta, 0, _maxHealth);
-            if (newValue == _currentHealth) return;
-
-            _currentHealth = newValue;
-            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
-
-            if (_currentHealth > 0 || !_isAlive) return;
-
-            _isAlive = false;
-            OnDied?.Invoke();
+            ApplyHealthChange(_currentHealth + delta);
         }
 
         [ButtonGroup("Buttons")]
         [GUIColor(0.4f, 1f, 0.4f)]
         public void RestoreFull()
         {
-            if (!_isAlive) return;
-            _currentHealth = _maxHealth;
-            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+            if (!_isAlive || _currentHealth == _maxHealth) return;
+
+            ApplyHealthChange(_maxHealth);
         }
 
         [ButtonGroup("Buttons")]
@@ -113,10 +104,8 @@ namespace Runtime.Combat
         public void Kill()
         {
             if (!_isAlive) return;
-            _currentHealth = 0;
-            _isAlive = false;
-            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
-            OnDied?.Invoke();
+
+            ApplyHealthChange(0, true);
         }
 
         [ButtonGroup("Buttons")]
@@ -124,19 +113,63 @@ namespace Runtime.Combat
         public void Revive()
         {
             if (_isAlive) return;
-            _isAlive = true;
-            RestoreFull();
-            OnRevived?.Invoke();
+
+            ApplyHealthChange(_maxHealth, true, true);
         }
 
         // ──────────────────────────────────────────────
         //  INTERNAL HELPERS
         // ──────────────────────────────────────────────
 
+        public void SetMaxHealth(int newMax)
+        {
+            InternalSetMaxHealth(newMax, newMax != _maxHealth);
+        }
+
         private void OnMaxHealthChanged()
         {
-            _currentHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
-            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+            InternalSetMaxHealth(_maxHealth, true);
+        }
+
+        private void InternalSetMaxHealth(int requestedMax, bool forceBroadcast)
+        {
+            int sanitizedMax = Mathf.Max(1, requestedMax);
+            bool sanitizedChanged = sanitizedMax != requestedMax;
+            bool maxChanged = sanitizedMax != _maxHealth;
+
+            _maxHealth = sanitizedMax;
+
+            int clampedHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
+            bool healthClamped = clampedHealth != _currentHealth;
+
+            ApplyHealthChange(
+                clampedHealth,
+                forceBroadcast || sanitizedChanged || maxChanged || healthClamped);
+        }
+
+        private void ApplyHealthChange(int targetHealth, bool forceInvokeHealthChanged = false, bool allowReviveEvent = false)
+        {
+            int clamped = Mathf.Clamp(targetHealth, 0, _maxHealth);
+            int previousHealth = _currentHealth;
+            bool wasAlive = _isAlive;
+
+            _currentHealth = clamped;
+            bool shouldBeAlive = _currentHealth > 0;
+            _isAlive = shouldBeAlive;
+
+            if (forceInvokeHealthChanged || previousHealth != _currentHealth)
+            {
+                OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+            }
+
+            if (wasAlive && !shouldBeAlive)
+            {
+                OnDied?.Invoke();
+            }
+            else if (!wasAlive && shouldBeAlive && allowReviveEvent)
+            {
+                OnRevived?.Invoke();
+            }
         }
 
         private Color GetHealthBarColor()
