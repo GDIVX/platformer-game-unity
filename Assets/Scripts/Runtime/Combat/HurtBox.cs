@@ -2,28 +2,33 @@ using UnityEngine;
 using UnityEngine.Events;
 using Runtime.Movement;
 
+#if UNITY_EDITOR
+using Sirenix.OdinInspector;
+#endif
+
+
 namespace Runtime.Combat
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider2D))]
     public class HurtBox : MonoBehaviour
     {
-        [Header("References")]
-        [SerializeField] private UnitHealth _health;
+        [Header("References")] [SerializeField]
+        private UnitHealth _health;
+
         [SerializeField] private ArmorProfile _armorProfile;
 
-        [Header("Invulnerability")]
-        [SerializeField] private float _invulnerabilityTime = 0.5f;
+        [Header("Invulnerability")] [SerializeField]
+        private float _invulnerabilityTime = 0.5f;
 
-        [Header("Events")]
-        public UnityEvent<HitBox> OnHitReceived;
+        [Header("Events")] public UnityEvent<HitBox> OnHitReceived;
         public UnityEvent<HitBox, int> OnDamageApplied;
         public UnityEvent OnBecameInvulnerable;
         public UnityEvent OnInvulnerabilityEnded;
         public UnityEvent OnKnockbackApplied;
 
-        private bool _isInvulnerable;
-        private float _invulnTimer;
+        [ShowInInspector, ReadOnly] private bool _isInvulnerable;
+        [ShowInInspector, ReadOnly] private float _invulnTimer;
 
         private void Awake()
         {
@@ -108,5 +113,22 @@ namespace Runtime.Combat
                 OnInvulnerabilityEnded?.Invoke();
             }
         }
+
+#if UNITY_EDITOR
+        [TitleGroup("Debug"), ShowInInspector, ReadOnly, PropertyOrder(100)]
+        [ProgressBar(0, nameof(_invulnerabilityTime), ColorGetter = nameof(GetInvulnColor))]
+        [LabelText("Invulnerability Timer")]
+        private float InvulnerabilityProgress => _isInvulnerable ? _invulnTimer : 0f;
+
+        private Color GetInvulnColor()
+        {
+            if (!_isInvulnerable)
+                return new Color(0.5f, 0.5f, 0.5f);
+
+            float pct = Mathf.Clamp01(_invulnTimer / _invulnerabilityTime);
+            // Green when fresh, fades to red as it expires
+            return Color.Lerp(Color.red, Color.green, pct);
+        }
+#endif
     }
 }
