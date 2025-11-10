@@ -1,35 +1,42 @@
 using UnityEngine;
+using UnityEngine.Events;
+using Runtime.Movement;
+
+#if UNITY_EDITOR
+using Sirenix.OdinInspector;
+#endif
+
 
 namespace Runtime.Combat
 {
-    /// <summary>
-    /// Represents a collider that can receive damage from a HitBox.
-    /// Manages invulnerability frames and forwards valid damage to the Health component.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider2D))]
     public class HurtBox : MonoBehaviour
     {
-        [Tooltip("The Health component that this HurtBox will affect.")]
-        [SerializeField] private UnitHealth health;
+        [Header("References")] [SerializeField]
+        private UnitHealth _health;
 
-        [SerializeField] private List<string> _hurtBoxTags;
-        [Tooltip("How long this hurt box remains invulnerable after taking a hit.")]
-        [SerializeField] private float invulnerabilityTime = 0.5f;
+        [SerializeField] private ArmorProfile _armorProfile;
 
-        
+        [Header("Invulnerability")] [SerializeField]
+        private float _invulnerabilityTime = 0.5f;
 
-        private bool _isInvulnerable;
-        private float _invulnTimer;
+        [Header("Events")] public UnityEvent<HitBox> OnHitReceived;
+        public UnityEvent<HitBox, int> OnDamageApplied;
+        public UnityEvent OnBecameInvulnerable;
+        public UnityEvent OnInvulnerabilityEnded;
+        public UnityEvent OnKnockbackApplied;
+
+        [ShowInInspector, ReadOnly] private bool _isInvulnerable;
+        [ShowInInspector, ReadOnly] private float _invulnTimer;
 
         private void Awake()
         {
-            if (health == null)
-                health = GetComponentInParent<UnitHealth>();
+            if (_health == null)
+                _health = GetComponentInParent<UnitHealth>();
 
-            // Make sure collider is a trigger
             var col = GetComponent<Collider2D>();
-            if (col != null) col.isTrigger = true;
+            col.isTrigger = true;
         }
 
         private void Update()
@@ -40,54 +47,88 @@ namespace Runtime.Combat
                 SetInvulnerable(false);
         }
 
-        private void OnTriggerEnter2D(Collider2D other)
+        public bool ApplyHit(HitBox hitBox, bool isCrit)
         {
-            if (!enabled || _isInvulnerable) return;
-        
-            // Check if collider tag matches allowed tags
-            if (_hurtBoxTags != null && _hurtBoxTags.Count > 0)
+            if (_isInvulnerable || _health == null || !_health.IsAlive)
+                return false;
+
+            OnHitReceived?.Invoke(hitBox);
+
+            DamageProfile data = hitBox.Damage;
+
+            // --- DAMAGE CALCULATION ---
+            float baseDamage = _armorProfile != null
+                ? _armorProfile.CalculateEffectiveDamage(data)
+                : data.TotalBaseDamage;
+
+            if (isCrit)
+                baseDamage *= data.CritMultiplier > 0 ? data.CritMultiplier : 2f;
+
+            int finalDamage = Mathf.RoundToInt(baseDamage);
+            _health.ModifyHealth(-finalDamage);
+            OnDamageApplied?.Invoke(hitBox, finalDamage);
+
+            // --- KNOCKBACK ---
+            if (data.KnockbackForce > 0f)
             {
-                bool tagAllowed = false;
-                foreach (var tag in _hurtBoxTags)
+                Vector2 dir = ((Vector2)(transform.position - hitBox.transform.position)).normalized;
+                bool knockbackApplied = false;
+
+                IMovementHandler movementHandler = GetComponentInParent<IMovementHandler>();
+                if (movementHandler != null)
                 {
-                    if (other.CompareTag(tag))
+                    movementHandler.AddVelocity(dir * data.KnockbackForce);
+                    knockbackApplied = true;
+                }
+                else
+                {
+                    Rigidbody2D rb = GetComponentInParent<Rigidbody2D>();
+                    if (rb != null)
                     {
-                        tagAllowed = true;
-                        break;
+                        rb.AddForce(dir * data.KnockbackForce, ForceMode2D.Impulse);
+                        knockbackApplied = true;
                     }
                 }
-        
-                if (!tagAllowed)
-                    return;
+
+                if (knockbackApplied)
+                {
+                    OnKnockbackApplied?.Invoke();
+                }
             }
-        
-            var hitBox = other.GetComponent<HitBox>();
-            if (hitBox == null) return;
-        
-            HandleDamage(hitBox);
-        }
 
-
-        /// <summary>
-        /// Apply damage from a HitBox, with invulnerability window.
-        /// </summary>
-        private void HandleDamage(HitBox hitBox)
-        {
-            if (health == null) return;
-
-            health.ModifyHealth(-hitBox.Damage);
             SetInvulnerable(true);
+            return true;
         }
 
-        /// <summary>
-        /// Activates or deactivates invulnerability state.
-        /// </summary>
         private void SetInvulnerable(bool state)
         {
             _isInvulnerable = state;
             if (state)
-                _invulnTimer = invulnerabilityTime;
+            {
+                _invulnTimer = _invulnerabilityTime;
+                OnBecameInvulnerable?.Invoke();
+            }
+            else
+            {
+                OnInvulnerabilityEnded?.Invoke();
+            }
         }
 
+#if UNITY_EDITOR
+        [TitleGroup("Debug"), ShowInInspector, ReadOnly, PropertyOrder(100)]
+        [ProgressBar(0, nameof(_invulnerabilityTime), ColorGetter = nameof(GetInvulnColor))]
+        [LabelText("Invulnerability Timer")]
+        private float InvulnerabilityProgress => _isInvulnerable ? _invulnTimer : 0f;
+
+        private Color GetInvulnColor()
+        {
+            if (!_isInvulnerable)
+                return new Color(0.5f, 0.5f, 0.5f);
+
+            float pct = Mathf.Clamp01(_invulnTimer / _invulnerabilityTime);
+            // Green when fresh, fades to red as it expires
+            return Color.Lerp(Color.red, Color.green, pct);
+        }
+#endif
     }
 }

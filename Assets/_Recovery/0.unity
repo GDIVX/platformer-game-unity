@@ -5246,15 +5246,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b77ab4b3a98df5a40878781ce5063762, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Runtime.Combat.HitBox
-  IsActive: 1
   _damageProfile:
     Raw: 1
-    Sharp: 0
+    Sharp: 3
     Blunt: 0
     Ballistic: 0
     Fire: 0
     Energy: 0
-    KnockbackForce: 75
+    KnockbackForce: 0
     CritChance: 0
     CritChanceCurve:
       serializedVersion: 2
@@ -5284,6 +5283,8 @@ MonoBehaviour:
   _targetMask:
     serializedVersion: 2
     m_Bits: 8
+  _canHitMultipleTargets: 0
+  _deactivateAfterHit: 0
   _owner: {fileID: 1131744010}
   OnHit:
     m_PersistentCalls:
@@ -12327,6 +12328,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1994383188}
   - component: {fileID: 1994383187}
+  - component: {fileID: 1994383186}
   - component: {fileID: 1994383185}
   m_Layer: 0
   m_Name: Hurt Zone
@@ -12362,6 +12364,52 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!61 &1994383186
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1994383184}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
 --- !u!212 &1994383187
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -12429,7 +12477,7 @@ Transform:
   m_GameObject: {fileID: 1994383184}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 17.579418, y: -25.15173, z: 0}
+  m_LocalPosition: {x: 15, y: -25, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

@@ -10639,8 +10639,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fc539e16ad32eb45b69c4a8c635bd85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Runtime.Combat.UnitHealth
-  _maxHealth: 50
-  _currentHealth: 50
+  _maxHealth: 20
+  _currentHealth: 20
   _isAlive: 1
   OnHealthChanged:
     m_PersistentCalls:

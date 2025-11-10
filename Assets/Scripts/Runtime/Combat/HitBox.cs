@@ -1,84 +1,80 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Runtime.Combat
 {
-    /// <summary>
-    /// Represents an attack area that can deal damage to valid HurtBoxes.
-    /// Should be attached to a GameObject with a Trigger Collider2D.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider2D))]
     public class HitBox : MonoBehaviour
     {
-        [Header("Damage Settings")]
-        [Tooltip("The amount of damage this hitbox will deal.")]
-        [SerializeField] private int damage = 10;
+        public bool IsActive = true;
 
-        [Tooltip("If true, this hitbox will deactivate itself after a successful hit.")]
-        [SerializeField] private bool deactivateAfterHit = false;
+        [Header("Damage Settings")] [SerializeField]
+        private DamageProfile _damageProfile;
 
-        [Tooltip("If true, the hitbox can hit multiple targets before deactivation.")]
-        [SerializeField] private bool canHitMultipleTargets = false;
+        [SerializeField] private LayerMask _targetMask = ~0;
 
-        [Header("Ownership")]
-        [Tooltip("Optional reference to the GameObject that owns this hitbox (used to prevent self-hits).")]
-        [SerializeField] private GameObject owner;
+        [Header("Ownership")] [SerializeField] private GameObject _owner;
 
-        private bool _hasHit;
+        [Header("Events")] public UnityEvent<HurtBox, bool> OnHit;
+        public UnityEvent OnActivated;
+        public UnityEvent OnDeactivated;
 
-        /// <summary>
-        /// The damage value this hitbox inflicts.
-        /// </summary>
-        public int Damage => damage;
+        private Collider2D _collider;
 
+
+        // --- Crit tracking (kept identical) ---
+        private float _critMomentum;
+        [SerializeField] private float _biasGainOnCrit = 0.25f;
+        [SerializeField] private float _biasLossOnMiss = 0.15f;
+
+        // ──────────────────────────────────────────────
+        //  LIFECYCLE
+        // ──────────────────────────────────────────────
         private void Awake()
         {
-            var col = GetComponent<Collider2D>();
-            if (col != null) col.isTrigger = true;
+            _collider = GetComponent<Collider2D>();
+            _collider.isTrigger = true;
         }
 
-        private void OnEnable()
-        {
-            _hasHit = false;
-        }
 
+        // ──────────────────────────────────────────────
+        //  CORE COLLISION
+        // ──────────────────────────────────────────────
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (_hasHit && !canHitMultipleTargets) return;
+            if (!IsActive) return;
+            if (_owner != null && other.gameObject == _owner) return;
+            if ((_targetMask.value & (1 << other.gameObject.layer)) == 0) return;
+            if (!other.TryGetComponent(out HurtBox hurtBox)) return;
 
-            // Don’t hit our own colliders
-            if (owner != null && other.gameObject == owner)
-                return;
+            bool isCrit = RollCrit(_damageProfile);
 
-            var hurtBox = other.GetComponent<HurtBox>();
-            if (hurtBox == null) return;
-
-            // Validate layer matchups (handled by HurtBox’s IsValidHit internally)
-            hurtBox.SendMessage("HandleDamage", this, SendMessageOptions.DontRequireReceiver);
-
-            if (deactivateAfterHit)
-                gameObject.SetActive(false);
-
-            if (!canHitMultipleTargets)
-                _hasHit = true;
+            if (hurtBox.ApplyHit(this, isCrit))
+            {
+                OnHit?.Invoke(hurtBox, isCrit);
+            }
         }
 
-        /// <summary>
-        /// Assigns who owns this hitbox (e.g., player, enemy).
-        /// Used to avoid self-hits.
-        /// </summary>
-        /// <param name="newOwner">The GameObject that spawned or triggered this hitbox.</param>
-        public void SetOwner(GameObject newOwner)
+        private bool RollCrit(DamageProfile profile)
         {
-            owner = newOwner;
+            float chance = profile.CritChance + _critMomentum;
+            if (profile.CritChanceCurve != null && profile.CritChanceCurve.length > 0)
+                chance = Mathf.Clamp01(profile.CritChanceCurve.Evaluate(chance));
+
+            bool isCrit = Random.value <= Mathf.Clamp01(chance);
+            _critMomentum = Mathf.Clamp(
+                _critMomentum + (isCrit ? _biasGainOnCrit : -_biasLossOnMiss),
+                -1f, 1f
+            );
+            return isCrit;
         }
 
-        /// <summary>
-        /// Allows setting damage dynamically (e.g., for scaling attacks or combo hits).
-        /// </summary>
-        public void SetDamage(int newDamage)
-        {
-            damage = newDamage;
-        }
+        // ──────────────────────────────────────────────
+        //  PUBLIC API 
+        // ──────────────────────────────────────────────
+        public DamageProfile Damage => _damageProfile;
+        public void SetDamage(DamageProfile newProfile) => _damageProfile = newProfile;
+        public void SetOwner(GameObject newOwner) => _owner = newOwner;
     }
 }

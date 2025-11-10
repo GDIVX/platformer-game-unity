@@ -4,6 +4,7 @@ using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Events;
+using Runtime.Movement;
 using Runtime.Player.Movement.Abilities;
 using Runtime.Player.Movement.Events;
 using Runtime.Player.Movement.States;
@@ -11,7 +12,7 @@ using Runtime.Player.Movement.Tools;
 
 namespace Runtime.Player.Movement
 {
-    public class PlayerMovement : MonoBehaviour
+    public class PlayerMovement : MonoBehaviour, IMovementHandler
     {
         [Header("References")] [SerializeField]
         private PlayerMovementStats _movementStats;
@@ -598,6 +599,102 @@ namespace Runtime.Player.Movement
                 Context.Wall.SetWallHit(true, rightHit);
                 Context.Wall.SetWallHit(false, leftHit);
             }
+        }
+
+        public Vector2 Velocity
+        {
+            get
+            {
+                if (Context?.RuntimeData != null)
+                {
+                    var data = Context.RuntimeData;
+                    return new Vector2(data.Velocity.x, data.VerticalVelocity);
+                }
+
+                return _rb != null ? _rb.linearVelocity : Vector2.zero;
+            }
+        }
+
+        public float VerticalVelocity
+        {
+            get
+            {
+                if (Context?.RuntimeData != null)
+                {
+                    return Context.RuntimeData.VerticalVelocity;
+                }
+
+                return _rb != null ? _rb.linearVelocity.y : 0f;
+            }
+        }
+
+        public void SetVelocity(Vector2 velocity)
+        {
+            if (Context?.RuntimeData != null)
+            {
+                var data = Context.RuntimeData;
+                data.Velocity = new Vector2(velocity.x, velocity.y);
+                data.VerticalVelocity = velocity.y;
+                SyncRuntimeVelocityToRigidbody();
+                return;
+            }
+
+            if (_rb != null)
+            {
+                _rb.linearVelocity = velocity;
+            }
+        }
+
+        public void AddVelocity(Vector2 delta)
+        {
+            if (Context?.RuntimeData != null)
+            {
+                var data = Context.RuntimeData;
+                data.Velocity = new Vector2(data.Velocity.x + delta.x, data.Velocity.y + delta.y);
+                data.VerticalVelocity += delta.y;
+                SyncRuntimeVelocityToRigidbody();
+                return;
+            }
+
+            if (_rb != null)
+            {
+                _rb.linearVelocity += delta;
+            }
+        }
+
+        public void SetVerticalVelocity(float verticalVelocity)
+        {
+            if (Context?.RuntimeData != null)
+            {
+                var data = Context.RuntimeData;
+                data.VerticalVelocity = verticalVelocity;
+                data.Velocity = new Vector2(data.Velocity.x, verticalVelocity);
+                SyncRuntimeVelocityToRigidbody();
+                return;
+            }
+
+            if (_rb != null)
+            {
+                Vector2 velocity = _rb.linearVelocity;
+                velocity.y = verticalVelocity;
+                _rb.linearVelocity = velocity;
+            }
+        }
+
+        public void AddVerticalVelocity(float delta)
+        {
+            SetVerticalVelocity(VerticalVelocity + delta);
+        }
+
+        private void SyncRuntimeVelocityToRigidbody()
+        {
+            if (_rb == null || Context?.RuntimeData == null)
+            {
+                return;
+            }
+
+            var data = Context.RuntimeData;
+            _rb.linearVelocity = new Vector2(data.Velocity.x, data.VerticalVelocity);
         }
 
         private class AbilityRuntimeData
