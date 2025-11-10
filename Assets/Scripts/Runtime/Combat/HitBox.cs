@@ -7,94 +7,72 @@ namespace Runtime.Combat
     [RequireComponent(typeof(Collider2D))]
     public class HitBox : MonoBehaviour
     {
-        [Header("Damage Settings")]
-        [SerializeField] private DamageProfile _damageProfile;
+        public bool IsActive = true;
 
-        [Tooltip("Layers that can be damaged by this HitBox.")]
+        [Header("Damage Settings")] [SerializeField]
+        private DamageProfile _damageProfile;
+
         [SerializeField] private LayerMask _targetMask = ~0;
 
-        [SerializeField] private bool _canHitMultipleTargets = false;
-        [SerializeField] private bool _deactivateAfterHit = false;
+        [Header("Ownership")] [SerializeField] private GameObject _owner;
 
-        [Header("Ownership")]
-        [SerializeField] private GameObject _owner;
-
-        [Header("Events")]
-        public UnityEvent<HurtBox, bool> OnHit; // bool = isCrit
+        [Header("Events")] public UnityEvent<HurtBox, bool> OnHit;
         public UnityEvent OnActivated;
         public UnityEvent OnDeactivated;
 
-        private bool _hasHit;
         private Collider2D _collider;
 
-        // --- Crit tracking ---
+
+        // --- Crit tracking (kept identical) ---
         private float _critMomentum;
         [SerializeField] private float _biasGainOnCrit = 0.25f;
         [SerializeField] private float _biasLossOnMiss = 0.15f;
 
+        // ──────────────────────────────────────────────
+        //  LIFECYCLE
+        // ──────────────────────────────────────────────
         private void Awake()
         {
             _collider = GetComponent<Collider2D>();
             _collider.isTrigger = true;
         }
 
-        private void OnEnable()
-        {
-            _hasHit = false;
-            OnActivated?.Invoke();
-        }
 
-        private void OnDisable()
-        {
-            OnDeactivated?.Invoke();
-        }
-
+        // ──────────────────────────────────────────────
+        //  CORE COLLISION
+        // ──────────────────────────────────────────────
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (_hasHit && !_canHitMultipleTargets) return;
+            if (!IsActive) return;
             if (_owner != null && other.gameObject == _owner) return;
+            if ((_targetMask.value & (1 << other.gameObject.layer)) == 0) return;
+            if (!other.TryGetComponent(out HurtBox hurtBox)) return;
 
-            // Layer filtering
-            if ((_targetMask.value & (1 << other.gameObject.layer)) == 0)
-                return;
-
-            if (!other.TryGetComponent(out HurtBox hurtBox))
-                return;
-
-            // --- Roll crit ---
             bool isCrit = RollCrit(_damageProfile);
 
-            // --- Apply damage ---
             if (hurtBox.ApplyHit(this, isCrit))
             {
                 OnHit?.Invoke(hurtBox, isCrit);
-
-                if (_deactivateAfterHit)
-                    gameObject.SetActive(false);
-
-                if (!_canHitMultipleTargets)
-                    _hasHit = true;
             }
         }
 
         private bool RollCrit(DamageProfile profile)
         {
             float chance = profile.CritChance + _critMomentum;
-
             if (profile.CritChanceCurve != null && profile.CritChanceCurve.length > 0)
                 chance = Mathf.Clamp01(profile.CritChanceCurve.Evaluate(chance));
 
             bool isCrit = Random.value <= Mathf.Clamp01(chance);
-
-            // Adjust momentum depending on outcome
             _critMomentum = Mathf.Clamp(
                 _critMomentum + (isCrit ? _biasGainOnCrit : -_biasLossOnMiss),
                 -1f, 1f
             );
-
             return isCrit;
         }
 
+        // ──────────────────────────────────────────────
+        //  PUBLIC API 
+        // ──────────────────────────────────────────────
         public DamageProfile Damage => _damageProfile;
         public void SetDamage(DamageProfile newProfile) => _damageProfile = newProfile;
         public void SetOwner(GameObject newOwner) => _owner = newOwner;
