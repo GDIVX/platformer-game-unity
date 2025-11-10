@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using Runtime.Movement;
 
 namespace Runtime.Combat
 {
@@ -63,11 +64,31 @@ namespace Runtime.Combat
             OnDamageApplied?.Invoke(hitBox, finalDamage);
 
             // --- KNOCKBACK ---
-            if (data.KnockbackForce > 0f && TryGetComponent(out Rigidbody2D rb))
+            if (data.KnockbackForce > 0f)
             {
                 Vector2 dir = ((Vector2)(transform.position - hitBox.transform.position)).normalized;
-                rb.AddForce(dir * data.KnockbackForce, ForceMode2D.Impulse);
-                OnKnockbackApplied?.Invoke();
+                bool knockbackApplied = false;
+
+                IMovementHandler movementHandler = GetComponentInParent<IMovementHandler>();
+                if (movementHandler != null)
+                {
+                    movementHandler.AddVelocity(dir * data.KnockbackForce);
+                    knockbackApplied = true;
+                }
+                else
+                {
+                    Rigidbody2D rb = GetComponentInParent<Rigidbody2D>();
+                    if (rb != null)
+                    {
+                        rb.AddForce(dir * data.KnockbackForce, ForceMode2D.Impulse);
+                        knockbackApplied = true;
+                    }
+                }
+
+                if (knockbackApplied)
+                {
+                    OnKnockbackApplied?.Invoke();
+                }
             }
 
             SetInvulnerable(true);
