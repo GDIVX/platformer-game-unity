@@ -27,7 +27,7 @@ namespace Runtime.Combat
         [ShowInInspector, ReadOnly, PropertyOrder(1)]
         [ProgressBar(0, nameof(_maxHealth), ColorGetter = nameof(GetHealthBarColor))]
         [LabelText("Current Health")]
-        [SerializeField] private int _currentHealth;
+        [SerializeField] private int _currentHealth = 100;
 
         [BoxGroup("Health"), LabelWidth(100)]
         [ReadOnly, ShowInInspector, GUIColor(nameof(GetAliveColor))]
@@ -40,17 +40,17 @@ namespace Runtime.Combat
         public bool IsAlive => _isAlive;
 
         // ──────────────────────────────────────────────
-        //  EVENTS
+        //  EVENTS (NOW SAFE FOR RUNTIME CREATION)
         // ──────────────────────────────────────────────
 
         [TitleGroup("Events"), LabelWidth(120)]
-        public UnityEvent<int, int> OnHealthChanged;
+        public UnityEvent<int, int> OnHealthChanged = new UnityEvent<int, int>();
 
         [TitleGroup("Events"), LabelWidth(120)]
-        public UnityEvent OnDied;
+        public UnityEvent OnDied = new UnityEvent();
 
         [TitleGroup("Events"), LabelWidth(120)]
-        public UnityEvent OnRevived;
+        public UnityEvent OnRevived = new UnityEvent();
 
         // ──────────────────────────────────────────────
         //  INITIALIZATION
@@ -58,8 +58,9 @@ namespace Runtime.Combat
 
         private void Awake()
         {
-            _currentHealth = _maxHealth;
-            _isAlive = true;
+            // Ensure consistent state even when spawned at runtime
+            _currentHealth = Mathf.Clamp(_currentHealth <= 0 ? _maxHealth : _currentHealth, 0, _maxHealth);
+            _isAlive = _currentHealth > 0;
         }
 
         // ──────────────────────────────────────────────
@@ -74,10 +75,7 @@ namespace Runtime.Combat
 
         [Button(ButtonSizes.Medium), GUIColor(0.4f, 0.8f, 1f)]
         [PropertyOrder(91)]
-        private void ApplyModify()
-        {
-            ModifyHealth(_modifyValue);
-        }
+        private void ApplyModify() => ModifyHealth(_modifyValue);
 
         // ──────────────────────────────────────────────
         //  CORE RUNTIME LOGIC
@@ -86,34 +84,27 @@ namespace Runtime.Combat
         public void ModifyHealth(int delta)
         {
             if (!_isAlive) return;
-
             ApplyHealthChange(_currentHealth + delta);
         }
 
-        [ButtonGroup("Buttons")]
-        [GUIColor(0.4f, 1f, 0.4f)]
+        [ButtonGroup("Buttons"), GUIColor(0.4f, 1f, 0.4f)]
         public void RestoreFull()
         {
             if (!_isAlive || _currentHealth == _maxHealth) return;
-
             ApplyHealthChange(_maxHealth);
         }
 
-        [ButtonGroup("Buttons")]
-        [GUIColor(1f, 0.3f, 0.3f)]
+        [ButtonGroup("Buttons"), GUIColor(1f, 0.3f, 0.3f)]
         public void Kill()
         {
             if (!_isAlive) return;
-
             ApplyHealthChange(0, true);
         }
 
-        [ButtonGroup("Buttons")]
-        [GUIColor(0.3f, 0.8f, 1f)]
+        [ButtonGroup("Buttons"), GUIColor(0.3f, 0.8f, 1f)]
         public void Revive()
         {
             if (_isAlive) return;
-
             ApplyHealthChange(_maxHealth, true, true);
         }
 
@@ -121,20 +112,13 @@ namespace Runtime.Combat
         //  INTERNAL HELPERS
         // ──────────────────────────────────────────────
 
-        public void SetMaxHealth(int newMax)
-        {
-            InternalSetMaxHealth(newMax, newMax != _maxHealth);
-        }
+        public void SetMaxHealth(int newMax) => InternalSetMaxHealth(newMax, newMax != _maxHealth);
 
-        private void OnMaxHealthChanged()
-        {
-            InternalSetMaxHealth(_maxHealth, true);
-        }
+        private void OnMaxHealthChanged() => InternalSetMaxHealth(_maxHealth, true);
 
         private void InternalSetMaxHealth(int requestedMax, bool forceBroadcast)
         {
             int sanitizedMax = Mathf.Max(1, requestedMax);
-            bool sanitizedChanged = sanitizedMax != requestedMax;
             bool maxChanged = sanitizedMax != _maxHealth;
 
             _maxHealth = sanitizedMax;
@@ -144,7 +128,7 @@ namespace Runtime.Combat
 
             ApplyHealthChange(
                 clampedHealth,
-                forceBroadcast || sanitizedChanged || maxChanged || healthClamped);
+                forceBroadcast || maxChanged || healthClamped);
         }
 
         private void ApplyHealthChange(int targetHealth, bool forceInvokeHealthChanged = false, bool allowReviveEvent = false)
@@ -154,33 +138,28 @@ namespace Runtime.Combat
             bool wasAlive = _isAlive;
 
             _currentHealth = clamped;
-            bool shouldBeAlive = _currentHealth > 0;
-            _isAlive = shouldBeAlive;
+            _isAlive = _currentHealth > 0;
 
             if (forceInvokeHealthChanged || previousHealth != _currentHealth)
-            {
-                OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
-            }
+                OnHealthChanged.Invoke(_currentHealth, _maxHealth);
 
-            if (wasAlive && !shouldBeAlive)
-            {
-                OnDied?.Invoke();
-            }
-            else if (!wasAlive && shouldBeAlive && allowReviveEvent)
-            {
-                OnRevived?.Invoke();
-            }
+            if (wasAlive && !_isAlive)
+                OnDied.Invoke();
+            else if (!wasAlive && _isAlive && allowReviveEvent)
+                OnRevived.Invoke();
         }
+
+        // ──────────────────────────────────────────────
+        //  EDITOR VISUAL HELPERS
+        // ──────────────────────────────────────────────
 
         private Color GetHealthBarColor()
         {
-            float pct = (float)_currentHealth / _maxHealth;
+            float pct = (float)_currentHealth / Mathf.Max(1, _maxHealth);
             return Color.Lerp(Color.red, Color.green, pct);
         }
 
-        private Color GetAliveColor()
-        {
-            return _isAlive ? new Color(0.6f, 1f, 0.6f) : new Color(1f, 0.4f, 0.4f);
-        }
+        private Color GetAliveColor() =>
+            _isAlive ? new Color(0.6f, 1f, 0.6f) : new Color(1f, 0.4f, 0.4f);
     }
 }

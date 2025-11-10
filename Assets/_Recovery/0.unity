@@ -5253,7 +5253,7 @@ MonoBehaviour:
     Ballistic: 0
     Fire: 0
     Energy: 0
-    KnockbackForce: 20
+    KnockbackForce: 0
     CritChance: 0
     CritChanceCurve:
       serializedVersion: 2
