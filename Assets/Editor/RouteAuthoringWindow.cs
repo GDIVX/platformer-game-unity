@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,37 +6,46 @@ using RoutePlanning.Profiles;
 using RoutePlanning.RoutePlanning;
 using Runtime.Player.Movement;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.UIElements;
 
 public class RouteAuthoringWindow : EditorWindow
 {
-    private const float LibraryPanelWidth = 240f;
-    private const float TreeViewMinHeight = 140f;
+    private const float LibraryWidth = 280f;
+    private const string PlacementIdle = "Place Route Gizmo";
+    private const string PlacementActive = "Click in Scene to Place";
 
-    private readonly Dictionary<MoveProfile, SerializedObject> _profileSerializationCache =
-        new Dictionary<MoveProfile, SerializedObject>();
-
-    private readonly List<RouteGraph> _library = new List<RouteGraph>();
+    private readonly List<MoveProfile> _allProfiles = new List<MoveProfile>();
+    private readonly List<NodeEntry> _nodeEntries = new List<NodeEntry>();
+    private readonly List<MoveProfile> _visibleProfiles = new List<MoveProfile>();
 
     private RouteGraph _activeGraph;
-    private SerializedObject _serializedGraph;
+    private SerializedObject _graphSerialized;
+    private SerializedProperty _nodesProperty;
 
-    private TreeViewState _treeState;
-    private RouteTreeView _treeView;
+    private MoveProfile _selectedProfile;
+    private int _selectedNodeIndex = -1;
 
-    private Vector2 _libraryScroll;
-    private Vector2 _inspectorScroll;
-    private string _librarySearch = string.Empty;
+    private MoveProfile _pendingPlacementProfile;
+    private Vector3 _pendingPlacementPosition;
+    private bool _pendingPlacementValid;
 
-    private string _selectedPropertyPath;
-    private string _selectedDisplayName;
+    private ObjectField _graphField;
+    private ToolbarSearchField _profileSearchField;
+    private ListView _profileListView;
+    private Label _profileDetailLabel;
+    private Button _placementButton;
 
-    private GraphValidationReport _validationReport;
-    private double _lastValidationSample;
+    private ListView _nodeListView;
+    private VisualElement _nodeInspector;
+    private Button _deleteNodeButton;
+    private Button _snapToSimulationButton;
+    private HelpBox _validationBox;
 
     [MenuItem("Tools/Route Authoring")]
-    private static void Open()
+    public static void ShowWindow()
     {
         var window = GetWindow<RouteAuthoringWindow>();
         window.titleContent = new GUIContent("Route Authoring");
@@ -44,270 +54,591 @@ public class RouteAuthoringWindow : EditorWindow
 
     private void OnEnable()
     {
-        RefreshLibrary();
         SceneView.duringSceneGui += OnSceneGUI;
         Undo.undoRedoPerformed += OnUndoRedoPerformed;
+        Selection.selectionChanged += OnEditorSelectionChanged;
 
-        _treeState ??= new TreeViewState();
-        _treeView = new RouteTreeView(_treeState);
-        _treeView.SelectionChangedEvent += OnTreeSelectionChanged;
+        BuildUI();
+        LoadProfiles();
+
+        if (Selection.activeObject is RouteGraph graph)
+        {
+            SetActiveGraph(graph);
+        }
     }
 
     private void OnDisable()
     {
         SceneView.duringSceneGui -= OnSceneGUI;
         Undo.undoRedoPerformed -= OnUndoRedoPerformed;
-
-        if (_treeView != null)
-        {
-            _treeView.SelectionChangedEvent -= OnTreeSelectionChanged;
-        }
-
-        _profileSerializationCache.Clear();
+        Selection.selectionChanged -= OnEditorSelectionChanged;
+        CancelPlacement();
     }
 
-    private void OnSelectionChange()
+    private void BuildUI()
     {
-        if (Selection.activeObject is RouteGraph graph)
+        var root = rootVisualElement;
+        root.Clear();
+        root.style.flexDirection = FlexDirection.Row;
+
+        var libraryPanel = new VisualElement
         {
-            SetActiveGraph(graph);
-            Repaint();
+            style =
+            {
+                flexBasis = LibraryWidth,
+                flexShrink = 0f,
+                flexGrow = 0f,
+                paddingLeft = 6,
+                paddingRight = 6,
+                paddingTop = 6,
+                paddingBottom = 6,
+                backgroundColor = new Color(0.13f, 0.13f, 0.13f)
+            }
+        };
+
+        var libraryHeader = new Label("Route Library")
+        {
+            style =
+            {
+                unityFontStyleAndWeight = FontStyle.Bold,
+                marginBottom = 4
+            }
+        };
+        libraryPanel.Add(libraryHeader);
+
+        _profileSearchField = new ToolbarSearchField();
+        _profileSearchField.RegisterValueChangedCallback(evt => FilterProfiles(evt.newValue));
+        libraryPanel.Add(_profileSearchField);
+
+        _profileListView = new ListView
+        {
+            selectionType = SelectionType.Single,
+            style =
+            {
+                flexGrow = 1f,
+                marginTop = 4,
+                marginBottom = 4
+            }
+        };
+        _profileListView.makeItem = MakeProfileItem;
+        _profileListView.bindItem = BindProfileItem;
+        _profileListView.onSelectionChange += OnProfileSelectionChanged;
+        _profileListView.RegisterCallback<PointerDownEvent>(OnProfilePointerDown);
+        libraryPanel.Add(_profileListView);
+
+        _profileDetailLabel = new Label("Select a profile to see details.")
+        {
+            style =
+            {
+                whiteSpace = WhiteSpace.Normal,
+                unityTextAlign = TextAnchor.UpperLeft,
+                marginBottom = 6
+            }
+        };
+        libraryPanel.Add(_profileDetailLabel);
+
+        _placementButton = new Button(BeginPlacement)
+        {
+            text = PlacementIdle,
+            style =
+            {
+                marginTop = 4,
+                marginBottom = 4
+            }
+        };
+        libraryPanel.Add(_placementButton);
+
+        root.Add(libraryPanel);
+
+        var editorPanel = new VisualElement
+        {
+            style =
+            {
+                flexGrow = 1f,
+                flexDirection = FlexDirection.Column,
+                paddingLeft = 8,
+                paddingRight = 8,
+                paddingTop = 6,
+                paddingBottom = 6
+            }
+        };
+
+        var graphRow = new VisualElement
+        {
+            style =
+            {
+                flexDirection = FlexDirection.Row,
+                alignItems = Align.Center,
+                marginBottom = 6
+            }
+        };
+
+        var graphLabel = new Label("Active Route Graph")
+        {
+            style =
+            {
+                unityFontStyleAndWeight = FontStyle.Bold,
+                marginRight = 6
+            }
+        };
+        graphRow.Add(graphLabel);
+
+        _graphField = new ObjectField
+        {
+            objectType = typeof(RouteGraph),
+            allowSceneObjects = false,
+            style =
+            {
+                flexGrow = 1f
+            }
+        };
+        _graphField.RegisterValueChangedCallback(evt => SetActiveGraph(evt.newValue as RouteGraph));
+        graphRow.Add(_graphField);
+
+        editorPanel.Add(graphRow);
+
+        _validationBox = new HelpBox("", HelpBoxMessageType.Info)
+        {
+            style =
+            {
+                display = DisplayStyle.None,
+                marginBottom = 6
+            }
+        };
+        editorPanel.Add(_validationBox);
+
+        var nodeHeader = new Label("Placed Gizmos")
+        {
+            style =
+            {
+                unityFontStyleAndWeight = FontStyle.Bold,
+                marginBottom = 4
+            }
+        };
+        editorPanel.Add(nodeHeader);
+
+        _nodeListView = new ListView
+        {
+            selectionType = SelectionType.Single,
+            style =
+            {
+                flexGrow = 1f,
+                minHeight = 160
+            }
+        };
+        _nodeListView.makeItem = MakeNodeItem;
+        _nodeListView.bindItem = BindNodeItem;
+        _nodeListView.onSelectionChange += OnNodeSelectionChanged;
+        editorPanel.Add(_nodeListView);
+
+        var nodeButtons = new VisualElement
+        {
+            style =
+            {
+                flexDirection = FlexDirection.Row,
+                justifyContent = Justify.FlexEnd,
+                marginTop = 4,
+                marginBottom = 4
+            }
+        };
+
+        _deleteNodeButton = new Button(DeleteSelectedNode) { text = "Delete" };
+        nodeButtons.Add(_deleteNodeButton);
+
+        _snapToSimulationButton = new Button(SnapSelectedNodeToSimulation)
+        {
+            text = "Revert to Simulation",
+            style =
+            {
+                marginLeft = 6
+            }
+        };
+        nodeButtons.Add(_snapToSimulationButton);
+
+        editorPanel.Add(nodeButtons);
+
+        var inspectorHeader = new Label("Gizmo Inspector")
+        {
+            style =
+            {
+                unityFontStyleAndWeight = FontStyle.Bold,
+                marginBottom = 4
+            }
+        };
+        editorPanel.Add(inspectorHeader);
+
+        _nodeInspector = new ScrollView
+        {
+            style =
+            {
+                flexGrow = 1f,
+                minHeight = 200
+            }
+        };
+        editorPanel.Add(_nodeInspector);
+
+        root.Add(editorPanel);
+
+        UpdateActionStates();
+    }
+
+    private VisualElement MakeProfileItem()
+    {
+        var row = new VisualElement
+        {
+            style =
+            {
+                flexDirection = FlexDirection.Row,
+                alignItems = Align.Center,
+                paddingLeft = 4,
+                paddingRight = 4,
+                paddingTop = 2,
+                paddingBottom = 2
+            }
+        };
+
+        var swatch = new VisualElement
+        {
+            style =
+            {
+                width = 12,
+                height = 12,
+                marginRight = 6,
+                borderBottomLeftRadius = 2,
+                borderBottomRightRadius = 2,
+                borderTopLeftRadius = 2,
+                borderTopRightRadius = 2
+            }
+        };
+        swatch.name = "swatch";
+        row.Add(swatch);
+
+        var label = new Label
+        {
+            style =
+            {
+                flexGrow = 1f,
+                whiteSpace = WhiteSpace.NoWrap
+            }
+        };
+        label.name = "label";
+        row.Add(label);
+
+        return row;
+    }
+
+    private void BindProfileItem(VisualElement element, int index)
+    {
+        var swatch = element.Q<VisualElement>("swatch");
+        var label = element.Q<Label>("label");
+
+        MoveProfile profile = null;
+        if (index >= 0 && index < _visibleProfiles.Count)
+        {
+            profile = _visibleProfiles[index];
+        }
+
+        label.text = profile != null ? profile.name : "<None>";
+        swatch.style.backgroundColor = profile != null ? profile.DebugColor : new Color(0.25f, 0.25f, 0.25f);
+    }
+
+    private VisualElement MakeNodeItem()
+    {
+        var row = new VisualElement
+        {
+            style =
+            {
+                flexDirection = FlexDirection.Row,
+                alignItems = Align.Center,
+                paddingLeft = 4,
+                paddingRight = 4,
+                paddingTop = 2,
+                paddingBottom = 2
+            }
+        };
+
+        var swatch = new VisualElement
+        {
+            style =
+            {
+                width = 10,
+                height = 10,
+                marginRight = 6,
+                borderBottomLeftRadius = 2,
+                borderBottomRightRadius = 2,
+                borderTopLeftRadius = 2,
+                borderTopRightRadius = 2
+            }
+        };
+        swatch.name = "swatch";
+        row.Add(swatch);
+
+        var label = new Label
+        {
+            style =
+            {
+                flexGrow = 1f,
+                whiteSpace = WhiteSpace.NoWrap
+            }
+        };
+        label.name = "label";
+        row.Add(label);
+
+        return row;
+    }
+
+    private void BindNodeItem(VisualElement element, int index)
+    {
+        var swatch = element.Q<VisualElement>("swatch");
+        var label = element.Q<Label>("label");
+
+        NodeEntry entry = null;
+        if (index >= 0 && index < _nodeEntries.Count)
+        {
+            entry = _nodeEntries[index];
+        }
+
+        label.text = entry != null ? $"{index + 1}. {entry.DisplayName}" : string.Empty;
+        swatch.style.backgroundColor = entry != null ? entry.Color : Color.clear;
+    }
+
+    private void LoadProfiles()
+    {
+        _allProfiles.Clear();
+        foreach (var guid in AssetDatabase.FindAssets("t:MoveProfile"))
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            var profile = AssetDatabase.LoadAssetAtPath<MoveProfile>(path);
+            if (profile != null && !_allProfiles.Contains(profile))
+            {
+                _allProfiles.Add(profile);
+            }
+        }
+
+        _allProfiles.Sort((a, b) => string.Compare(a?.name, b?.name, StringComparison.OrdinalIgnoreCase));
+        FilterProfiles(_profileSearchField?.value ?? string.Empty);
+    }
+
+    private void FilterProfiles(string filter)
+    {
+        _visibleProfiles.Clear();
+
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            _visibleProfiles.AddRange(_allProfiles);
+        }
+        else
+        {
+            var lower = filter.Trim().ToLowerInvariant();
+            foreach (var profile in _allProfiles)
+            {
+                if (profile != null && profile.name.ToLowerInvariant().Contains(lower))
+                {
+                    _visibleProfiles.Add(profile);
+                }
+            }
+        }
+
+        _profileListView.itemsSource = _visibleProfiles;
+        _profileListView.Rebuild();
+
+        if (_selectedProfile != null && !_visibleProfiles.Contains(_selectedProfile))
+        {
+            SetSelectedProfile(null);
         }
     }
 
-    private void OnUndoRedoPerformed()
+    private void OnProfileSelectionChanged(IEnumerable<object> selection)
     {
+        var profile = selection.OfType<MoveProfile>().FirstOrDefault();
+        SetSelectedProfile(profile);
+    }
+
+    private void OnProfilePointerDown(PointerDownEvent evt)
+    {
+        if (evt.clickCount == 2)
+        {
+            BeginPlacement();
+        }
+    }
+
+    private void SetSelectedProfile(MoveProfile profile)
+    {
+        _selectedProfile = profile;
+
+        if (profile == null)
+        {
+            _profileListView.ClearSelection();
+            _profileDetailLabel.text = "Select a profile to see details.";
+        }
+        else
+        {
+            int index = _visibleProfiles.IndexOf(profile);
+            if (index >= 0)
+            {
+                _profileListView.SetSelectionWithoutNotify(index);
+            }
+
+            _profileDetailLabel.text =
+                $"<b>{profile.name}</b>\nStamina Cost: {profile.StaminaCost:F1}\nTrajectory Samples: {profile.TrajectorySamples}";
+        }
+
+        UpdateActionStates();
+    }
+
+    private void BeginPlacement()
+    {
+        if (_selectedProfile == null)
+        {
+            EditorUtility.DisplayDialog("Route Authoring", "Select a route profile to place first.", "OK");
+            return;
+        }
+
         if (_activeGraph == null)
         {
+            EditorUtility.DisplayDialog("Route Authoring", "Assign a RouteGraph asset to edit.", "OK");
             return;
         }
 
-        _serializedGraph = new SerializedObject(_activeGraph);
-        UpdateValidation(force: true);
-        Repaint();
-    }
-
-    private void OnGUI()
-    {
-        using (new EditorGUILayout.HorizontalScope())
+        _pendingPlacementProfile = _selectedProfile;
+        _pendingPlacementValid = false;
+        if (_placementButton != null)
         {
-            DrawLibraryPanel();
-            DrawRouteEditor();
+            _placementButton.text = PlacementActive;
         }
 
-        DrawValidationStatus();
-
-        if (Event.current.type == EventType.Layout)
-        {
-            UpdateValidation();
-        }
+        SceneView.FocusWindowIfItsOpen<SceneView>();
+        SceneView.RepaintAll();
     }
 
-    private void DrawLibraryPanel()
+    private void CancelPlacement()
     {
-        using (new EditorGUILayout.VerticalScope(GUILayout.Width(LibraryPanelWidth)))
+        _pendingPlacementProfile = null;
+        _pendingPlacementValid = false;
+        if (_placementButton != null)
         {
-            EditorGUILayout.LabelField("Library", EditorStyles.boldLabel);
-
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
-            {
-                GUILayout.Label("Search", GUILayout.Width(50f));
-                _librarySearch = GUILayout.TextField(_librarySearch, EditorStyles.toolbarTextField);
-                if (GUILayout.Button(string.Empty, EditorStyles.toolbarSearchCancelButton))
-                {
-                    _librarySearch = string.Empty;
-                    GUI.FocusControl(null);
-                }
-            }
-
-            using (var scroll = new EditorGUILayout.ScrollViewScope(_libraryScroll))
-            {
-                _libraryScroll = scroll.scrollPosition;
-
-                foreach (var graph in _library)
-                {
-                    if (graph == null)
-                    {
-                        continue;
-                    }
-
-                    if (!string.IsNullOrEmpty(_librarySearch) &&
-                        graph.name.IndexOf(_librarySearch, StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        continue;
-                    }
-
-                    using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
-                    {
-                        if (GUILayout.Button(graph.name, GUILayout.ExpandWidth(true)))
-                        {
-                            SetActiveGraph(graph);
-                        }
-
-                        if (GUILayout.Button("Ping", GUILayout.Width(46f)))
-                        {
-                            EditorGUIUtility.PingObject(graph);
-                        }
-                    }
-                }
-            }
-
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button("Refresh", GUILayout.Height(24f)))
-            {
-                RefreshLibrary();
-            }
-
-            if (GUILayout.Button("Create Route Graph", GUILayout.Height(26f)))
-            {
-                CreateRouteGraphAsset();
-            }
+            _placementButton.text = PlacementIdle;
         }
     }
 
-    private void DrawRouteEditor()
+    private void OnNodeSelectionChanged(IEnumerable<object> selection)
     {
-        using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+        var entry = selection.OfType<NodeEntry>().FirstOrDefault();
+        if (entry != null)
         {
-            if (_activeGraph == null)
+            SelectNode(entry.Index);
+        }
+        else
+        {
+            SelectNode(-1);
+        }
+    }
+
+    private void SelectNode(int index)
+    {
+        _selectedNodeIndex = index;
+
+        if (index < 0)
+        {
+            _nodeListView.ClearSelection();
+        }
+        else
+        {
+            for (int i = 0; i < _nodeEntries.Count; i++)
             {
-                GUILayout.FlexibleSpace();
-                EditorGUILayout.HelpBox("Select or create a Route Graph to begin editing.", MessageType.Info);
-                GUILayout.FlexibleSpace();
-                return;
-            }
-
-            _serializedGraph ??= new SerializedObject(_activeGraph);
-            _serializedGraph.UpdateIfRequiredOrScript();
-
-            EditorGUILayout.LabelField(_activeGraph.name, EditorStyles.largeLabel);
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("Ping Asset", GUILayout.Width(100f)))
+                if (_nodeEntries[i].Index == index)
                 {
-                    EditorGUIUtility.PingObject(_activeGraph);
-                }
-
-                GUILayout.FlexibleSpace();
-
-                if (GUILayout.Button("Validate", GUILayout.Width(100f)))
-                {
-                    UpdateValidation(force: true);
-                }
-            }
-
-            EditorGUILayout.Space();
-
-            Rect treeRect = GUILayoutUtility.GetRect(100f, 9999f, TreeViewMinHeight, 400f);
-            _treeView?.OnGUI(treeRect);
-
-            EditorGUILayout.Space();
-
-            EditorGUILayout.LabelField("Inspector", EditorStyles.boldLabel);
-            using (var scroll = new EditorGUILayout.ScrollViewScope(_inspectorScroll))
-            {
-                _inspectorScroll = scroll.scrollPosition;
-
-                EditorGUI.BeginChangeCheck();
-                DrawSelectionInspector();
-                bool changed = EditorGUI.EndChangeCheck();
-                _serializedGraph.ApplyModifiedProperties();
-                if (changed)
-                {
-                    EditorUtility.SetDirty(_activeGraph);
-                    UpdateValidation(force: true);
+                    _nodeListView.SetSelectionWithoutNotify(i);
+                    break;
                 }
             }
         }
+
+        UpdateNodeInspector();
+        UpdateActionStates();
+        SceneView.RepaintAll();
     }
 
-    private void DrawSelectionInspector()
+    private void UpdateNodeInspector()
     {
-        if (string.IsNullOrEmpty(_selectedPropertyPath))
-        {
-            EditorGUILayout.HelpBox("Select a node or branch in the tree view to edit its parameters.",
-                MessageType.Info);
-            return;
-        }
+        _nodeInspector.Clear();
 
-        if (_serializedGraph == null)
+        if (_graphSerialized == null || _nodesProperty == null ||
+            _selectedNodeIndex < 0 || _selectedNodeIndex >= _nodesProperty.arraySize)
         {
             return;
         }
 
-        var property = _serializedGraph.FindProperty(_selectedPropertyPath);
-        if (property == null)
-        {
-            EditorGUILayout.HelpBox("The selected property could not be found. It may have been removed.",
-                MessageType.Warning);
-            return;
-        }
+        _graphSerialized.Update();
+        var nodeProperty = _nodesProperty.GetArrayElementAtIndex(_selectedNodeIndex);
 
-        using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-        {
-            EditorGUILayout.PropertyField(property, new GUIContent(_selectedDisplayName), true);
-        }
-    }
+        var labelField = new PropertyField(nodeProperty.FindPropertyRelative("_label"), "Label");
+        labelField.Bind(_graphSerialized);
+        _nodeInspector.Add(labelField);
 
-    private void DrawValidationStatus()
-    {
-        if (_activeGraph == null)
-        {
-            return;
-        }
+        var positionField = new PropertyField(nodeProperty.FindPropertyRelative("_worldPosition"), "World Position");
+        positionField.Bind(_graphSerialized);
+        _nodeInspector.Add(positionField);
 
-        if (_validationReport == null)
-        {
-            EditorGUILayout.HelpBox("Validation pending…", MessageType.Info);
-            return;
-        }
+        var profileField = new PropertyField(nodeProperty.FindPropertyRelative("_moveProfile"), "Move Profile");
+        profileField.Bind(_graphSerialized);
+        _nodeInspector.Add(profileField);
 
-        var messageType = _validationReport.HasErrors ? MessageType.Error : MessageType.Info;
-        EditorGUILayout.HelpBox(_validationReport.Summary, messageType);
-
-        if (_validationReport.HasErrors)
+        var useSelectedProfile = new Button(AssignSelectedProfileToNode)
         {
-            foreach (var error in _validationReport.Errors)
+            text = _selectedProfile != null ? $"Use Selected Profile ({_selectedProfile.name})" : "Use Selected Profile",
+            style =
             {
-                EditorGUILayout.LabelField("• " + error, EditorStyles.wordWrappedLabel);
+                marginTop = 4,
+                marginBottom = 4
             }
-        }
+        };
+        useSelectedProfile.SetEnabled(_selectedProfile != null);
+        _nodeInspector.Add(useSelectedProfile);
+
+        var expectedFoldout = new Foldout { text = "Expected State" };
+        var expectedState = nodeProperty.FindPropertyRelative("_expectedState");
+        expectedFoldout.Add(new PropertyField(expectedState.FindPropertyRelative("_velocity"), "Velocity"));
+        expectedFoldout.Add(new PropertyField(expectedState.FindPropertyRelative("_stamina"), "Stamina"));
+        expectedFoldout.Add(new PropertyField(expectedState.FindPropertyRelative("_dashCooldown"), "Dash Cooldown"));
+        expectedFoldout.Add(new PropertyField(expectedState.FindPropertyRelative("_airDashCooldown"), "Air Dash Cooldown"));
+        expectedFoldout.Add(new PropertyField(expectedState.FindPropertyRelative("_glideTimeRemaining"), "Glide Time"));
+        expectedFoldout.Add(new PropertyField(expectedState.FindPropertyRelative("_flightTimeRemaining"), "Flight Time"));
+        expectedFoldout.Add(new PropertyField(expectedState.FindPropertyRelative("_airDashCount"), "Air Dash Count"));
+        expectedFoldout.Bind(_graphSerialized);
+        _nodeInspector.Add(expectedFoldout);
+
+        var detailsFoldout = new Foldout { text = "Details" };
+        detailsFoldout.Add(new PropertyField(nodeProperty.FindPropertyRelative("_designerNotes"), "Notes"));
+        detailsFoldout.Add(new PropertyField(nodeProperty.FindPropertyRelative("_important"), "Important"));
+        detailsFoldout.Add(new PropertyField(nodeProperty.FindPropertyRelative("_colorOverride"), "Color Override"));
+        detailsFoldout.Bind(_graphSerialized);
+        _nodeInspector.Add(detailsFoldout);
+
+        var branchesFoldout = new Foldout { text = "Branches" };
+        branchesFoldout.Add(new PropertyField(nodeProperty.FindPropertyRelative("_branches")));
+        branchesFoldout.Bind(_graphSerialized);
+        _nodeInspector.Add(branchesFoldout);
     }
 
-    private void RefreshLibrary()
+    private void AssignSelectedProfileToNode()
     {
-        _library.Clear();
-        string[] guids = AssetDatabase.FindAssets("t:RouteGraph");
-        foreach (string guid in guids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            var asset = AssetDatabase.LoadAssetAtPath<RouteGraph>(path);
-            if (asset != null && !_library.Contains(asset))
-            {
-                _library.Add(asset);
-            }
-        }
-
-        _library.Sort((a, b) => string.CompareOrdinal(a?.name, b?.name));
-    }
-
-    private void CreateRouteGraphAsset()
-    {
-        string path = EditorUtility.SaveFilePanelInProject("Create Route Graph", "RouteGraph", "asset",
-            "Choose a location for the new Route Graph asset.");
-        if (string.IsNullOrEmpty(path))
+        if (_selectedProfile == null || _graphSerialized == null || _nodesProperty == null ||
+            _selectedNodeIndex < 0 || _selectedNodeIndex >= _nodesProperty.arraySize)
         {
             return;
         }
 
-        var asset = CreateInstance<RouteGraph>();
-        AssetDatabase.CreateAsset(asset, path);
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
+        Undo.RegisterCompleteObjectUndo(_activeGraph, "Assign Move Profile");
+        _graphSerialized.Update();
+        var nodeProperty = _nodesProperty.GetArrayElementAtIndex(_selectedNodeIndex);
+        nodeProperty.FindPropertyRelative("_moveProfile").objectReferenceValue = _selectedProfile;
+        _graphSerialized.ApplyModifiedProperties();
+        EditorUtility.SetDirty(_activeGraph);
 
-        RefreshLibrary();
-        SetActiveGraph(asset);
+        UpdateNodeEntries();
+        UpdateValidationMessages();
+        SceneView.RepaintAll();
     }
 
     private void SetActiveGraph(RouteGraph graph)
@@ -318,770 +649,484 @@ public class RouteAuthoringWindow : EditorWindow
         }
 
         _activeGraph = graph;
-        _serializedGraph = graph != null ? new SerializedObject(graph) : null;
-        _selectedPropertyPath = null;
-        _selectedDisplayName = null;
-        _profileSerializationCache.Clear();
 
-        UpdateValidation(force: true);
-    }
-
-    private void OnTreeSelectionChanged(RouteTreeView.SelectionData selection)
-    {
-        if (selection == null)
+        if (_graphField != null)
         {
-            _selectedPropertyPath = null;
-            _selectedDisplayName = null;
+            _graphField.SetValueWithoutNotify(graph);
+        }
+
+        if (_activeGraph != null)
+        {
+            _graphSerialized = new SerializedObject(_activeGraph);
+            _nodesProperty = _graphSerialized.FindProperty("_nodes");
         }
         else
         {
-            _selectedPropertyPath = selection.PropertyPath;
-            _selectedDisplayName = selection.DisplayName;
+            _graphSerialized = null;
+            _nodesProperty = null;
         }
 
-        Repaint();
+        _selectedNodeIndex = -1;
+        UpdateNodeEntries();
+        UpdateNodeInspector();
+        UpdateValidationMessages();
+        UpdateActionStates();
+        SceneView.RepaintAll();
     }
 
-    private void UpdateValidation(bool force = false)
+    private void UpdateNodeEntries()
+    {
+        _nodeEntries.Clear();
+
+        if (_activeGraph != null)
+        {
+            var nodes = _activeGraph.Nodes;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                var node = nodes[i];
+                var color = node.ColorOverride.a > 0f
+                    ? node.ColorOverride
+                    : node.MoveProfile != null ? node.MoveProfile.DebugColor : _activeGraph.DefaultColor;
+
+                _nodeEntries.Add(new NodeEntry
+                {
+                    Index = i,
+                    DisplayName = string.IsNullOrEmpty(node.Label) ? $"Node {i + 1}" : node.Label,
+                    Color = color,
+                    Profile = node.MoveProfile
+                });
+            }
+        }
+
+        _nodeListView.itemsSource = _nodeEntries;
+        _nodeListView.Rebuild();
+    }
+
+    private void UpdateActionStates()
+    {
+        bool hasGraph = _activeGraph != null;
+        bool hasProfile = _selectedProfile != null;
+        bool hasNodeSelection = _selectedNodeIndex >= 0 && _selectedNodeIndex < _nodeEntries.Count;
+
+        _placementButton?.SetEnabled(hasGraph && hasProfile);
+        _deleteNodeButton?.SetEnabled(hasNodeSelection);
+        _snapToSimulationButton?.SetEnabled(hasNodeSelection);
+    }
+
+    private void DeleteSelectedNode()
+    {
+        if (_graphSerialized == null || _nodesProperty == null ||
+            _selectedNodeIndex < 0 || _selectedNodeIndex >= _nodesProperty.arraySize)
+        {
+            return;
+        }
+
+        Undo.RegisterCompleteObjectUndo(_activeGraph, "Delete Route Gizmo");
+        _graphSerialized.Update();
+        _nodesProperty.DeleteArrayElementAtIndex(_selectedNodeIndex);
+        _graphSerialized.ApplyModifiedProperties();
+        EditorUtility.SetDirty(_activeGraph);
+
+        _selectedNodeIndex = -1;
+        UpdateNodeEntries();
+        UpdateNodeInspector();
+        UpdateValidationMessages();
+        UpdateActionStates();
+        SceneView.RepaintAll();
+    }
+
+    private void SnapSelectedNodeToSimulation()
+    {
+        if (_activeGraph == null || _selectedNodeIndex < 0 || _selectedNodeIndex >= _activeGraph.Nodes.Count)
+        {
+            return;
+        }
+
+        var node = _activeGraph.Nodes[_selectedNodeIndex];
+        if (node.MoveProfile == null)
+        {
+            EditorUtility.DisplayDialog("Route Authoring", "Assign a move profile before reverting.", "OK");
+            return;
+        }
+
+        var (startPos, startState) = GetSimulationStart(_selectedNodeIndex, _activeGraph.Nodes);
+        if (!node.MoveProfile.TryEvaluate(startPos, node.WorldPosition, startState, out var evaluation, out var error))
+        {
+            EditorUtility.DisplayDialog("Route Authoring", $"Simulation failed: {error}", "OK");
+            return;
+        }
+
+        Undo.RegisterCompleteObjectUndo(_activeGraph, "Snap Gizmo to Simulation");
+        _graphSerialized.Update();
+        var nodeProperty = _nodesProperty.GetArrayElementAtIndex(_selectedNodeIndex);
+        nodeProperty.FindPropertyRelative("_worldPosition").vector3Value = GetTrajectoryEnd(evaluation, node.WorldPosition);
+        ApplySnapshotToProperty(nodeProperty.FindPropertyRelative("_expectedState"), evaluation.EndState);
+        _graphSerialized.ApplyModifiedProperties();
+        EditorUtility.SetDirty(_activeGraph);
+
+        UpdateNodeEntries();
+        UpdateNodeInspector();
+        UpdateValidationMessages();
+        SceneView.RepaintAll();
+    }
+
+    private (Vector3 position, PlayerStateSnapshot state) GetSimulationStart(int nodeIndex, IReadOnlyList<RouteNode> nodes)
+    {
+        if (nodeIndex <= 0)
+        {
+            return (nodes[nodeIndex].WorldPosition, default);
+        }
+
+        var previous = nodes[nodeIndex - 1];
+        return (previous.WorldPosition, previous.ExpectedState);
+    }
+
+    private void PlacePendingNode(Vector3 position)
+    {
+        if (_pendingPlacementProfile == null || _graphSerialized == null || _nodesProperty == null)
+        {
+            return;
+        }
+
+        Undo.RegisterCompleteObjectUndo(_activeGraph, "Add Route Gizmo");
+        _graphSerialized.Update();
+        int newIndex = _nodesProperty.arraySize;
+        _nodesProperty.InsertArrayElementAtIndex(newIndex);
+        var nodeProperty = _nodesProperty.GetArrayElementAtIndex(newIndex);
+        nodeProperty.FindPropertyRelative("_label").stringValue = _pendingPlacementProfile.name;
+        nodeProperty.FindPropertyRelative("_worldPosition").vector3Value = position;
+        nodeProperty.FindPropertyRelative("_moveProfile").objectReferenceValue = _pendingPlacementProfile;
+        ApplySnapshotToProperty(nodeProperty.FindPropertyRelative("_expectedState"), default);
+        nodeProperty.FindPropertyRelative("_designerNotes").stringValue = string.Empty;
+        nodeProperty.FindPropertyRelative("_important").boolValue = false;
+        nodeProperty.FindPropertyRelative("_colorOverride").colorValue = new Color(0f, 0f, 0f, 0f);
+        var branches = nodeProperty.FindPropertyRelative("_branches");
+        branches.arraySize = 0;
+
+        _graphSerialized.ApplyModifiedProperties();
+        EditorUtility.SetDirty(_activeGraph);
+
+        TryPopulateNodeFromSimulation(newIndex);
+
+        CancelPlacement();
+        UpdateNodeEntries();
+        SelectNode(newIndex);
+        UpdateValidationMessages();
+    }
+
+    private void TryPopulateNodeFromSimulation(int nodeIndex)
+    {
+        if (_activeGraph == null || nodeIndex < 0 || nodeIndex >= _activeGraph.Nodes.Count)
+        {
+            return;
+        }
+
+        var node = _activeGraph.Nodes[nodeIndex];
+        if (node.MoveProfile == null)
+        {
+            return;
+        }
+
+        var (startPos, startState) = GetSimulationStart(nodeIndex, _activeGraph.Nodes);
+        if (!node.MoveProfile.TryEvaluate(startPos, node.WorldPosition, startState, out var evaluation, out _))
+        {
+            return;
+        }
+
+        _graphSerialized.Update();
+        var nodeProperty = _nodesProperty.GetArrayElementAtIndex(nodeIndex);
+        ApplySnapshotToProperty(nodeProperty.FindPropertyRelative("_expectedState"), evaluation.EndState);
+        _graphSerialized.ApplyModifiedProperties();
+        EditorUtility.SetDirty(_activeGraph);
+    }
+
+    private void ApplySnapshotToProperty(SerializedProperty stateProperty, PlayerStateSnapshot snapshot)
+    {
+        if (stateProperty == null)
+        {
+            return;
+        }
+
+        stateProperty.FindPropertyRelative("_velocity").vector2Value = snapshot.Velocity;
+        stateProperty.FindPropertyRelative("_stamina").floatValue = snapshot.Stamina;
+        stateProperty.FindPropertyRelative("_dashCooldown").floatValue = snapshot.DashCooldown;
+        stateProperty.FindPropertyRelative("_airDashCooldown").floatValue = snapshot.AirDashCooldown;
+        stateProperty.FindPropertyRelative("_glideTimeRemaining").floatValue = snapshot.GlideTimeRemaining;
+        stateProperty.FindPropertyRelative("_flightTimeRemaining").floatValue = snapshot.FlightTimeRemaining;
+        stateProperty.FindPropertyRelative("_airDashCount").intValue = snapshot.AirDashCount;
+    }
+
+    private void OnUndoRedoPerformed()
     {
         if (_activeGraph == null)
         {
-            _validationReport = null;
-            _treeView?.SetGraph(null, null);
             return;
         }
 
-        if (!force && EditorApplication.timeSinceStartup - _lastValidationSample < 0.25)
-        {
-            return;
-        }
-
-        _lastValidationSample = EditorApplication.timeSinceStartup;
-        _validationReport = GraphValidator.Build(_activeGraph);
-        _treeView?.SetGraph(_serializedGraph, _validationReport);
-        _treeView?.SetSelectionByPath(_selectedPropertyPath);
+        _graphSerialized = new SerializedObject(_activeGraph);
+        _nodesProperty = _graphSerialized.FindProperty("_nodes");
+        UpdateNodeEntries();
+        UpdateNodeInspector();
+        UpdateValidationMessages();
         SceneView.RepaintAll();
-        Repaint();
     }
 
-    private void OnSceneGUI(SceneView view)
+    private void OnEditorSelectionChanged()
     {
-        if (_activeGraph == null || _serializedGraph == null || _validationReport == null)
+        if (Selection.activeObject is RouteGraph graph)
+        {
+            SetActiveGraph(graph);
+        }
+    }
+
+    private void UpdateValidationMessages()
+    {
+        if (_validationBox == null)
         {
             return;
         }
 
-        _serializedGraph.UpdateIfRequiredOrScript();
-        var nodesProperty = _serializedGraph.FindProperty("_nodes");
-        if (nodesProperty == null || !nodesProperty.isArray)
+        if (_activeGraph == null)
         {
+            _validationBox.style.display = DisplayStyle.None;
             return;
         }
 
-        Handles.zTest = UnityEngine.Rendering.CompareFunction.Always;
-
-        foreach (var nodeResult in _validationReport.Nodes)
+        bool isValid = _activeGraph.TryValidate(out var errors);
+        if (isValid)
         {
-            if (nodeResult.Index < 0 || nodeResult.Index >= nodesProperty.arraySize)
+            if (errors.Count == 0)
             {
-                continue;
-            }
-
-            var nodeProperty = nodesProperty.GetArrayElementAtIndex(nodeResult.Index);
-            var positionProperty = nodeProperty.FindPropertyRelative("_worldPosition");
-            Vector3 position = positionProperty != null ? positionProperty.vector3Value : Vector3.zero;
-
-            Color color = ResolveNodeColor(nodeProperty, _activeGraph.DefaultColor, nodeResult.ProfileColor);
-            bool isSelected = TryParseNodeIndex(_selectedPropertyPath, out int selectedIndex) &&
-                              selectedIndex == nodeResult.Index;
-
-            DrawNodeHandles(nodeResult, nodeProperty, position, color, isSelected);
-        }
-
-        foreach (var branchResult in _validationReport.Branches)
-        {
-            DrawBranchVisualization(branchResult);
-        }
-    }
-
-    private void DrawNodeHandles(NodeValidationResult nodeResult, SerializedProperty nodeProperty, Vector3 position,
-        Color color, bool isSelected)
-    {
-        float size = HandleUtility.GetHandleSize(position) * (isSelected ? 0.22f : 0.18f);
-        Handles.color = nodeResult.HasError ? Color.red : color;
-        Handles.SphereHandleCap(0, position, Quaternion.identity, size, Event.current.type);
-        Handles.Label(position + Vector3.up * size * 2f, nodeResult.DisplayName,
-            nodeResult.HasError ? EditorStyles.boldLabel : EditorStyles.label);
-
-        EditorGUI.BeginChangeCheck();
-        Vector3 newPosition = Handles.PositionHandle(position, Quaternion.identity);
-        if (EditorGUI.EndChangeCheck())
-        {
-            nodeProperty.FindPropertyRelative("_worldPosition").vector3Value = newPosition;
-            _serializedGraph.ApplyModifiedProperties();
-            EditorUtility.SetDirty(_activeGraph);
-            UpdateValidation(force: true);
-        }
-
-        if (nodeResult.Evaluation.HasValue)
-        {
-            DrawTrajectory(nodeResult, color);
-            DrawApexHandle(nodeResult, nodeProperty, color);
-            DrawDurationHandles(nodeResult);
-        }
-        else if (!string.IsNullOrEmpty(nodeResult.Error))
-        {
-            Handles.color = Color.red;
-            Handles.Label(position + Vector3.up * size * 3f, nodeResult.Error, EditorStyles.wordWrappedLabel);
-        }
-    }
-
-    private void DrawTrajectory(NodeValidationResult nodeResult, Color color)
-    {
-        var evaluation = nodeResult.Evaluation.Value;
-        var trajectory = evaluation.Trajectory;
-        if (trajectory == null || trajectory.Count < 2)
-        {
-            return;
-        }
-
-        Handles.color = nodeResult.HasError ? Color.red : color;
-        Handles.DrawAAPolyLine(4f, trajectory.ToArray());
-
-        if (evaluation.CollisionIndex.HasValue &&
-            evaluation.CollisionIndex.Value >= 0 && evaluation.CollisionIndex.Value < trajectory.Count)
-        {
-            Vector3 collisionPoint = trajectory[evaluation.CollisionIndex.Value];
-            Handles.color = Color.red;
-            float size = HandleUtility.GetHandleSize(collisionPoint) * 0.15f;
-            Handles.CubeHandleCap(0, collisionPoint, Quaternion.identity, size, Event.current.type);
-            Handles.Label(collisionPoint + Vector3.up * size * 2f, "Collision", EditorStyles.boldLabel);
-        }
-    }
-
-    private void DrawApexHandle(NodeValidationResult nodeResult, SerializedProperty nodeProperty, Color color)
-    {
-        var evaluation = nodeResult.Evaluation.Value;
-        var trajectory = evaluation.Trajectory;
-        if (trajectory == null || trajectory.Count < 2)
-        {
-            return;
-        }
-
-        Vector3 apex = trajectory.OrderByDescending(p => p.y).First();
-        float size = HandleUtility.GetHandleSize(apex) * 0.12f;
-        Handles.color = color;
-
-        EditorGUI.BeginChangeCheck();
-        Vector3 moved = Handles.FreeMoveHandle(apex, Quaternion.identity, size, Vector3.zero, Handles.CubeHandleCap);
-        if (EditorGUI.EndChangeCheck())
-        {
-            Vector3 delta = moved - apex;
-            var positionProperty = nodeProperty.FindPropertyRelative("_worldPosition");
-            positionProperty.vector3Value += delta;
-            _serializedGraph.ApplyModifiedProperties();
-            EditorUtility.SetDirty(_activeGraph);
-            UpdateValidation(force: true);
-        }
-
-        Handles.Label(apex + Vector3.up * size * 1.5f,
-            $"Apex {apex.y:F2}", EditorStyles.miniBoldLabel);
-    }
-
-    private void DrawDurationHandles(NodeValidationResult nodeResult)
-    {
-        if (!nodeResult.Evaluation.HasValue)
-        {
-            return;
-        }
-
-        if (nodeResult.Profile is GlideProfile glide)
-        {
-            DrawDurationSlider(glide, "_duration", nodeResult);
-        }
-        else if (nodeResult.Profile is FlightProfile flight)
-        {
-            DrawDurationSlider(flight, "_duration", nodeResult);
-        }
-    }
-
-    private void DrawDurationSlider(MoveProfile profile, string propertyName, NodeValidationResult nodeResult)
-    {
-        var serializedProfile = GetProfileSerialized(profile);
-        if (serializedProfile == null)
-        {
-            return;
-        }
-
-        var durationProperty = serializedProfile.FindProperty(propertyName);
-        if (durationProperty == null)
-        {
-            return;
-        }
-
-        float duration = durationProperty.floatValue;
-        Vector3 anchor = nodeResult.Evaluation.Value.Trajectory.Last();
-        Vector3 handlePosition = anchor + Vector3.up * HandleUtility.GetHandleSize(anchor) * 0.4f;
-        Handles.color = profile.DebugColor;
-
-        EditorGUI.BeginChangeCheck();
-        float scaled = Handles.ScaleSlider(duration, handlePosition, Vector3.right, Quaternion.identity,
-            HandleUtility.GetHandleSize(handlePosition), 0f);
-        if (EditorGUI.EndChangeCheck())
-        {
-            durationProperty.floatValue = Mathf.Max(0.1f, scaled);
-            serializedProfile.ApplyModifiedProperties();
-            EditorUtility.SetDirty(profile);
-            UpdateValidation(force: true);
-        }
-
-        Handles.Label(handlePosition + Vector3.up * 0.1f,
-            $"Duration {durationProperty.floatValue:F2}s", EditorStyles.miniBoldLabel);
-    }
-
-    private void DrawBranchVisualization(BranchValidationResult branchResult)
-    {
-        bool isSelected = TryParseBranchIndices(_selectedPropertyPath, out int nodeIndex, out int branchIndex) &&
-                          nodeIndex == branchResult.OriginIndex && branchIndex == branchResult.BranchIndex;
-
-        if (!branchResult.HasTarget)
-        {
-            Handles.color = Color.red;
-            Vector3 labelPoint = branchResult.StartPosition +
-                                 Vector3.up * HandleUtility.GetHandleSize(branchResult.StartPosition) * 0.2f;
-            Handles.Label(labelPoint,
-                $"{branchResult.DisplayName}: {branchResult.Error}",
-                EditorStyles.wordWrappedLabel);
-            return;
-        }
-
-        Color color = branchResult.ProfileColor;
-        if (color.a <= 0f)
-        {
-            color = _activeGraph != null ? _activeGraph.DefaultColor : Color.cyan;
-        }
-
-        if (branchResult.Evaluation.HasValue && branchResult.Evaluation.Value.Trajectory != null &&
-            branchResult.Evaluation.Value.Trajectory.Count >= 2)
-        {
-            var points = branchResult.Evaluation.Value.Trajectory.ToArray();
-            Handles.color = branchResult.HasError ? Color.red : color;
-            Handles.DrawAAPolyLine(3f, points);
-        }
-        else
-        {
-            Handles.color = Color.red;
-            Handles.DrawDottedLine(branchResult.StartPosition, branchResult.TargetPosition, 4f);
-        }
-
-        Vector3 labelPos = (branchResult.StartPosition + branchResult.TargetPosition) * 0.5f;
-        float labelOffset = HandleUtility.GetHandleSize(labelPos) * 0.1f;
-        Handles.Label(labelPos + Vector3.up * labelOffset,
-            branchResult.HasError ? branchResult.Error : branchResult.DisplayName,
-            branchResult.HasError ? EditorStyles.wordWrappedLabel : EditorStyles.miniBoldLabel);
-
-        if (isSelected)
-        {
-            Handles.color = Color.yellow;
-            if (branchResult.Evaluation.HasValue && branchResult.Evaluation.Value.Trajectory != null &&
-                branchResult.Evaluation.Value.Trajectory.Count >= 2)
-            {
-                Handles.DrawAAPolyLine(5f, branchResult.Evaluation.Value.Trajectory.ToArray());
+                _validationBox.text = "All transitions simulate successfully.";
+                _validationBox.messageType = HelpBoxMessageType.Info;
             }
             else
             {
-                Handles.DrawAAPolyLine(5f, branchResult.StartPosition, branchResult.TargetPosition);
+                _validationBox.text = string.Join("
+", errors);
+                _validationBox.messageType = HelpBoxMessageType.Warning;
             }
         }
-    }
-
-    private SerializedObject GetProfileSerialized(MoveProfile profile)
-    {
-        if (profile == null)
+        else
         {
-            return null;
+            _validationBox.text = string.Join("
+", errors);
+            _validationBox.messageType = HelpBoxMessageType.Error;
         }
 
-        if (!_profileSerializationCache.TryGetValue(profile, out var serialized) || serialized == null)
-        {
-            serialized = new SerializedObject(profile);
-            _profileSerializationCache[profile] = serialized;
-        }
-
-        serialized.UpdateIfRequiredOrScript();
-        return serialized;
+        _validationBox.style.display = DisplayStyle.Flex;
     }
 
-    private static Color ResolveNodeColor(SerializedProperty nodeProperty, Color fallback, Color profileColor)
+    private void OnSceneGUI(SceneView sceneView)
     {
-        var colorOverride = nodeProperty.FindPropertyRelative("_colorOverride");
-        if (colorOverride != null)
+        if (_activeGraph == null)
         {
-            var overrideColor = colorOverride.colorValue;
-            if (overrideColor.a > 0f)
+            return;
+        }
+
+        Handles.zTest = CompareFunction.LessEqual;
+
+        DrawPendingPlacement(sceneView);
+        DrawRouteNodes();
+    }
+
+    private void DrawPendingPlacement(SceneView sceneView)
+    {
+        if (_pendingPlacementProfile == null)
+        {
+            return;
+        }
+
+        var evt = Event.current;
+        UpdatePlacementPreview(evt);
+        HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
+
+        if (_pendingPlacementValid)
+        {
+            Handles.color = _pendingPlacementProfile.DebugColor;
+            Handles.DrawWireDisc(_pendingPlacementPosition, Vector3.up, 0.75f);
+            Handles.SphereHandleCap(0, _pendingPlacementPosition, Quaternion.identity,
+                HandleUtility.GetHandleSize(_pendingPlacementPosition) * 0.08f, EventType.Repaint);
+            Handles.Label(_pendingPlacementPosition + Vector3.up * HandleUtility.GetHandleSize(_pendingPlacementPosition) * 0.4f,
+                $"{_pendingPlacementProfile.name} (click to confirm)");
+        }
+
+        if (evt.type == EventType.MouseDown && evt.button == 0)
+        {
+            if (_pendingPlacementValid)
             {
-                return overrideColor;
+                PlacePendingNode(_pendingPlacementPosition);
             }
+            evt.Use();
+        }
+        else if (evt.type == EventType.KeyDown && evt.keyCode == KeyCode.Escape)
+        {
+            CancelPlacement();
+            evt.Use();
+        }
+    }
+
+    private void UpdatePlacementPreview(Event evt)
+    {
+        if (evt == null)
+        {
+            return;
         }
 
-        if (profileColor.a > 0f)
+        if (evt.type != EventType.MouseMove && evt.type != EventType.Layout && evt.type != EventType.Repaint)
         {
-            return profileColor;
+            return;
+        }
+
+        var ray = HandleUtility.GUIPointToWorldRay(evt.mousePosition);
+        if (Physics.Raycast(ray, out var hit, 500f))
+        {
+            _pendingPlacementPosition = hit.point;
+            _pendingPlacementValid = true;
+        }
+        else
+        {
+            var plane = new Plane(Vector3.up, Vector3.zero);
+            if (plane.Raycast(ray, out var distance))
+            {
+                _pendingPlacementPosition = ray.GetPoint(distance);
+                _pendingPlacementValid = true;
+            }
+            else
+            {
+                _pendingPlacementValid = false;
+            }
+        }
+    }
+
+    private void DrawRouteNodes()
+    {
+        var nodes = _activeGraph.Nodes;
+        if (nodes.Count == 0)
+        {
+            return;
+        }
+
+        PlayerStateSnapshot lastState = default;
+        Vector3 lastPosition = nodes[0].WorldPosition;
+        bool hasState = false;
+
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            var node = nodes[i];
+            var color = node.ColorOverride.a > 0f
+                ? node.ColorOverride
+                : node.MoveProfile != null ? node.MoveProfile.DebugColor : _activeGraph.DefaultColor;
+
+            Vector3 startPos;
+            PlayerStateSnapshot startState;
+            if (i == 0 || !hasState)
+            {
+                if (i == 0)
+                {
+                    startPos = node.WorldPosition;
+                    startState = default;
+                }
+                else
+                {
+                    var prev = nodes[i - 1];
+                    startPos = prev.WorldPosition;
+                    startState = prev.ExpectedState;
+                }
+            }
+            else
+            {
+                startPos = lastPosition;
+                startState = lastState;
+            }
+
+            bool hasEvaluation = false;
+            MoveEvaluation evaluation = default;
+            string error = string.Empty;
+
+            if (node.MoveProfile != null)
+            {
+                hasEvaluation = node.MoveProfile.TryEvaluate(startPos, node.WorldPosition, startState, out evaluation, out error);
+            }
+            else
+            {
+                error = "No move profile assigned.";
+            }
+
+            var size = HandleUtility.GetHandleSize(node.WorldPosition) * 0.1f;
+            Handles.color = color;
+
+            if (_selectedNodeIndex == i)
+            {
+                EditorGUI.BeginChangeCheck();
+                var newPosition = Handles.PositionHandle(node.WorldPosition, Quaternion.identity);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RegisterCompleteObjectUndo(_activeGraph, "Move Route Gizmo");
+                    _graphSerialized.Update();
+                    var nodeProperty = _nodesProperty.GetArrayElementAtIndex(i);
+                    nodeProperty.FindPropertyRelative("_worldPosition").vector3Value = newPosition;
+                    _graphSerialized.ApplyModifiedProperties();
+                    EditorUtility.SetDirty(_activeGraph);
+                    UpdateNodeEntries();
+                    UpdateValidationMessages();
+                    Repaint();
+                }
+            }
+            else
+            {
+                if (Handles.Button(node.WorldPosition, Quaternion.identity, size, size, Handles.SphereHandleCap))
+                {
+                    SelectNode(i);
+                }
+            }
+
+            Handles.SphereHandleCap(0, node.WorldPosition, Quaternion.identity, size, EventType.Repaint);
+            Handles.Label(node.WorldPosition + Vector3.up * size * 2f, node.Label);
+
+            if (hasEvaluation && evaluation.Trajectory != null && evaluation.Trajectory.Count > 1)
+            {
+                Handles.DrawAAPolyLine(4f, evaluation.Trajectory.ToArray());
+                if (evaluation.CollisionIndex.HasValue && evaluation.CollisionIndex.Value >= 0 &&
+                    evaluation.CollisionIndex.Value < evaluation.Trajectory.Count)
+                {
+                    Handles.color = Color.red;
+                    var collisionPoint = evaluation.Trajectory[evaluation.CollisionIndex.Value];
+                    Handles.SphereHandleCap(0, collisionPoint, Quaternion.identity, size * 1.5f, EventType.Repaint);
+                }
+
+                lastState = evaluation.EndState;
+                lastPosition = node.WorldPosition;
+                hasState = true;
+            }
+            else
+            {
+                Handles.color = Color.yellow;
+                Handles.DrawDottedLine(startPos, node.WorldPosition, 4f);
+                if (!string.IsNullOrEmpty(error))
+                {
+                    Handles.Label(node.WorldPosition + Vector3.up * size * 3f, error);
+                }
+                hasState = false;
+            }
+        }
+    }
+
+    private static Vector3 GetTrajectoryEnd(MoveEvaluation evaluation, Vector3 fallback)
+    {
+        if (evaluation.Trajectory != null && evaluation.Trajectory.Count > 0)
+        {
+            return evaluation.Trajectory[evaluation.Trajectory.Count - 1];
         }
 
         return fallback;
     }
 
-    private static bool TryParseNodeIndex(string propertyPath, out int index)
+    private struct NodeEntry
     {
-        index = -1;
-        if (string.IsNullOrEmpty(propertyPath))
-        {
-            return false;
-        }
-
-        const string prefix = "_nodes.Array.data[";
-        int prefixIndex = propertyPath.IndexOf(prefix, StringComparison.Ordinal);
-        if (prefixIndex < 0)
-        {
-            return false;
-        }
-
-        int start = prefixIndex + prefix.Length;
-        int end = propertyPath.IndexOf(']', start);
-        if (end < 0)
-        {
-            return false;
-        }
-
-        string slice = propertyPath.Substring(start, end - start);
-        return int.TryParse(slice, out index);
-    }
-
-    private static bool TryParseBranchIndices(string propertyPath, out int nodeIndex, out int branchIndex)
-    {
-        nodeIndex = -1;
-        branchIndex = -1;
-        if (string.IsNullOrEmpty(propertyPath))
-        {
-            return false;
-        }
-
-        const string nodePrefix = "_nodes.Array.data[";
-        int nodeStart = propertyPath.IndexOf(nodePrefix, StringComparison.Ordinal);
-        if (nodeStart < 0)
-        {
-            return false;
-        }
-
-        int nodeEnd = propertyPath.IndexOf(']', nodeStart + nodePrefix.Length);
-        if (nodeEnd < 0)
-        {
-            return false;
-        }
-
-        if (!int.TryParse(propertyPath.Substring(nodeStart + nodePrefix.Length,
-                nodeEnd - nodeStart - nodePrefix.Length), out nodeIndex))
-        {
-            return false;
-        }
-
-        const string branchPrefix = "_branches.Array.data[";
-        int branchStart = propertyPath.IndexOf(branchPrefix, nodeEnd, StringComparison.Ordinal);
-        if (branchStart < 0)
-        {
-            return false;
-        }
-
-        int branchEnd = propertyPath.IndexOf(']', branchStart + branchPrefix.Length);
-        if (branchEnd < 0)
-        {
-            return false;
-        }
-
-        return int.TryParse(propertyPath.Substring(branchStart + branchPrefix.Length,
-            branchEnd - branchStart - branchPrefix.Length), out branchIndex);
-    }
-    private class RouteTreeView : TreeView
-    {
-        private readonly Dictionary<int, string> _propertyLookup = new Dictionary<int, string>();
-        private readonly Dictionary<int, string> _displayLookup = new Dictionary<int, string>();
-        private readonly HashSet<int> _errorItems = new HashSet<int>();
-
-        private SerializedObject _graph;
-        private SerializedProperty _nodesProperty;
-        private GraphValidationReport _report;
-
-        public RouteTreeView(TreeViewState state) : base(state)
-        {
-            showBorder = true;
-            Reload();
-        }
-
-        public event Action<SelectionData> SelectionChangedEvent;
-
-        public void SetGraph(SerializedObject graph, GraphValidationReport report)
-        {
-            _graph = graph;
-            _nodesProperty = graph != null ? graph.FindProperty("_nodes") : null;
-            _report = report;
-            Reload();
-        }
-
-        public void SetSelectionByPath(string propertyPath)
-        {
-            if (string.IsNullOrEmpty(propertyPath))
-            {
-                SetSelection(new List<int>());
-                return;
-            }
-
-            int id = ResolveId(propertyPath);
-            if (id != 0)
-            {
-                SetSelection(new List<int> { id });
-            }
-        }
-
-        protected override TreeViewItem BuildRoot()
-        {
-            _propertyLookup.Clear();
-            _displayLookup.Clear();
-            _errorItems.Clear();
-
-            var root = new TreeViewItem { id = 0, depth = -1, displayName = "Root" };
-            var items = new List<TreeViewItem>();
-            int nextId = 1;
-
-            if (_nodesProperty != null && _nodesProperty.isArray)
-            {
-                for (int i = 0; i < _nodesProperty.arraySize; i++)
-                {
-                    var nodeProperty = _nodesProperty.GetArrayElementAtIndex(i);
-                    string label = $"Node {i}: {GetNodeLabel(nodeProperty)}";
-                    var nodeItem = new TreeViewItem { id = nextId++, depth = 0, displayName = label };
-                    items.Add(nodeItem);
-                    _propertyLookup[nodeItem.id] = nodeProperty.propertyPath;
-                    _displayLookup[nodeItem.id] = label;
-
-                    if (_report?.GetNode(i)?.HasError == true)
-                    {
-                        _errorItems.Add(nodeItem.id);
-                    }
-
-                    var branches = nodeProperty.FindPropertyRelative("_branches");
-                    if (branches != null && branches.isArray)
-                    {
-                        for (int b = 0; b < branches.arraySize; b++)
-                        {
-                            var branchProperty = branches.GetArrayElementAtIndex(b);
-                            int target = branchProperty.FindPropertyRelative("_targetNodeIndex")?.intValue ?? -1;
-                            string branchLabel = $"Branch {b}: → {target}";
-                            var branchItem = new TreeViewItem { id = nextId++, depth = 1, displayName = branchLabel };
-                            items.Add(branchItem);
-                            _propertyLookup[branchItem.id] = branchProperty.propertyPath;
-                            _displayLookup[branchItem.id] = branchLabel;
-
-                            if (_report?.GetBranch(i, b)?.HasError == true)
-                            {
-                                _errorItems.Add(branchItem.id);
-                            }
-                        }
-                    }
-                }
-            }
-
-            SetupParentsAndChildrenFromDepths(root, items);
-            return root;
-        }
-
-        protected override void RowGUI(RowGUIArgs args)
-        {
-            if (_errorItems.Contains(args.item.id))
-            {
-                var rect = args.rowRect;
-                EditorGUI.DrawRect(rect, new Color(0.8f, 0.2f, 0.2f, 0.25f));
-            }
-
-            base.RowGUI(args);
-        }
-
-        protected override void SelectionChanged(IList<int> selectedIds)
-        {
-            if (selectedIds == null || selectedIds.Count == 0)
-            {
-                SelectionChangedEvent?.Invoke(null);
-                return;
-            }
-
-            int id = selectedIds[0];
-            if (_propertyLookup.TryGetValue(id, out var path))
-            {
-                _displayLookup.TryGetValue(id, out var displayName);
-                SelectionChangedEvent?.Invoke(new SelectionData(path, displayName ?? path));
-            }
-            else
-            {
-                SelectionChangedEvent?.Invoke(null);
-            }
-        }
-
-        private int ResolveId(string propertyPath)
-        {
-            foreach (var pair in _propertyLookup)
-            {
-                if (pair.Value == propertyPath)
-                {
-                    return pair.Key;
-                }
-            }
-
-            return 0;
-        }
-
-        private static string GetNodeLabel(SerializedProperty nodeProperty)
-        {
-            var labelProp = nodeProperty.FindPropertyRelative("_label");
-            string label = labelProp != null ? labelProp.stringValue : string.Empty;
-            return string.IsNullOrEmpty(label) ? "Node" : label;
-        }
-
-        public readonly struct SelectionData
-        {
-            public SelectionData(string propertyPath, string displayName)
-            {
-                PropertyPath = propertyPath;
-                DisplayName = displayName;
-            }
-
-            public string PropertyPath { get; }
-            public string DisplayName { get; }
-        }
-    }
-
-    private sealed class GraphValidationReport
-    {
-        private readonly List<string> _errors = new List<string>();
-        private readonly Dictionary<int, NodeValidationResult> _nodeLookup = new Dictionary<int, NodeValidationResult>();
-        private readonly Dictionary<(int, int), BranchValidationResult> _branchLookup =
-            new Dictionary<(int, int), BranchValidationResult>();
-
-        public readonly List<NodeValidationResult> Nodes = new List<NodeValidationResult>();
-        public readonly List<BranchValidationResult> Branches = new List<BranchValidationResult>();
-
-        public IReadOnlyList<string> Errors => _errors;
-        public bool HasErrors => _errors.Count > 0;
-        public string Summary { get; set; } = string.Empty;
-
-        public void AddNode(NodeValidationResult node)
-        {
-            Nodes.Add(node);
-            _nodeLookup[node.Index] = node;
-            if (node.HasError)
-            {
-                _errors.Add($"{node.DisplayName}: {node.Error}");
-            }
-        }
-
-        public void AddBranch(BranchValidationResult branch)
-        {
-            Branches.Add(branch);
-            _branchLookup[(branch.OriginIndex, branch.BranchIndex)] = branch;
-            if (branch.HasError && !string.IsNullOrEmpty(branch.Error))
-            {
-                _errors.Add($"{branch.DisplayName}: {branch.Error}");
-            }
-        }
-
-        public NodeValidationResult GetNode(int index)
-        {
-            return _nodeLookup.TryGetValue(index, out var node) ? node : null;
-        }
-
-        public BranchValidationResult GetBranch(int nodeIndex, int branchIndex)
-        {
-            return _branchLookup.TryGetValue((nodeIndex, branchIndex), out var branch) ? branch : null;
-        }
-    }
-
-    private sealed class NodeValidationResult
-    {
-        public int Index { get; set; }
-        public string DisplayName { get; set; }
-        public MoveProfile Profile { get; set; }
-        public Color ProfileColor { get; set; }
-        public MoveEvaluation? Evaluation { get; set; }
-        public string Error { get; set; }
-        public bool StateMismatch { get; set; }
-        public Vector3 StartPosition { get; set; }
-        public Vector3 TargetPosition { get; set; }
-        public PlayerStateSnapshot StartState { get; set; }
-
-        public bool HasError => !string.IsNullOrEmpty(Error);
-    }
-
-    private sealed class BranchValidationResult
-    {
-        public int OriginIndex { get; set; }
-        public int BranchIndex { get; set; }
-        public string DisplayName { get; set; }
-        public MoveProfile Profile { get; set; }
-        public Color ProfileColor { get; set; }
-        public MoveEvaluation? Evaluation { get; set; }
-        public string Error { get; set; }
-        public Vector3 StartPosition { get; set; }
-        public Vector3 TargetPosition { get; set; }
-        public bool HasTarget { get; set; }
-
-        public bool HasError => !string.IsNullOrEmpty(Error);
-    }
-
-    private static class GraphValidator
-    {
-        public static GraphValidationReport Build(RouteGraph graph)
-        {
-            var report = new GraphValidationReport();
-            if (graph == null)
-            {
-                report.Summary = "No route selected.";
-                return report;
-            }
-
-            var nodes = graph.Nodes;
-            if (nodes == null || nodes.Count == 0)
-            {
-                report.Summary = "Route graph has no nodes.";
-                return report;
-            }
-
-            var first = nodes[0];
-            var firstResult = new NodeValidationResult
-            {
-                Index = 0,
-                DisplayName = $"Node 0: {first.Label}",
-                Profile = first.MoveProfile,
-                ProfileColor = first.MoveProfile != null ? first.MoveProfile.DebugColor : graph.DefaultColor,
-                Evaluation = null,
-                Error = string.Empty,
-                StateMismatch = false,
-                StartPosition = first.WorldPosition,
-                TargetPosition = first.WorldPosition,
-                StartState = first.ExpectedState
-            };
-            report.AddNode(firstResult);
-
-            ValidateBranches(graph, first, 0, first.WorldPosition, first.ExpectedState, report);
-
-            Vector3 currentPosition = first.WorldPosition;
-            PlayerStateSnapshot currentState = first.ExpectedState;
-
-            for (int i = 1; i < nodes.Count; i++)
-            {
-                var node = nodes[i];
-                var result = new NodeValidationResult
-                {
-                    Index = i,
-                    DisplayName = $"Node {i}: {node.Label}",
-                    Profile = node.MoveProfile,
-                    ProfileColor = node.MoveProfile != null ? node.MoveProfile.DebugColor : graph.DefaultColor,
-                    StartPosition = currentPosition,
-                    TargetPosition = node.WorldPosition,
-                    StartState = currentState
-                };
-
-                if (!node.TryEvaluate(currentPosition, currentState, out var evaluation, out string error))
-                {
-                    result.Error = error;
-                }
-                else
-                {
-                    result.Evaluation = evaluation;
-                    currentPosition = node.WorldPosition;
-                    currentState = evaluation.EndState;
-
-                    if (!node.ExpectedState.ApproximatelyEquals(evaluation.EndState))
-                    {
-                        result.StateMismatch = true;
-                        result.Error =
-                            $"Expected {node.ExpectedState} but got {evaluation.EndState}.";
-                    }
-                }
-
-                report.AddNode(result);
-                ValidateBranches(graph, node, i, currentPosition, currentState, report);
-            }
-
-            report.Summary = report.HasErrors
-                ? "Route contains validation issues. Review highlighted nodes and branches."
-                : "Route validated successfully.";
-
-            return report;
-        }
-
-        private static void ValidateBranches(RouteGraph graph, RouteNode node, int nodeIndex,
-            Vector3 nodePosition, PlayerStateSnapshot nodeState, GraphValidationReport report)
-        {
-            if (!node.HasBranches)
-            {
-                return;
-            }
-
-            int branchIndex = 0;
-            foreach (var branch in node.Branches)
-            {
-                var branchResult = new BranchValidationResult
-                {
-                    OriginIndex = nodeIndex,
-                    BranchIndex = branchIndex,
-                    DisplayName = $"Branch {branchIndex}: {node.Label} → {branch.TargetNodeIndex}",
-                    Profile = branch.ProfileOverride != null ? branch.ProfileOverride : node.MoveProfile,
-                    ProfileColor = branch.ColorTint,
-                    StartPosition = nodePosition
-                };
-
-                if (!graph.TryGetNode(branch.TargetNodeIndex, out var target))
-                {
-                    branchResult.Error = $"Invalid branch target index {branch.TargetNodeIndex}.";
-                    report.AddBranch(branchResult);
-                    branchIndex++;
-                    continue;
-                }
-
-                branchResult.HasTarget = true;
-                branchResult.TargetPosition = target.WorldPosition;
-
-                var profile = branchResult.Profile;
-                if (profile == null)
-                {
-                    branchResult.Error = "No move profile available for branch transition.";
-                    report.AddBranch(branchResult);
-                    branchIndex++;
-                    continue;
-                }
-
-                if (!profile.TryEvaluate(nodePosition, target.WorldPosition, nodeState, out var evaluation,
-                        out string error))
-                {
-                    branchResult.Error = error;
-                }
-                else
-                {
-                    branchResult.Evaluation = evaluation;
-                    if (!branch.ExpectedState.ApproximatelyEquals(evaluation.EndState))
-                    {
-                        branchResult.Error =
-                            $"Expected {branch.ExpectedState} but got {evaluation.EndState}.";
-                    }
-                }
-
-                if (branchResult.ProfileColor.a <= 0f)
-                {
-                    branchResult.ProfileColor = profile.DebugColor;
-                }
-
-                report.AddBranch(branchResult);
-                branchIndex++;
-            }
-        }
+        public int Index;
+        public string DisplayName;
+        public Color Color;
+        public MoveProfile Profile;
     }
 }
