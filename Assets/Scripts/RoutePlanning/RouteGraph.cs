@@ -5,7 +5,7 @@ using Runtime.Player.Movement;
 using Runtime.Player.Movement.Math;
 using UnityEngine;
 
-namespace RoutePlanning
+namespace RoutePlanning.RoutePlanning
 {
     [CreateAssetMenu(menuName = "Route Planning/Route Graph", fileName = "RouteGraph")]
     public class RouteGraph : ScriptableObject
@@ -120,7 +120,7 @@ namespace RoutePlanning
         public Color ColorOverride => _colorOverride;
         public string DesignerNotes => _designerNotes;
         public bool Important => _important;
-        public IReadOnlyList<RouteBranch> Branches => _branches ?? Array.Empty<RouteBranch>();
+        public IReadOnlyList<RouteBranch> Branches => (IReadOnlyList<RouteBranch>)_branches ?? Array.Empty<RouteBranch>();
         public bool HasBranches => _branches != null && _branches.Count > 0;
 
         public bool TryEvaluate(Vector3 previousPosition, PlayerStateSnapshot previousState,
