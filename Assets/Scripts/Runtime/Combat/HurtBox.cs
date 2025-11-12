@@ -71,7 +71,20 @@ namespace Runtime.Combat
             // --- KNOCKBACK ---
             if (data.KnockbackForce > 0f)
             {
-                Vector2 dir = ((Vector2)(transform.position - hitBox.transform.position)).normalized;
+                Vector2 toTarget = ((Vector2)(transform.position - hitBox.transform.position)).normalized;
+                Vector2 overrideDir = data.KnockbackDirection.normalized;
+
+                Vector2 dir = data.KnockbackMethod switch
+                {
+                    DamageProfile.KnockbackMethodEnum.TowardsTarget => toTarget,
+                    DamageProfile.KnockbackMethodEnum.OverrideDirection => overrideDir,
+                    DamageProfile.KnockbackMethodEnum.Combine =>
+                        ((overrideDir * 0.7f) + (toTarget * 0.3f)).normalized,
+
+                    _ => Vector2.zero
+                };
+
+
                 bool knockbackApplied = false;
 
                 IMovementHandler movementHandler = GetComponentInParent<IMovementHandler>();

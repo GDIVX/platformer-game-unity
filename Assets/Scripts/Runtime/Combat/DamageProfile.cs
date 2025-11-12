@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Runtime.Combat
@@ -5,8 +6,8 @@ namespace Runtime.Combat
     /// <summary>
     /// Pure data definition for an attack’s damage breakdown and crit parameters.
     /// </summary>
-    [System.Serializable]
-    public struct DamageProfile
+    [CreateAssetMenu(menuName = "Combat/Damage Profile")]
+    public class DamageProfile : ScriptableObject
     {
         [Header("Damage Composition")]
         public float Raw;
@@ -16,8 +17,14 @@ namespace Runtime.Combat
         public float Fire;
         public float Energy;
 
-        [Header("Impact")]
-        public float KnockbackForce; 
+        [BoxGroup("Impact")]
+        public float KnockbackForce;
+
+        [BoxGroup("Impact")]
+        public KnockbackMethodEnum KnockbackMethod;
+
+        [BoxGroup("Impact"), ShowIf("@KnockbackMethod != KnockbackMethodEnum.TowardsTarget")]
+        public Vector2 KnockbackDirection;
 
         [Header("Critical")]
         [Range(0f, 1f)] public float CritChance;
@@ -26,5 +33,12 @@ namespace Runtime.Combat
 
         public float TotalBaseDamage =>
             Raw + Sharp + Blunt + Ballistic + Fire + Energy;
+
+        public enum KnockbackMethodEnum
+        {
+            TowardsTarget,
+            OverrideDirection,
+            Combine
+        }
     }
 }
