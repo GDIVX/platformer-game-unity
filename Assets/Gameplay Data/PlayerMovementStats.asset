@@ -56,12 +56,12 @@ MonoBehaviour:
   _legacyLimitGlideDuration: 0
   _legacyMaxGlideDuration: 1.5
   _glideSettingsMigrated: 1
-  WallDetectionRayLength: 0.1
+  WallDetectionRayLength: 0.025
   WallDetectionHeightScale: 0.9
   DebugShowWallChecks: 1
   _wallSlide:
-    StickDuration: 0.2
-    GravityMultiplier: 0.5
+    StickDuration: 1
+    GravityMultiplier: 1
     HorizontalFriction: 20
     HorizontalAcceleration: 15
     MinSlideSpeed: 1.5
