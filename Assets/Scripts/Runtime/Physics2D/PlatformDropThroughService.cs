@@ -15,6 +15,8 @@ namespace Runtime.Physics2D
 
         private bool _isDropping;
         private Coroutine _restoreCoroutine;
+        private Collider2D _activePlatformCollider;
+        private MonoBehaviour _activeRunner;
 
         /// <summary>
         /// Creates a new drop-through service.
@@ -64,6 +66,8 @@ namespace Runtime.Physics2D
         private void StartDrop(Collider2D platformCollider, MonoBehaviour runner)
         {
             _isDropping = true;
+            _activePlatformCollider = platformCollider;
+            _activeRunner = runner;
 
             for (int i = 0; i < _playerColliders.Length; i++)
             {
@@ -76,14 +80,14 @@ namespace Runtime.Physics2D
 
             if (_restoreCoroutine != null)
             {
-                runner.StopCoroutine(_restoreCoroutine);
+                _activeRunner?.StopCoroutine(_restoreCoroutine);
                 _restoreCoroutine = null;
             }
 
-            _restoreCoroutine = runner.StartCoroutine(RestoreCollisions(platformCollider));
+            _restoreCoroutine = runner.StartCoroutine(RestoreCollisions(platformCollider, runner));
         }
 
-        private IEnumerator RestoreCollisions(Collider2D platformCollider)
+        private IEnumerator RestoreCollisions(Collider2D platformCollider, MonoBehaviour runner)
         {
             yield return new WaitForSeconds(_disableDuration);
 
@@ -98,6 +102,45 @@ namespace Runtime.Physics2D
 
             _isDropping = false;
             _restoreCoroutine = null;
+            if (_activePlatformCollider == platformCollider)
+            {
+                _activePlatformCollider = null;
+            }
+            if (_activeRunner == runner)
+            {
+                _activeRunner = null;
+            }
+        }
+
+        /// <summary>
+        /// Immediately restores collisions if a drop is currently active.
+        /// </summary>
+        public void CancelDrop()
+        {
+            if (!_isDropping || _activePlatformCollider == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _playerColliders.Length; i++)
+            {
+                var playerCollider = _playerColliders[i];
+                if (playerCollider == null)
+                    continue;
+
+                Physics2D.IgnoreCollision(playerCollider, _activePlatformCollider, false);
+            }
+
+            _isDropping = false;
+
+            if (_restoreCoroutine != null)
+            {
+                _activeRunner?.StopCoroutine(_restoreCoroutine);
+                _restoreCoroutine = null;
+            }
+
+            _activePlatformCollider = null;
+            _activeRunner = null;
         }
     }
 }

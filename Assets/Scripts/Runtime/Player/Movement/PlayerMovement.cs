@@ -9,6 +9,7 @@ using Runtime.Player.Movement.Abilities;
 using Runtime.Player.Movement.Events;
 using Runtime.Player.Movement.States;
 using Runtime.Player.Movement.Tools;
+using PlatformDropThroughService = Runtime.Physics2D.PlatformDropThroughService;
 
 namespace Runtime.Player.Movement
 {
@@ -21,6 +22,14 @@ namespace Runtime.Player.Movement
 
         [SerializeField] private Collider2D _feetCollider;
         [SerializeField] private Collider2D _bodyCollider;
+
+        [Header("Drop-Through Settings")]
+        [SerializeField] private bool _useGroundLayerForDropThroughMask = true;
+        [SerializeField] private LayerMask _dropThroughLayerMask;
+        [SerializeField] private float _dropDisableDuration = 0.2f;
+        [SerializeField] private float _dropRaycastDistance = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float _dropInputThreshold = 0.5f;
+        [SerializeField] private Collider2D[] _additionalDropThroughColliders;
 
         [FoldoutGroup("Events")] public UnityEvent OnJump;
         [FoldoutGroup("Events")] public UnityEvent OnFall;
@@ -43,6 +52,8 @@ namespace Runtime.Player.Movement
 
         private Rigidbody2D _rb;
         private PlayerMovementStateMachine _stateMachine;
+        private PlatformDropThroughService _dropThroughService;
+        private bool _wasPressingDrop;
 
         private void Awake()
         {
@@ -67,11 +78,19 @@ namespace Runtime.Player.Movement
             {
                 EnableConfiguredAbilities();
             }
+
+            _wasPressingDrop = false;
+
+            if (_dropThroughService == null && _movementStats != null)
+            {
+                InitializeDropThroughService();
+            }
         }
 
         private void OnDisable()
         {
             DisableAllAbilities();
+            _dropThroughService?.CancelDrop();
         }
 
         public void InitializeMovement(PlayerMovementStats stats, Collider2D feetCollider, Collider2D bodyCollider)
@@ -86,6 +105,8 @@ namespace Runtime.Player.Movement
             {
                 Context = null;
                 _stateMachine = null;
+                _dropThroughService?.CancelDrop();
+                _dropThroughService = null;
                 return;
             }
 
@@ -101,6 +122,7 @@ namespace Runtime.Player.Movement
 
             BuildContext();
             BuildStateMachine();
+            InitializeDropThroughService();
         }
 
         [Button]
@@ -403,6 +425,7 @@ namespace Runtime.Player.Movement
             }
 
             ReadInput();
+            TryHandleDropThrough();
             Context.UpdateTimers(Time.deltaTime);
             _stateMachine.HandleInput();
             _stateMachine.Tick();
@@ -432,6 +455,52 @@ namespace Runtime.Player.Movement
                 InputManager.JumpPressed,
                 InputManager.JumpHeld,
                 InputManager.JumpReleased);
+        }
+
+        private void TryHandleDropThrough()
+        {
+            if (_dropThroughService == null || Context == null)
+            {
+                _wasPressingDrop = false;
+                return;
+            }
+
+            var data = Context.RuntimeData;
+            if (data == null)
+            {
+                _wasPressingDrop = false;
+                return;
+            }
+
+            Vector2 moveInput = data.MoveInput;
+            float threshold = Mathf.Clamp(_dropInputThreshold, 0f, 1f);
+            if (threshold <= 0f)
+            {
+                threshold = 0.01f;
+            }
+
+            bool isPressingDown = moveInput.y <= -threshold;
+            bool downPressedThisFrame = isPressingDown && !_wasPressingDrop;
+            bool jumpPressed = data.JumpPressed;
+
+            if (!data.IsGrounded)
+            {
+                _wasPressingDrop = isPressingDown;
+                return;
+            }
+
+            if (downPressedThisFrame || (jumpPressed && isPressingDown))
+            {
+                LayerMask mask = ResolveDropThroughLayerMask();
+                var playerTransform = Context.Transform;
+                if (playerTransform != null && _dropThroughService.TryDrop(playerTransform, mask, this))
+                {
+                    data.IsGrounded = false;
+                    data.GroundHit = default;
+                }
+            }
+
+            _wasPressingDrop = isPressingDown;
         }
 
         private void CollisionCheck()
@@ -704,6 +773,57 @@ namespace Runtime.Player.Movement
 
             public readonly List<Func<PlayerMovementContext, bool>> ActivationConditions =
                 new List<Func<PlayerMovementContext, bool>>();
+        }
+
+        private void InitializeDropThroughService()
+        {
+            _dropThroughService?.CancelDrop();
+
+            var colliderSet = new HashSet<Collider2D>();
+
+            if (_additionalDropThroughColliders != null)
+            {
+                for (int i = 0; i < _additionalDropThroughColliders.Length; i++)
+                {
+                    var extraCollider = _additionalDropThroughColliders[i];
+                    if (extraCollider != null)
+                    {
+                        colliderSet.Add(extraCollider);
+                    }
+                }
+            }
+
+            if (_feetCollider != null)
+            {
+                colliderSet.Add(_feetCollider);
+            }
+
+            if (_bodyCollider != null)
+            {
+                colliderSet.Add(_bodyCollider);
+            }
+
+            if (colliderSet.Count == 0)
+            {
+                _dropThroughService = null;
+                return;
+            }
+
+            _dropThroughService = new PlatformDropThroughService(
+                colliderSet.ToArray(),
+                _dropDisableDuration,
+                this,
+                _dropRaycastDistance);
+        }
+
+        private LayerMask ResolveDropThroughLayerMask()
+        {
+            if (_useGroundLayerForDropThroughMask && _movementStats != null)
+            {
+                return _movementStats.GroundLayer;
+            }
+
+            return _dropThroughLayerMask;
         }
     }
 }
