@@ -1,18 +1,28 @@
 using System;
-using Runtime.Player.Movement;
 using UnityEngine;
 
 namespace Runtime.Player.Movement.Controllers
 {
+    /// <summary>
+    /// Manages all player interactions with walls, including:
+    /// detection, stick timing, direction buffers, and
+    /// wall-slide motion shaping (vertical + horizontal).
+    /// 
+    /// IMPORTANT:
+    /// - Wall slide only continues while TOUCHING the wall.
+    /// - Wall-stick timer is preserved for wall-jumps ONLY.
+    /// - No more ghost-sliding midair.
+    /// </summary>
     [Serializable]
     public class WallInteractionController
     {
         private readonly PlayerMovementRuntimeData _data;
         private readonly PlayerMovementStats _stats;
         private readonly Rigidbody2D _rigidbody;
-        private readonly Collider2D _feetCollider;
-        private readonly Collider2D _bodyCollider;
 
+        /// <summary>
+        /// Creates a new instance of the WallInteractionController.
+        /// </summary>
         public WallInteractionController(
             PlayerMovementRuntimeData data,
             PlayerMovementStats stats,
@@ -23,38 +33,52 @@ namespace Runtime.Player.Movement.Controllers
             _data = data;
             _stats = stats;
             _rigidbody = rigidbody;
-            _feetCollider = feetCollider;
-            _bodyCollider = bodyCollider;
         }
 
+        /// <summary>
+        /// Duration for which wall stick persists (wall-coyote).
+        /// </summary>
         private float WallStickDuration => _stats.WallSlide?.StickDuration ?? 0f;
 
+        // ---------------------------------------------------------------------
+        // HIT SETUP
+        // ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Updates the ground state based on the given raycast hit.
+        /// </summary>
         public void SetGroundHit(RaycastHit2D hit)
         {
             _data.GroundHit = hit;
             _data.IsGrounded = hit.collider != null;
         }
 
+        /// <summary>
+        /// Updates the head bump state from the given raycast hit.
+        /// </summary>
         public void SetHeadHit(RaycastHit2D hit)
         {
             _data.HeadHit = hit;
-            _data.BumpedHead = hit.collider != null;
+            _data.BumpedHead = hit.collider;
         }
 
+        /// <summary>
+        /// Updates left/right wall contact and resets wall-stick timer.
+        /// </summary>
         public void SetWallHit(bool isRight, RaycastHit2D hit)
         {
             if (isRight)
             {
                 _data.RightWallHit = hit;
-                _data.IsTouchingRightWall = hit.collider != null;
+                _data.IsTouchingRightWall = hit.collider;
             }
             else
             {
                 _data.LeftWallHit = hit;
-                _data.IsTouchingLeftWall = hit.collider != null;
+                _data.IsTouchingLeftWall = hit.collider;
             }
 
-            if (hit.collider != null)
+            if (hit.collider)
             {
                 _data.WallStickTimer = WallStickDuration;
                 _data.WallDirection = isRight ? 1 : -1;
@@ -64,6 +88,9 @@ namespace Runtime.Player.Movement.Controllers
             UpdateWallContactState();
         }
 
+        /// <summary>
+        /// Clears wall contact for one side.
+        /// </summary>
         public void ClearWallHit(bool isRight)
         {
             if (isRight)
@@ -80,40 +107,50 @@ namespace Runtime.Player.Movement.Controllers
             UpdateWallContactState();
         }
 
+        /// <summary>
+        /// Clears all wall contact information.
+        /// </summary>
         public void ClearWallHit()
         {
             _data.LeftWallHit = default;
             _data.RightWallHit = default;
             _data.IsTouchingLeftWall = false;
             _data.IsTouchingRightWall = false;
+
             UpdateWallContactState();
-            if (_data.WallStickTimer <= 0f)
-            {
-                _data.WallDirection = 0;
-                _data.WallHit = default;
-            }
         }
 
+        // ---------------------------------------------------------------------
+        // TIMERS
+        // ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Updates wall-stick, coyote logic, and direction buffer timers.
+        /// </summary>
         public void UpdateTimers(float deltaTime)
         {
+            // Refresh stick time if touching any wall.
             if (_data.IsTouchingWall)
             {
                 _data.WallStickTimer = WallStickDuration;
             }
-            else if (_data.WallStickTimer > 0f)
+            else
             {
-                _data.WallStickTimer = Mathf.Max(0f, _data.WallStickTimer - deltaTime);
-                if (_data.WallStickTimer <= 0f && !_data.IsWallSliding)
+                // Count down wall-coyote for WALL JUMPS ONLY.
+                if (_data.WallStickTimer > 0f)
                 {
-                    _data.WallDirection = 0;
-                    _data.WallHit = default;
+                    _data.WallStickTimer = Mathf.Max(0f, _data.WallStickTimer - deltaTime);
                 }
             }
 
             UpdateDirectionBuffer(deltaTime);
         }
 
-        public void UpdateDirectionBuffer(float deltaTime)
+        /// <summary>
+        /// Tracks whether the player is pushing away from the wall,
+        /// giving them a small buffer window.
+        /// </summary>
+        private void UpdateDirectionBuffer(float deltaTime)
         {
             if (_data.WallDirection == 0)
             {
@@ -122,8 +159,12 @@ namespace Runtime.Player.Movement.Controllers
                 return;
             }
 
-            bool movingAway = Mathf.Approximately(Mathf.Sign(_data.MoveInput.x), -_data.WallDirection) &&
-                              Mathf.Abs(_data.MoveInput.x) > 0.25f;
+            int inputDir = GetInputDirection();
+
+            bool movingAway =
+                inputDir != 0 &&
+                inputDir == -_data.WallDirection &&
+                Mathf.Abs(_data.MoveInput.x) > 0.25f;
 
             if (movingAway)
             {
@@ -133,6 +174,7 @@ namespace Runtime.Player.Movement.Controllers
             else if (_data.DirectionBufferTimer > 0f)
             {
                 _data.DirectionBufferTimer = Mathf.Max(0f, _data.DirectionBufferTimer - deltaTime);
+
                 if (_data.DirectionBufferTimer <= 0f)
                 {
                     _data.WantsToMoveAwayFromWall = false;
@@ -140,59 +182,77 @@ namespace Runtime.Player.Movement.Controllers
             }
         }
 
+        // ---------------------------------------------------------------------
+        // WALL SLIDE CONDITIONS
+        // ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Whether wall slide should begin this frame.
+        /// Requires:
+        /// - Falling
+        /// - Touching the wall
+        /// - Wall stick active
+        /// - Facing the wall (or neutral)
+        /// </summary>
         public bool ShouldStartWallSlide()
         {
             if (_stats.WallSlide == null)
-            {
                 return false;
-            }
 
-            if (_data.IsGrounded || _data.VerticalVelocity > 0f)
-            {
+            if (_data.IsGrounded)
                 return false;
-            }
 
-            if (!_data.IsTouchingWall && _data.WallStickTimer <= 0f)
-            {
+            if (_data.VerticalVelocity > 0f)
                 return false;
-            }
 
-            int inputDirection = Mathf.Approximately(_data.MoveInput.x, 0f)
-                ? 0
-                : (_data.MoveInput.x > 0f ? 1 : -1);
+            if (!_data.IsTouchingWall)
+                return false;
 
-            if (_data.IsTouchingWall)
-            {
-                return _data.WallDirection != 0 && (inputDirection == _data.WallDirection || inputDirection == 0);
-            }
+            if (_data.WallStickTimer <= 0f)
+                return false;
 
-            return _data.WallDirection != 0 && _data.WallStickTimer > 0f && inputDirection != -_data.WallDirection;
+            int inputDir = GetInputDirection();
+
+            return _data.WallDirection != 0 &&
+                   (inputDir == _data.WallDirection || inputDir == 0);
         }
 
+        /// <summary>
+        /// Whether a currently running wall slide may continue.
+        /// 
+        /// FIXED:
+        /// - NO CONTINUING WHILE NOT TOUCHING WALL.
+        /// - Wall-coyote no longer fakes slide in midair.
+        /// </summary>
         public bool CanContinueWallSlide()
         {
             if (_stats.WallSlide == null)
-            {
                 return false;
-            }
 
-            if (_data.IsGrounded || _data.VerticalVelocity > 0f)
-            {
+            if (_data.IsGrounded)
                 return false;
-            }
 
-            int inputDirection = Mathf.Approximately(_data.MoveInput.x, 0f)
-                ? 0
-                : (_data.MoveInput.x > 0f ? 1 : -1);
+            if (_data.VerticalVelocity > 0f)
+                return false;
 
-            if (_data.IsTouchingWall)
-            {
-                return _data.WallDirection != 0 && (inputDirection == _data.WallDirection || inputDirection == 0);
-            }
+            // THE FIX:
+            // Wall slide stops instantly if not touching the wall.
+            if (!_data.IsTouchingWall)
+                return false;
 
-            return _data.WallDirection != 0 && _data.WallStickTimer > 0f && inputDirection != -_data.WallDirection;
+            int inputDir = GetInputDirection();
+
+            return _data.WallDirection != 0 &&
+                   (inputDir == _data.WallDirection || inputDir == 0);
         }
 
+        // ---------------------------------------------------------------------
+        // WALL SLIDE MOTION
+        // ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Applies vertical shaping for the slide (gravity + clamping).
+        /// </summary>
         public void ApplyWallSlideVertical(PlayerMovementStats.WallSlideSettings settings, float deltaTime)
         {
             float gravity = settings.CalculatedGravity != 0f
@@ -201,35 +261,49 @@ namespace Runtime.Player.Movement.Controllers
 
             _data.VerticalVelocity += gravity * deltaTime;
 
-            float maxDownward = -Mathf.Abs(settings.MaxSlideSpeed);
-            float minDownward = -Mathf.Abs(settings.MinSlideSpeed);
-            if (minDownward < maxDownward)
-            {
-                (maxDownward, minDownward) = (minDownward, maxDownward);
-            }
+            float maxDown = -Mathf.Abs(settings.MaxSlideSpeed);
+            float minDown = -Mathf.Abs(settings.MinSlideSpeed);
 
-            _data.VerticalVelocity = Mathf.Clamp(_data.VerticalVelocity, maxDownward, minDownward);
+            if (minDown < maxDown)
+                (maxDown, minDown) = (minDown, maxDown);
+
+            _data.VerticalVelocity = Mathf.Clamp(_data.VerticalVelocity, maxDown, minDown);
         }
 
+        /// <summary>
+        /// Applies horizontal friction/acceleration shaping during slide.
+        /// </summary>
         public void ApplyWallSlideHorizontal(PlayerMovementStats.WallSlideSettings settings, float deltaTime)
         {
             float inputX = _data.MoveInput.x;
-            int inputDirection = Mathf.Approximately(inputX, 0f) ? 0 : (inputX > 0f ? 1 : -1);
+            int inputDir = GetInputDirection();
 
             float target = 0f;
             float rate = settings.HorizontalFriction;
 
-            if (_data.WallDirection != 0 && inputDirection == -_data.WallDirection)
+            // Pushing away → accelerate
+            if (_data.WallDirection != 0 && inputDir == -_data.WallDirection)
             {
-                target = inputX * (_data.RunHeld ? _stats.MaxRunSpeed : _stats.MaxWalkSpeed);
+                float maxSpeed = _data.RunHeld ? _stats.MaxRunSpeed : _stats.MaxWalkSpeed;
+                target = inputX * maxSpeed;
                 rate = settings.HorizontalAcceleration;
             }
 
             float nextX = Mathf.Lerp(_data.Velocity.x, target, rate * deltaTime);
+
             _data.Velocity = new Vector2(nextX, _data.Velocity.y);
+
+            // Using your custom linearVelocity API
             _rigidbody.linearVelocity = new Vector2(_data.Velocity.x, _rigidbody.linearVelocityY);
         }
 
+        // ---------------------------------------------------------------------
+        // INTERNAL HELPERS
+        // ---------------------------------------------------------------------
+
+        /// <summary>
+        /// Updates which wall side is active and wall direction.
+        /// </summary>
         private void UpdateWallContactState()
         {
             _data.IsTouchingWall = _data.IsTouchingLeftWall || _data.IsTouchingRightWall;
@@ -246,22 +320,39 @@ namespace Runtime.Player.Movement.Controllers
                     _data.WallDirection = 1;
                     _data.WallHit = _data.RightWallHit;
                 }
+
+                return;
             }
-            else if (_data.IsTouchingRightWall)
+
+            if (_data.IsTouchingRightWall)
             {
                 _data.WallDirection = 1;
                 _data.WallHit = _data.RightWallHit;
+                return;
             }
-            else if (_data.IsTouchingLeftWall)
+
+            if (_data.IsTouchingLeftWall)
             {
                 _data.WallDirection = -1;
                 _data.WallHit = _data.LeftWallHit;
+                return;
             }
-            else if (_data.WallStickTimer <= 0f && !_data.IsWallSliding)
-            {
-                _data.WallDirection = 0;
-                _data.WallHit = default;
-            }
+
+            // No wall contact → direction only resets when stick expires.
+            if (!(_data.WallStickTimer <= 0f) || _data.IsWallSliding) return;
+            _data.WallDirection = 0;
+            _data.WallHit = default;
+        }
+
+        /// <summary>
+        /// Converts analog input into -1, 0, or 1.
+        /// </summary>
+        private int GetInputDirection()
+        {
+            if (Mathf.Approximately(_data.MoveInput.x, 0f))
+                return 0;
+
+            return _data.MoveInput.x > 0f ? 1 : -1;
         }
     }
 }
