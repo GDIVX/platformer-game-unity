@@ -9,6 +9,7 @@ namespace Runtime.Inventory
     public class InventoryController : MonoBehaviour
     {
         [SerializeField] private InventoryPageView _inventoryPageView;
+        [SerializeField] private bool _freezeTimeOnInventoryOpen = false;
 
         private static PlayerInput _playerInput;
 
@@ -31,13 +32,19 @@ namespace Runtime.Inventory
         {
             _inventoryPageView.Show();
             _playerInput.SwitchCurrentActionMap("Inventory");
-            
+
+            if (_freezeTimeOnInventoryOpen)
+            {
+                Time.timeScale = 0;
+            }
         }
-        
+
         private void CloseInventory()
         {
             _inventoryPageView.Hide();
             _playerInput.SwitchCurrentActionMap("Player");
+
+            Time.timeScale = 1;
         }
     }
 }

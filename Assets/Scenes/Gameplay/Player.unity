@@ -5261,6 +5261,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Runtime.Inventory::Runtime.Inventory.InventoryController
   _inventoryPageView: {fileID: 3631598031185610735}
+  _freezeTimeOnInventoryOpen: 1
 --- !u!1 &648492757
 GameObject:
   m_ObjectHideFlags: 0
