@@ -7,6 +7,7 @@ namespace Runtime.Inventory.UI
 {
     public class InventorySlotView : MonoBehaviour, IDropHandler
     {
+        [SerializeField] private InventoryLayer _inventoryLayer;
         public event Action<InventoryItemView> OnItemDropped;
 
         public void OnDrop(PointerEventData eventData)
@@ -38,5 +39,6 @@ namespace Runtime.Inventory.UI
             itemView.InventorySlot = this;
             OnItemDropped?.Invoke(itemView);
         }
+
     }
 }
