@@ -8,13 +8,15 @@ namespace Runtime.Inventory
 {
     public class InventoryController : MonoBehaviour
     {
-        [SerializeField] private InventoryPageView _inventoryPageView;
+        [SerializeField] private GameObject _inventoryGroup;
+        [SerializeField] private GameObject _inventorySlotPrefab;
         [SerializeField] private bool _freezeTimeOnInventoryOpen = false;
 
         private static PlayerInput _playerInput;
 
         private static InputAction _inventoryOpenInput;
         private static InputAction _inventoryCloseInput;
+
 
         private void Start()
         {
@@ -25,12 +27,14 @@ namespace Runtime.Inventory
 
             _inventoryOpenInput.performed += (_) => OpenInventory();
             _inventoryCloseInput.performed += (_) => CloseInventory();
+
+            CloseInventory();
         }
 
 
         private void OpenInventory()
         {
-            _inventoryPageView.Show();
+            _inventoryGroup.SetActive(true);
             _playerInput.SwitchCurrentActionMap("Inventory");
 
             if (_freezeTimeOnInventoryOpen)
@@ -41,7 +45,7 @@ namespace Runtime.Inventory
 
         private void CloseInventory()
         {
-            _inventoryPageView.Hide();
+            _inventoryGroup.SetActive(false);
             _playerInput.SwitchCurrentActionMap("Player");
 
             Time.timeScale = 1;
