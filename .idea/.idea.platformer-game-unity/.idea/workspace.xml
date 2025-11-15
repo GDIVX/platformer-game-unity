@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7995ad0a-86e5-421f-83b2-28a66c75038b" name="Changes" comment="">
+<<<<<<< Updated upstream
       <change beforePath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Gameplay Data/DashMovementAbility.asset" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Gameplay Data/DashMovementAbility.asset.meta" beforeDir="false" />
@@ -298,6 +299,18 @@
       <change beforePath="$PROJECT_DIR$/Assets/TEMP/Tiles/Dungeon/Dungeon Tile Set_99.asset.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/TEMP/Tiles/Dungeon/New Tile Palette.prefab" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/TEMP/Tiles/Dungeon/New Tile Palette.prefab.meta" beforeDir="false" />
+=======
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Inventory/InventoryController.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Inventory/InventoryController.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Inventory/UI/InventoryItemView.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Inventory/UI/InventoryItemView.cs.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.platformer-game-unity/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Gameplay/Main.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Gameplay/Main.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Gameplay/Player.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Gameplay/Player.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/Levels/Demo.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/Levels/Demo.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/PlayerControls.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/PlayerControls.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/PlayerControls.inputactions" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/Runtime/Player/PlayerControls.inputactions" afterDir="false" />
+>>>>>>> Stashed changes
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -324,6 +337,7 @@
 }</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/Assets/Tests/UnitHealthTests.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.inputsystem@be6c4fd0abf5/InputSystem/Plugins/PlayerInput/PlayerInput.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -407,6 +421,7 @@
       <workItem from="1762770307332" duration="6228000" />
       <workItem from="1762946917016" duration="3000" />
       <workItem from="1762946970464" duration="1680000" />
+      <workItem from="1763209211770" duration="2370000" />
     </task>
     <servers />
   </component>
