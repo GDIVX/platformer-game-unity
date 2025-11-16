@@ -184,6 +184,49 @@ namespace Runtime.Inventory
             _selectedSlotIndex = slotIndex;
         }
 
+        [Button]
+        public Item GetCurrentlySelectedItem()
+        {
+            var slot = _slots[_selectedSlotIndex];
+            var itemInSlot = slot.InventoryItem;
+            return itemInSlot ? itemInSlot.Item : null;
+        }
+
+        [Button]
+        public ItemRemovalOutcome RemoveItemAt(int slotIndex, int amount)
+        {
+            var slot = _slots[slotIndex];
+            var itemInSlot = slot.InventoryItem;
+
+            if (itemInSlot == null)
+            {
+                return ItemRemovalOutcome.NoItemToRemove;
+            }
+
+            var newAmount = Mathf.Clamp(itemInSlot.Amount - amount, 0, itemInSlot.Item.MaxStack);
+            if (newAmount <= 0)
+            {
+                itemInSlot.DestroySelf();
+                return ItemRemovalOutcome.ItemDestroyed;
+            }
+
+            itemInSlot.SetAmount(itemInSlot.Item.MaxStack - newAmount);
+            return ItemRemovalOutcome.ChangedStackAmount;
+        }
+
+        [Button]
+        public ItemRemovalOutcome RemoveCurrentlySelectedItem(int amount)
+        {
+            return RemoveItemAt(_selectedSlotIndex, amount);
+        }
+
+        public enum ItemRemovalOutcome
+        {
+            NoItemToRemove,
+            ChangedStackAmount,
+            ItemDestroyed
+        }
+
         #endregion
 
         #region Helpers

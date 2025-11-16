@@ -23,7 +23,7 @@ namespace Runtime.Inventory.UI
                 _inventoryItem = GetComponentInChildren<InventoryItem>();
                 return _inventoryItem;
             }
-            private set => _inventoryItem = value;
+            internal set => _inventoryItem = value;
         }
 
         private void Awake()

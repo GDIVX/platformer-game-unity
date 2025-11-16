@@ -83,5 +83,12 @@ namespace Runtime.Inventory.UI
         {
             transform.position = Mouse.current.position.ReadValue();
         }
+
+        public void DestroySelf()
+        {
+            InventorySlot.InventoryItem = null;
+            Item = null;
+            Destroy(gameObject);
+        }
     }
 }
