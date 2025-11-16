@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine.InputSystem;
+using Random = UnityEngine.Random;
 
 namespace Runtime.Inventory
 {
@@ -13,7 +14,9 @@ namespace Runtime.Inventory
         [SerializeField, FoldoutGroup("UI")] private GameObject _inventoryGroup;
         [SerializeField, FoldoutGroup("UI")] private InventoryItem _inventoryItemPrefab;
         [SerializeField, FoldoutGroup("UI")] private bool _freezeTimeOnInventoryOpen;
-        [SerializeReference, FoldoutGroup("Content")] private IInventorySorter _inventorySorter = new DefaultInventorySorter();
+
+        [SerializeReference, FoldoutGroup("Content")]
+        private IInventorySorter _inventorySorter = new DefaultInventorySorter();
 
 
         [SerializeField, FoldoutGroup("Content")]
@@ -167,7 +170,12 @@ namespace Runtime.Inventory
                     return true;
                 }
 
-                if (!emptySlot) return false;
+                if (!emptySlot)
+                {
+                    DropItem(item, amount);
+                    return false;
+                }
+
                 CreateNewItem(item, emptySlot, amount);
                 return true;
             }
@@ -255,6 +263,28 @@ namespace Runtime.Inventory
             InventoryItem newItem = Instantiate(_inventoryItemPrefab);
             newItem.SetItem(item, amount);
             slot.SetItem(newItem);
+        }
+
+
+        [Button]
+        private void DropItem(Item item, int amount)
+        {
+            if (!_itemDropPrefab)
+            {
+                Debug.LogWarning("Item drop prefab is not assigned");
+                return;
+            }
+
+            var position = (Vector3)(Random.insideUnitCircle * 5) + PlayerContext.Instance.transform.position;
+
+            var dropObject = Instantiate(_itemDropPrefab, position,
+                Quaternion.identity);
+            if (!dropObject.TryGetComponent<ItemDrop>(out var itemDrop))
+            {
+                itemDrop = dropObject.AddComponent<ItemDrop>();
+            }
+
+            itemDrop.Initialize(item, amount);
         }
 
         #endregion
