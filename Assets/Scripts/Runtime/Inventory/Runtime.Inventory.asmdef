@@ -2,7 +2,6 @@
     "name": "Runtime.Inventory",
     "rootNamespace": "",
     "references": [
-        "GUID:504f308a19930d1468e6324ef08ad551",
         "GUID:d884c09315fca8144acfd9a2ebbc94e5",
         "GUID:75469ad4d38634e559750d17036d5f7c"
     ],

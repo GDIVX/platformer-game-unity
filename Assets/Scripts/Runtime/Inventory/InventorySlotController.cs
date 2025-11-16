@@ -11,10 +11,10 @@ namespace Runtime.Inventory
         private void Awake()
         {
             _view ??= GetComponent<InventorySlotView>();
-            _view.OnItemDropped += ViewOnOnItemDropped;
+            _view.OnSetItem += ViewOnSetOnSetItem;
         }
 
-        private void ViewOnOnItemDropped(InventoryItemView ItemView)
+        private void ViewOnSetOnSetItem(InventoryItemView ItemView)
         {
         }
     }

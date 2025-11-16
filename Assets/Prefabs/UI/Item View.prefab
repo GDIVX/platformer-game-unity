@@ -91,6 +91,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Runtime.Inventory.UI::Runtime.Inventory.UI.InventoryItemView
   _canvasGroup: {fileID: 7975581545058652539}
+  _image: {fileID: 7900907464319869301}
   ParentAfterDrag: {fileID: 0}
   _inventorySlot: {fileID: 0}
 --- !u!225 &7975581545058652539

@@ -1,7 +1,4 @@
 using System;
-using DG.Tweening;
-using Sirenix.OdinInspector;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -12,9 +9,12 @@ namespace Runtime.Inventory.UI
     public class InventoryItemView : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
     {
         [SerializeField] CanvasGroup _canvasGroup;
+        [SerializeField] Image _image;
 
         [HideInInspector] public Transform ParentAfterDrag;
         [SerializeField] private InventorySlotView _inventorySlot;
+
+        public InventoryItem InventoryItem { get; private set; }
 
         public InventorySlotView InventorySlot
         {
@@ -24,8 +24,20 @@ namespace Runtime.Inventory.UI
 
         private void Awake()
         {
+            _image ??= GetComponent<Image>();
             _canvasGroup ??= GetComponent<CanvasGroup>();
+        }
+
+        private void OnEnable()
+        {
             InventorySlot ??= transform.parent.GetComponent<InventorySlotView>();
+        }
+
+        [Sirenix.OdinInspector.Button]
+        public void SetItem(Item item)
+        {
+            InventoryItem = new InventoryItem(item);
+            _image.sprite = item.Sprite;
         }
 
 
