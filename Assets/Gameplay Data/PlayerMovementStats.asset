@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f63dd10489cb74c459163379b7e5ed43, type: 3}
   m_Name: PlayerMovementStats
   m_EditorClassIdentifier: Assembly-CSharp::Runtime.Player.Movement.PlayerMovementStats
-  MaxWalkSpeed: 8
+  MaxWalkSpeed: 13
   GroundAcceleration: 25
   GroundDeceleration: 35
-  AirAcceleration: 10
+  AirAcceleration: 8
   AirDeceleration: 10
   MinSpeedThreshold: 0.2
   StepHeight: 0.05
@@ -73,7 +73,7 @@ MonoBehaviour:
     WallDetectionHorizontalDistance: 0.015
     WallJumpDownwardCancelMultiplier: 0
     WallDetectionVerticalShrink: 0.15
-  MaxRunSpeed: 13.5
+  MaxRunSpeed: 18
   DashForwardBurstSpeed: 22
   DashDuration: 0.2
   DashGroundCooldown: 0.45
@@ -89,7 +89,7 @@ MonoBehaviour:
   HeadWidth: 0.75
   HeadNudgeDistance: 0.4
   HeadNudgeSteps: 3
-  JumpHeight: 6
+  JumpHeight: 5
   MaxRiseSpeed: 100
   GravityOnReleaseMultiplier: 2
   JumpHeightCompensationFactor: 1
