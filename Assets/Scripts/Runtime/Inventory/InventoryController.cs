@@ -27,6 +27,8 @@ namespace Runtime.Inventory
         private static InputAction _inventoryCloseInput;
         private InputAction _hotbarInput;
         private InputAction _moveInput;
+        private InputAction _dropInput;
+        private InputAction _equipInput;
 
         private bool _inventoryOpen;
 
@@ -45,6 +47,8 @@ namespace Runtime.Inventory
 
             _moveInput = _playerInput.actions["UIMove"];
             _hotbarInput = _playerInput.actions["HotbarSelect"];
+            _dropInput = _playerInput.actions.FindAction("Drop", false);
+            _equipInput = _playerInput.actions.FindAction("Equip", false);
 
             SelectedSlotAt(0);
             CloseInventory();
@@ -66,6 +70,11 @@ namespace Runtime.Inventory
             //     Debug.Log($"Slot Index: {slotIndex}");
             //     SelectedSlotAt(slotIndex);
             // }
+
+            if (_inventoryOpen)
+            {
+                HandleKeyboardShortcuts();
+            }
 
             if (!_hotbarInput.triggered) return;
             var read = _hotbarInput.ReadValue<float>();
@@ -220,6 +229,40 @@ namespace Runtime.Inventory
             return RemoveItemAt(_selectedSlotIndex, amount);
         }
 
+        public void DropSelectedItem()
+        {
+            var slot = _slots[_selectedSlotIndex];
+            if (!slot.InventoryItem) return;
+
+            DropItem(slot.InventoryItem);
+        }
+
+        public void EquipSelectedItem()
+        {
+            var slot = _slots[_selectedSlotIndex];
+            if (!slot.InventoryItem) return;
+
+            var equipAction = slot.InventoryItem.Item.Actions?.Find(action => action != null && action.ActionName == "Equip");
+            if (equipAction == null) return;
+
+            PerformItemAction(slot.InventoryItem, equipAction);
+        }
+
+        public void DropItem(InventoryItem item)
+        {
+            if (item == null) return;
+
+            var slotIndex = item.InventorySlot.transform.GetSiblingIndex();
+            RemoveItemAt(slotIndex, item.Amount);
+        }
+
+        public void PerformItemAction(InventoryItem item, ItemAction action)
+        {
+            if (item == null || action == null) return;
+
+            action.Execute();
+        }
+
         public enum ItemRemovalOutcome
         {
             NoItemToRemove,
@@ -242,6 +285,29 @@ namespace Runtime.Inventory
             InventoryItem newItem = Instantiate(_inventoryItemPrefab);
             newItem.SetItem(item, amount);
             slot.SetItem(newItem);
+        }
+
+        private void HandleKeyboardShortcuts()
+        {
+            var keyboard = Keyboard.current;
+
+            if (_dropInput != null && _dropInput.WasPerformedThisFrame())
+            {
+                DropSelectedItem();
+            }
+            else if (keyboard != null && keyboard.qKey.wasPressedThisFrame)
+            {
+                DropSelectedItem();
+            }
+
+            if (_equipInput != null && _equipInput.WasPerformedThisFrame())
+            {
+                EquipSelectedItem();
+            }
+            else if (keyboard != null && keyboard.eKey.wasPressedThisFrame)
+            {
+                EquipSelectedItem();
+            }
         }
 
         #endregion

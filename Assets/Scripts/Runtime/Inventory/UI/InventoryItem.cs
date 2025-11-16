@@ -6,12 +6,13 @@ using UnityEngine.UI;
 
 namespace Runtime.Inventory.UI
 {
-    public class InventoryItem : ItemView, IBeginDragHandler, IEndDragHandler, IDragHandler
+    public class InventoryItem : ItemView, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
     {
         [SerializeField] CanvasGroup _canvasGroup;
 
         [HideInInspector] public Transform ParentAfterDrag;
         [SerializeField] private InventorySlot _inventorySlot;
+        [SerializeField] private InventoryContextMenu _contextMenuPrefab;
 
         public Item Item { get; private set; }
         public int Amount { get; private set; }
@@ -84,11 +85,44 @@ namespace Runtime.Inventory.UI
             transform.position = Mouse.current.position.ReadValue();
         }
 
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData.button != PointerEventData.InputButton.Right || Item == null)
+            {
+                return;
+            }
+
+            var contextMenu = EnsureContextMenuInstance();
+            if (contextMenu)
+            {
+                contextMenu.Show(this, eventData.position);
+            }
+        }
+
         public void DestroySelf()
         {
             InventorySlot.InventoryItem = null;
             Item = null;
             Destroy(gameObject);
+        }
+
+        private InventoryContextMenu EnsureContextMenuInstance()
+        {
+            if (_contextMenuPrefab == null)
+            {
+                Debug.LogWarning("No context menu prefab assigned to InventoryItem");
+                return null;
+            }
+
+            if (_contextMenuPrefab.gameObject.scene.IsValid())
+            {
+                return _contextMenuPrefab;
+            }
+
+            var rootCanvas = transform.root;
+            var instance = Instantiate(_contextMenuPrefab, rootCanvas);
+            _contextMenuPrefab = instance;
+            return _contextMenuPrefab;
         }
     }
 }

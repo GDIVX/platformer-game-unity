@@ -95,6 +95,7 @@ MonoBehaviour:
   _canvasGroup: {fileID: 7975581545058652539}
   ParentAfterDrag: {fileID: 0}
   _inventorySlot: {fileID: 0}
+  _contextMenuPrefab: {fileID: 11400003, guid: 262492c1c8f6498282703e96d55669a1, type: 3}
 --- !u!225 &7975581545058652539
 CanvasGroup:
   m_ObjectHideFlags: 0
