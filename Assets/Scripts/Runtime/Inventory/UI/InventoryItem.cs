@@ -49,7 +49,7 @@ namespace Runtime.Inventory.UI
         {
             if (amount <= 0)
             {
-                //TODO: Destroy this
+                DestroySelf();
                 return;
             }
 

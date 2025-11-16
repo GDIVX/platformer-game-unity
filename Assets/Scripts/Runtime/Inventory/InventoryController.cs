@@ -210,7 +210,7 @@ namespace Runtime.Inventory
                 return ItemRemovalOutcome.ItemDestroyed;
             }
 
-            itemInSlot.SetAmount(itemInSlot.Item.MaxStack - newAmount);
+            itemInSlot.SetAmount(newAmount);
             return ItemRemovalOutcome.ChangedStackAmount;
         }
 
