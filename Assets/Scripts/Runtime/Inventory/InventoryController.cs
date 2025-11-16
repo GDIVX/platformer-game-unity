@@ -1,9 +1,7 @@
 using Runtime.Inventory.UI;
 using Runtime.Player;
 using UnityEngine;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine.InputSystem;
 
@@ -12,20 +10,18 @@ namespace Runtime.Inventory
     public class InventoryController : MonoBehaviour
     {
         [SerializeField, FoldoutGroup("UI")] private GameObject _inventoryGroup;
-        [SerializeField, FoldoutGroup("UI")] private UI.InventoryItem _inventoryItemPrefab;
-        [SerializeField, FoldoutGroup("UI")] private bool _freezeTimeOnInventoryOpen = false;
+        [SerializeField, FoldoutGroup("UI")] private InventoryItem _inventoryItemPrefab;
+        [SerializeField, FoldoutGroup("UI")] private bool _freezeTimeOnInventoryOpen;
 
 
         [SerializeField, FoldoutGroup("Content")]
         private List<InventorySlot> _slots;
 
         [SerializeField, FoldoutGroup("Drop")] private GameObject _itemDropPrefab;
-        [SerializeField, FoldoutGroup("Drop")] private static PlayerInput _playerInput;
 
+        private static PlayerInput _playerInput;
         private static InputAction _inventoryOpenInput;
         private static InputAction _inventoryCloseInput;
-
-        public bool IsInventoryFull { get; private set; } = false;
 
 
         #region Unity Events
@@ -72,13 +68,13 @@ namespace Runtime.Inventory
         #region Public Interface
 
         [Button]
-        public void AddItem(Item item, int amount)
+        public bool TryAddItem(Item item, int amount)
         {
             while (true)
             {
                 if (amount <= 0)
                 {
-                    return;
+                    return false;
                 }
 
                 //early split check
@@ -86,7 +82,7 @@ namespace Runtime.Inventory
                 {
                     //we need to split before we continue,
                     //first add a full stack first
-                    AddItem(item, item.MaxStack);
+                    TryAddItem(item, item.MaxStack);
                     //now add whatever left
                     var remains = amount - item.MaxStack;
                     amount = remains;
@@ -124,24 +120,17 @@ namespace Runtime.Inventory
                         //split
                         itemInSlot.SetAmount(itemInSlot.Item.MaxStack);
                         var diff = sum - itemInSlot.Item.MaxStack;
-                        AddItem(item, diff);
-                        return;
+                        return TryAddItem(item, diff);
                     }
 
                     //We found an item of the same type and that can accept stacking
                     itemInSlot.AddAmount(amount);
-                    return;
+                    return true;
                 }
 
-                if (emptySlot)
-                {
-                    CreateNewItem(item, emptySlot, amount);
-                    return;
-                }
-
-                //Inventory is full
-                IsInventoryFull = true;
-                break;
+                if (!emptySlot) return false;
+                CreateNewItem(item, emptySlot, amount);
+                return true;
             }
         }
 
