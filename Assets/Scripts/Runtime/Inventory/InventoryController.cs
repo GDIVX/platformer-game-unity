@@ -13,6 +13,7 @@ namespace Runtime.Inventory
         [SerializeField, FoldoutGroup("UI")] private GameObject _inventoryGroup;
         [SerializeField, FoldoutGroup("UI")] private InventoryItem _inventoryItemPrefab;
         [SerializeField, FoldoutGroup("UI")] private bool _freezeTimeOnInventoryOpen;
+        [SerializeReference, FoldoutGroup("Content")] private IInventorySorter _inventorySorter = new DefaultInventorySorter();
 
 
         [SerializeField, FoldoutGroup("Content")]
@@ -218,6 +219,18 @@ namespace Runtime.Inventory
         public ItemRemovalOutcome RemoveCurrentlySelectedItem(int amount)
         {
             return RemoveItemAt(_selectedSlotIndex, amount);
+        }
+
+        [Button]
+        public void SortInventory()
+        {
+            _inventorySorter ??= new DefaultInventorySorter();
+            if (_slots == null)
+            {
+                return;
+            }
+
+            _inventorySorter.Sort(_slots);
         }
 
         public enum ItemRemovalOutcome
