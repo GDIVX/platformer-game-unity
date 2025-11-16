@@ -14,10 +14,10 @@ namespace Runtime.Inventory
                 _inventoryController = GetComponentInParent<InventoryController>();
             }
 
-            var collider = GetComponent<Collider2D>();
-            if (collider != null)
+            var component = GetComponent<Collider2D>();
+            if (component != null)
             {
-                collider.isTrigger = true;
+                component.isTrigger = true;
             }
         }
 

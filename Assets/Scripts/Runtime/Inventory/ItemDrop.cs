@@ -43,22 +43,21 @@ namespace Runtime.Inventory
             UpdateView();
         }
 
-        public bool TryAddToInventory(InventoryController inventory)
+        private bool TryAddToInventory(InventoryController inventory)
         {
-            if (inventory == null || _item == null)
+            if (!inventory || !_item)
             {
                 return false;
             }
 
             var success = inventory.TryAddItem(_item, _count);
 
-            if (success)
-            {
-                StopCollectRoutine();
-                Destroy(gameObject);
-            }
+            if (!success) return false;
+            
+            StopCollectRoutine();
+            Destroy(gameObject);
 
-            return success;
+            return true;
         }
 
         public void BeginCollection(InventoryController inventory)
