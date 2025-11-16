@@ -220,6 +220,69 @@ namespace Runtime.Inventory
             return RemoveItemAt(_selectedSlotIndex, amount);
         }
 
+        public int GetAvailableAmount(Item item)
+        {
+            return item == null ? 0 : GetAvailableAmount(item.ItemName);
+        }
+
+        public int GetAvailableAmount(string itemName)
+        {
+            var totalAmount = 0;
+
+            foreach (var slot in _slots)
+            {
+                var slotItem = slot.InventoryItem;
+                if (!slotItem) continue;
+
+                if (!string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                totalAmount += slotItem.Amount;
+            }
+
+            return totalAmount;
+        }
+
+        public bool CanMeetRequirements(IEnumerable<ItemRequirement> requirements)
+        {
+            foreach (var requirement in requirements)
+            {
+                if (requirement.Amount <= 0 || requirement.Item == null)
+                {
+                    continue;
+                }
+
+                if (GetAvailableAmount(requirement.Item) < requirement.Amount)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public bool TryRemoveRequirements(IEnumerable<ItemRequirement> requirements)
+        {
+            if (!CanMeetRequirements(requirements))
+            {
+                return false;
+            }
+
+            foreach (var requirement in requirements)
+            {
+                if (requirement.Amount <= 0 || requirement.Item == null)
+                {
+                    continue;
+                }
+
+                RemoveItemStacks(requirement.Item.ItemName, requirement.Amount);
+            }
+
+            return true;
+        }
+
         public enum ItemRemovalOutcome
         {
             NoItemToRemove,
@@ -242,6 +305,42 @@ namespace Runtime.Inventory
             InventoryItem newItem = Instantiate(_inventoryItemPrefab);
             newItem.SetItem(item, amount);
             slot.SetItem(newItem);
+        }
+
+        private void RemoveItemStacks(string itemName, int amount)
+        {
+            foreach (var slot in _slots)
+            {
+                if (amount <= 0)
+                {
+                    break;
+                }
+
+                var slotItem = slot.InventoryItem;
+                if (!slotItem || !string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var amountToRemove = Mathf.Min(amount, slotItem.Amount);
+                var newAmount = slotItem.Amount - amountToRemove;
+                amount -= amountToRemove;
+
+                if (newAmount <= 0)
+                {
+                    slotItem.DestroySelf();
+                    continue;
+                }
+
+                slotItem.SetAmount(newAmount);
+            }
+        }
+
+        [Serializable]
+        public struct ItemRequirement
+        {
+            public Item Item;
+            public int Amount;
         }
 
         #endregion
