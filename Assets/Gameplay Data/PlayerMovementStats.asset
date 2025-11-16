@@ -37,11 +37,11 @@ MonoBehaviour:
     <useSimulationMove>k__BackingField: 0
     <useAttachedTriggers>k__BackingField: 0
   DirectionBufferDuration: 0.1
-  FlyDuration: 1.5
+  FlyDuration: 1.2
   FlyLift: 115
-  FlyAirAccelerationOverride: 12
-  FlyAirDecelerationOverride: 25
-  FlyExitHangDuration: 0.25
+  FlyAirAccelerationOverride: 24
+  FlyAirDecelerationOverride: 18
+  FlyExitHangDuration: 0.18
   FlyRegenerationRate: 1
   StickinessOnLanding: 0.15
   _glide:
@@ -74,9 +74,9 @@ MonoBehaviour:
     WallJumpDownwardCancelMultiplier: 0
     WallDetectionVerticalShrink: 0.15
   MaxRunSpeed: 18
-  DashForwardBurstSpeed: 22
-  DashDuration: 0.2
-  DashGroundCooldown: 0.45
+  DashForwardBurstSpeed: 34
+  DashDuration: 0.15
+  DashGroundCooldown: 0.25
   DashAirDashLimit: 1
   DashAirDashCooldown: 0.75
   DashPostDashStopDuration: 0.1
