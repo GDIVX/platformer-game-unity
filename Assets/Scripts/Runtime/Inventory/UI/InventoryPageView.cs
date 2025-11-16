@@ -6,10 +6,10 @@ namespace Runtime.Inventory.UI
 {
     public class InventoryPageView : MonoBehaviour
     {
-        [SerializeField] private InventoryItemView _inventoryItemPrefab;
+        [SerializeField] private InventoryItem _inventoryItemPrefab;
         [SerializeField] private RectTransform _contentPanel;
 
-        [ShowInInspector, ReadOnly] private List<InventoryItemView> _inventoryItems = new();
+        [ShowInInspector, ReadOnly] private List<InventoryItem> _inventoryItems = new();
 
         public void Initialize(int inventorySize)
         {
