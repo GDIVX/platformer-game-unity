@@ -1,17 +1,18 @@
-using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace Runtime.Inventory.UI
 {
     public class InventorySlot : MonoBehaviour, IDropHandler
     {
+        [SerializeField] private Image _image;
+        [SerializeField] private Color _selectedColor, _unselectedColor;
+        // [SerializeField] private float _colorChangeDuration = 0.2f;
+        // [SerializeField] private Ease _easeType = Ease.OutCubic;
         [SerializeField] private InventoryLayer _inventoryLayer;
         [ShowInInspector, ReadOnly] private InventoryItem _inventoryItem;
-        public event Action<InventoryItem> OnSetItem;
-        public event Action<InventoryItem> OnRemoveItem;
 
         public InventoryItem InventoryItem
         {
@@ -23,6 +24,11 @@ namespace Runtime.Inventory.UI
                 return _inventoryItem;
             }
             private set => _inventoryItem = value;
+        }
+
+        private void Awake()
+        {
+            Deselect();
         }
 
         public void OnDrop(PointerEventData eventData)
@@ -40,9 +46,14 @@ namespace Runtime.Inventory.UI
             SetItem(item, true);
         }
 
-        public void RemoveItem()
+        public void Select()
         {
-            if (_inventoryItem == null) return;
+            _image.color = _selectedColor;
+        }
+
+        public void Deselect()
+        {
+            _image.color = _unselectedColor;
         }
 
         public void SetItem(InventoryItem item, bool setParentAfterDrag = false)
@@ -64,8 +75,6 @@ namespace Runtime.Inventory.UI
 
             item.InventorySlot = this;
             _inventoryItem = item;
-
-            OnSetItem?.Invoke(item);
         }
     }
 }

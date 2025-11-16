@@ -14634,6 +14634,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4088573414057953135, guid: 9838de0aeba62e84c96842e0bde1ef44, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088573414057953135, guid: 9838de0aeba62e84c96842e0bde1ef44, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4088573414057953135, guid: 9838de0aeba62e84c96842e0bde1ef44, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5128378027082521597, guid: 9838de0aeba62e84c96842e0bde1ef44, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -15034,14 +15046,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.31764707, g: 0.24313726, b: 0.27058825, a: 0.27450982}
+  m_Color: {r: 0.6039216, g: 0.60784316, b: 0.654902, a: 0.27450982}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -5138375157232984397, guid: 32c3ef92e553716478cc6d513f23fb17, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -19043,6 +19055,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4088573414057953135, guid: 9838de0aeba62e84c96842e0bde1ef44, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 5128378027082521597, guid: 9838de0aeba62e84c96842e0bde1ef44, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -19218,7 +19234,7 @@ MonoBehaviour:
   m_ActionEvents: []
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: Player
+  m_DefaultActionMap: 
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
 --- !u!1001 &1695394958
@@ -19414,7 +19430,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Runtime.Inventory::Runtime.Inventory.InventoryController
   _inventoryGroup: {fileID: 629116844}
   _inventoryItemPrefab: {fileID: 5568448967001937556, guid: daa7c8f98a481034c9db5a3425d4fd19, type: 3}
-  _freezeTimeOnInventoryOpen: 1
+  _freezeTimeOnInventoryOpen: 0
   _slots:
   - {fileID: 1011534897}
   - {fileID: 1781976148}

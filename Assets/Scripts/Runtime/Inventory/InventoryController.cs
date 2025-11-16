@@ -1,3 +1,4 @@
+using System;
 using Runtime.Inventory.UI;
 using Runtime.Player;
 using UnityEngine;
@@ -19,9 +20,15 @@ namespace Runtime.Inventory
 
         [SerializeField, FoldoutGroup("Drop")] private GameObject _itemDropPrefab;
 
+        [ShowInInspector] private int _selectedSlotIndex = -1;
+
         private static PlayerInput _playerInput;
         private static InputAction _inventoryOpenInput;
         private static InputAction _inventoryCloseInput;
+        private InputAction _hotbarInput;
+        private InputAction _moveInput;
+
+        private bool _inventoryOpen;
 
 
         #region Unity Events
@@ -36,7 +43,35 @@ namespace Runtime.Inventory
             _inventoryOpenInput.performed += (_) => OpenInventory();
             _inventoryCloseInput.performed += (_) => CloseInventory();
 
+            _moveInput = _playerInput.actions["UIMove"];
+            _hotbarInput = _playerInput.actions["HotbarSelect"];
+
+            SelectedSlotAt(0);
             CloseInventory();
+        }
+
+
+        private void Update()
+        {
+            //TODO: Fix
+            // if (_inventoryOpen)
+            // {
+            //     var movement = _moveInput.ReadValue<Vector2>();
+            //     Debug.Log($"Movement: {movement.x}, {movement.y}");
+            //     //There are 10 columns
+            //     var slotIndexDelta = Mathf.FloorToInt(movement.x + 10 * movement.y);
+            //     Debug.Log($"Slot Index Delta: {slotIndexDelta}");
+            //     var slotIndex = Mathf.Clamp(slotIndexDelta + _selectedSlotIndex % _slots.Count - 1, 0,
+            //         _slots.Count - 1);
+            //     Debug.Log($"Slot Index: {slotIndex}");
+            //     SelectedSlotAt(slotIndex);
+            // }
+
+            if (!_hotbarInput.triggered) return;
+            var read = _hotbarInput.ReadValue<float>();
+            var index = Mathf.Clamp(Mathf.RoundToInt(read - 1), 0, _slots.Count - 1);
+
+            SelectedSlotAt(Mathf.RoundToInt(index));
         }
 
         #endregion
@@ -53,6 +88,8 @@ namespace Runtime.Inventory
             {
                 Time.timeScale = 0;
             }
+
+            _inventoryOpen = true;
         }
 
         private void CloseInventory()
@@ -61,6 +98,7 @@ namespace Runtime.Inventory
             _playerInput.SwitchCurrentActionMap("Player");
 
             Time.timeScale = 1;
+            _inventoryOpen = false;
         }
 
         #endregion
@@ -134,8 +172,16 @@ namespace Runtime.Inventory
             }
         }
 
-        public void DropItemFromInventory(InventorySlot slot)
+        [Button]
+        public void SelectedSlotAt(int slotIndex)
         {
+            if (_selectedSlotIndex >= 0)
+            {
+                _slots[_selectedSlotIndex].Deselect();
+            }
+
+            _slots[slotIndex].Select();
+            _selectedSlotIndex = slotIndex;
         }
 
         #endregion

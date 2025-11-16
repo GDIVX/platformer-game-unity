@@ -67,8 +67,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 2533e6e118734c24aa3227c4220e01a9, type: 3}
-  m_Type: 1
+  m_Sprite: {fileID: -3490872726964384697, guid: 93de84b8c50081d41b76d9c78abab9b3, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -113,4 +113,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f664cf75295850a4c8ddc88bf052c74f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Runtime.Inventory.UI::InventorySlotView
+  _image: {fileID: 4088573414057953135}
+  _selectedColor: {r: 0.6039216, g: 0.7546638, b: 0.83137256, a: 1}
+  _unselectedColor: {r: 1, g: 1, b: 1, a: 1}
   _inventoryLayer: 0

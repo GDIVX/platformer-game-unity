@@ -16,6 +16,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "HotbarSelect",
+                    "type": "Value",
+                    "id": "cf2cf25d-d3a6-42b8-8691-8e53dda1d436",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "Jump",
                     "type": "Button",
                     "id": "6de9093a-87f9-4360-98ee-79fa6fbd04e0",
@@ -154,6 +163,116 @@
                     "action": "Move",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "de9a33cd-ee02-4fcf-a070-3ea7067cad08",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "Scale",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e3e01de7-e8fc-416a-a833-3bbf46a61246",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "Scale(factor=2)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8755fa05-288a-4711-bde4-391aa83a2cf1",
+                    "path": "<Keyboard>/3",
+                    "interactions": "",
+                    "processors": "Scale(factor=3)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5d5bfe4a-f8d0-4bfa-942c-25989809fc35",
+                    "path": "<Keyboard>/4",
+                    "interactions": "",
+                    "processors": "Scale(factor=4)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d58c65e9-497b-41ca-af3d-8651a6bbd7d8",
+                    "path": "<Keyboard>/5",
+                    "interactions": "",
+                    "processors": "Scale(factor=5)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "27315570-15c6-4b49-83a2-ab686118192b",
+                    "path": "<Keyboard>/6",
+                    "interactions": "",
+                    "processors": "Scale(factor=6)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5c0b40b3-a1b1-4d43-9c6f-1ee487c40152",
+                    "path": "<Keyboard>/7",
+                    "interactions": "",
+                    "processors": "Scale(factor=7)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "71dc8d5b-dabd-4fda-b1ba-5d71742469e2",
+                    "path": "<Keyboard>/8",
+                    "interactions": "",
+                    "processors": "Scale(factor=8)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "44e96061-9090-4a69-838f-856d0c187394",
+                    "path": "<Keyboard>/9",
+                    "interactions": "",
+                    "processors": "Scale(factor=9)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2f4dbb75-32f2-4cee-8f12-81e2f3a96453",
+                    "path": "<Keyboard>/0",
+                    "interactions": "",
+                    "processors": "Scale(factor=10)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 },
                 {
                     "name": "",
@@ -358,11 +477,11 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Move",
+                    "name": "HotbarSelect",
                     "type": "Value",
-                    "id": "833c79e7-56f1-4f09-8a9c-2c749f4b6c4b",
-                    "expectedControlType": "Vector2",
-                    "processors": "NormalizeVector2",
+                    "id": "7f24dc3d-4a71-466b-9ca1-57ee2395ce95",
+                    "expectedControlType": "Axis",
+                    "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
                 },
@@ -374,6 +493,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "UIMove",
+                    "type": "Value",
+                    "id": "d45dbaa3-449f-45c8-a05b-71c7830f2ed8",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -422,68 +550,112 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "WASD",
-                    "id": "ec6d735b-030d-4276-b3c1-0d47faf84c10",
-                    "path": "2DVector",
+                    "name": "",
+                    "id": "30b09b99-9f30-4ddb-b117-2b80986aca51",
+                    "path": "<Keyboard>/1",
                     "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Move",
-                    "isComposite": true,
+                    "processors": "Scale",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "up",
-                    "id": "45a79b67-d977-4752-a447-1031198ce39f",
-                    "path": "<Keyboard>/w",
+                    "name": "",
+                    "id": "2b2ca113-a9af-4272-b9e9-e0fe1721f70d",
+                    "path": "<Keyboard>/2",
                     "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Move",
+                    "processors": "Scale(factor=2)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
                     "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
-                    "name": "down",
-                    "id": "3c1e3ee8-7cf7-4561-ac9f-0ce06f5ac564",
-                    "path": "<Keyboard>/s",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Move",
-                    "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
-                    "name": "left",
-                    "id": "0548b3d6-9ea8-4ee6-bab1-6d2eecac0bf4",
-                    "path": "<Keyboard>/a",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Move",
-                    "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
-                    "name": "right",
-                    "id": "c6b31143-7f4e-4953-9bfd-6cb138a334ef",
-                    "path": "<Keyboard>/d",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Move",
-                    "isComposite": false,
-                    "isPartOfComposite": true
+                    "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "fe61c19a-121d-40ac-8b88-3badad72961c",
-                    "path": "<Gamepad>/leftStick",
+                    "id": "5fc6af47-daaa-47a6-b3eb-b064c9d1c1a2",
+                    "path": "<Keyboard>/3",
                     "interactions": "",
-                    "processors": "",
-                    "groups": ";Gamepad",
-                    "action": "Move",
+                    "processors": "Scale(factor=3)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fa7b9259-a5ff-4de3-9ec6-0c4b125a8f1b",
+                    "path": "<Keyboard>/4",
+                    "interactions": "",
+                    "processors": "Scale(factor=4)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b9e40879-db7c-4432-b6e7-801fa0f1ae1c",
+                    "path": "<Keyboard>/5",
+                    "interactions": "",
+                    "processors": "Scale(factor=5)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "51315e96-90c1-4cd7-84f0-7da70c6b5eb1",
+                    "path": "<Keyboard>/6",
+                    "interactions": "",
+                    "processors": "Scale(factor=6)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1108c6e8-007c-48a6-a450-b2f1ea980e61",
+                    "path": "<Keyboard>/7",
+                    "interactions": "",
+                    "processors": "Scale(factor=7)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "741ef2df-9c34-4ff9-a702-f66fcbb18b58",
+                    "path": "<Keyboard>/8",
+                    "interactions": "",
+                    "processors": "Scale(factor=8)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "550022d0-8561-436c-af5f-7621a1d7fd48",
+                    "path": "<Keyboard>/9",
+                    "interactions": "",
+                    "processors": "Scale(factor=9)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1bd65fb8-1a45-48d7-bf2a-1419dc396cfc",
+                    "path": "<Keyboard>/0",
+                    "interactions": "",
+                    "processors": "Scale(factor=10)",
+                    "groups": ";Keyboard And Mouse",
+                    "action": "HotbarSelect",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -497,6 +669,72 @@
                     "action": "Quick Transfer",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7e911706-82d8-43fe-a2a5-a7be7df6ebfa",
+                    "path": "<Gamepad>/leftStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "UIMove",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "WASD",
+                    "id": "ef9172c0-53f1-47b0-b443-98659523708f",
+                    "path": "2DVector",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UIMove",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "up",
+                    "id": "6acbc1f3-6fc0-46f8-940f-ec2d2b20bf5b",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UIMove",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "down",
+                    "id": "f4883684-be96-4935-ba49-46a3bc28a0bb",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UIMove",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "left",
+                    "id": "863230f2-e613-4090-96b9-a562275884a7",
+                    "path": "<Keyboard>/a",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UIMove",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "right",
+                    "id": "17512180-91f1-4668-b15d-54e46ed37ccf",
+                    "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UIMove",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 }
             ]
         }
