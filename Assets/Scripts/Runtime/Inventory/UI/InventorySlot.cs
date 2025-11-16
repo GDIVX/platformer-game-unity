@@ -1,3 +1,4 @@
+using Runtime.Inventory;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -33,7 +34,22 @@ namespace Runtime.Inventory.UI
 
         public void OnDrop(PointerEventData eventData)
         {
-            InventoryItem item = eventData.pointerDrag.GetComponent<InventoryItem>();
+            InventoryItem item = eventData.pointerDrag
+                ? eventData.pointerDrag.GetComponent<InventoryItem>()
+                : null;
+
+            if (!item)
+            {
+                Debug.LogWarning("Dropped object is not a valid inventory item.");
+                return;
+            }
+
+            if (!CanAcceptItem(item))
+            {
+                EquipmentManager.HandleInvalidSlotAttempt(_inventoryLayer, item.Item);
+                return;
+            }
+
             if (transform.childCount != 0)
             {
                 var otherSlot = item.InventorySlot;
@@ -44,6 +60,7 @@ namespace Runtime.Inventory.UI
             }
 
             SetItem(item, true);
+            EquipItem(item);
         }
 
         public void Select()
@@ -54,6 +71,22 @@ namespace Runtime.Inventory.UI
         public void Deselect()
         {
             _image.color = _unselectedColor;
+        }
+
+        public void TryEquipFromClick()
+        {
+            if (!InventoryItem)
+            {
+                return;
+            }
+
+            if (!CanAcceptItem(InventoryItem))
+            {
+                EquipmentManager.HandleInvalidSlotAttempt(_inventoryLayer, InventoryItem.Item);
+                return;
+            }
+
+            EquipItem(InventoryItem);
         }
 
         public void SetItem(InventoryItem item, bool setParentAfterDrag = false)
@@ -75,6 +108,21 @@ namespace Runtime.Inventory.UI
 
             item.InventorySlot = this;
             _inventoryItem = item;
+        }
+
+        private bool CanAcceptItem(InventoryItem item)
+        {
+            if (!item)
+            {
+                return false;
+            }
+
+            return EquipmentManager.CanEquip(_inventoryLayer, item.Item.Layer);
+        }
+
+        private void EquipItem(InventoryItem item)
+        {
+            EquipmentManager.Equip(this, item);
         }
     }
 }

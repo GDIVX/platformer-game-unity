@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace Runtime.Inventory.UI
 {
-    public class InventoryItem : ItemView, IBeginDragHandler, IEndDragHandler, IDragHandler
+    public class InventoryItem : ItemView, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
     {
         [SerializeField] CanvasGroup _canvasGroup;
 
@@ -89,6 +89,21 @@ namespace Runtime.Inventory.UI
             InventorySlot.InventoryItem = null;
             Item = null;
             Destroy(gameObject);
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (!Keyboard.current.leftShiftKey.isPressed && !Keyboard.current.rightShiftKey.isPressed)
+            {
+                return;
+            }
+
+            if (!InventorySlot)
+            {
+                return;
+            }
+
+            InventorySlot.TryEquipFromClick();
         }
     }
 }
