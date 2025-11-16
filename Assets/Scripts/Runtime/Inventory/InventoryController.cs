@@ -166,7 +166,11 @@ namespace Runtime.Inventory
                     return true;
                 }
 
-                if (!emptySlot) return false;
+                if (!emptySlot)
+                {
+                    DropItem(item, amount);
+                    return false;
+                }
                 CreateNewItem(item, emptySlot, amount);
                 return true;
             }
@@ -242,6 +246,20 @@ namespace Runtime.Inventory
             InventoryItem newItem = Instantiate(_inventoryItemPrefab);
             newItem.SetItem(item, amount);
             slot.SetItem(newItem);
+        }
+
+        private void DropItem(Item item, int amount)
+        {
+            if (_itemDropPrefab == null)
+            {
+                Debug.LogWarning("Item drop prefab is not assigned");
+                return;
+            }
+
+            var dropObject = Instantiate(_itemDropPrefab, transform.position, Quaternion.identity);
+            if (!dropObject.TryGetComponent<ItemDrop>(out var itemDrop)) return;
+
+            itemDrop.Initialize(item, amount);
         }
 
         #endregion
