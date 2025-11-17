@@ -1,3 +1,4 @@
+using Runtime.Player.Inventory;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;

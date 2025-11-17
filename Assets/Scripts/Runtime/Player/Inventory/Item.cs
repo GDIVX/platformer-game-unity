@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using Runtime.Inventory;
 using Runtime.Inventory.UI;
 using Sirenix.Utilities;
 using UnityEngine;
 
-namespace Runtime.Inventory
+namespace Runtime.Player.Inventory
 {
     [CreateAssetMenu(fileName = "Items ")]
     public class Item : ScriptableObject

@@ -4,7 +4,7 @@ using System.Linq;
 using Runtime.Inventory.UI;
 using UnityEngine;
 
-namespace Runtime.Inventory
+namespace Runtime.Player.Inventory
 {
     public interface IInventorySorter
     {

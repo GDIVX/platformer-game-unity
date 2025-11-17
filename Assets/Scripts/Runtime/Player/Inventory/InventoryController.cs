@@ -1,13 +1,11 @@
-using System;
-using Runtime.Inventory.UI;
-using Runtime.Player;
-using UnityEngine;
 using System.Collections.Generic;
+using Runtime.Inventory.UI;
 using Sirenix.OdinInspector;
+using UnityEngine;
 using UnityEngine.InputSystem;
 using Random = UnityEngine.Random;
 
-namespace Runtime.Inventory
+namespace Runtime.Player.Inventory
 {
     public class InventoryController : MonoBehaviour
     {
@@ -33,6 +31,7 @@ namespace Runtime.Inventory
         private InputAction _moveInput;
 
         private bool _inventoryOpen;
+        private static GameObject _player;
 
 
         #region Unity Events
@@ -52,6 +51,8 @@ namespace Runtime.Inventory
 
             SelectedSlotAt(0);
             CloseInventory();
+
+            _player = GameObject.FindWithTag("Player");
         }
 
 
@@ -275,7 +276,7 @@ namespace Runtime.Inventory
                 return;
             }
 
-            var position = (Vector3)(Random.insideUnitCircle * 5) + PlayerContext.Instance.transform.position;
+            var position = (Vector3)(Random.insideUnitCircle * 5) + _player.transform.position;
 
             var dropObject = Instantiate(_itemDropPrefab, position,
                 Quaternion.identity);
