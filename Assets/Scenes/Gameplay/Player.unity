@@ -6714,7 +6714,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 990809108b9491d4c844c4825eae59a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Runtime.Inventory::Runtime.Inventory.ItemCollector
-  _inventoryController: {fileID: 0}
+  _inventoryController: {fileID: 1704279925}
 --- !u!61 &489131432
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -6749,7 +6749,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 1.5}
+  m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -6759,7 +6759,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 5, y: 5}
+  m_Size: {x: 10, y: 10}
   m_EdgeRadius: 0
 --- !u!1001 &500749024
 PrefabInstance:
