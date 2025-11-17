@@ -6714,7 +6714,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 990809108b9491d4c844c4825eae59a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Runtime.Inventory::Runtime.Inventory.ItemCollector
-  _inventoryController: {fileID: 1704279925}
 --- !u!61 &489131432
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -19524,8 +19523,6 @@ MonoBehaviour:
   _inventoryGroup: {fileID: 629116844}
   _inventoryItemPrefab: {fileID: 5568448967001937556, guid: daa7c8f98a481034c9db5a3425d4fd19, type: 3}
   _freezeTimeOnInventoryOpen: 0
-  _inventorySorter:
-    rid: 22852632346886144
   _slots:
   - {fileID: 1011534897}
   - {fileID: 1781976148}
@@ -19588,12 +19585,6 @@ MonoBehaviour:
   - {fileID: 1391695501}
   - {fileID: 1486535898}
   _itemDropPrefab: {fileID: 8996791176420086064, guid: 80861fb1fe4ae1647aa2daab94a491cd, type: 3}
-  references:
-    version: 2
-    RefIds:
-    - rid: 22852632346886144
-      type: {class: DefaultInventorySorter, ns: Runtime.Inventory, asm: Runtime.Inventory}
-      data: 
 --- !u!114 &1712958974 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4565500503981381752, guid: 9838de0aeba62e84c96842e0bde1ef44, type: 3}
