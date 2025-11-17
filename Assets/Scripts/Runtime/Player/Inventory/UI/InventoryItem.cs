@@ -1,11 +1,10 @@
-using System;
-using Runtime.Player.Inventory;
+using Runtime.Inventory.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-namespace Runtime.Inventory.UI
+namespace Runtime.Player.Inventory.UI
 {
     public class InventoryItem : ItemView, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
     {

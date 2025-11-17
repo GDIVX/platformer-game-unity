@@ -1,15 +1,16 @@
-using Runtime.Inventory;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace Runtime.Inventory.UI
+namespace Runtime.Player.Inventory.UI
 {
     public class InventorySlot : MonoBehaviour, IDropHandler
     {
         [SerializeField] private Image _image;
+
         [SerializeField] private Color _selectedColor, _unselectedColor;
+
         // [SerializeField] private float _colorChangeDuration = 0.2f;
         // [SerializeField] private Ease _easeType = Ease.OutCubic;
         [SerializeField] private InventoryLayer _inventoryLayer;
@@ -46,7 +47,7 @@ namespace Runtime.Inventory.UI
 
             if (!CanAcceptItem(item))
             {
-                EquipmentManager.HandleInvalidSlotAttempt(_inventoryLayer, item.Item);
+                // EquipmentManager.HandleInvalidSlotAttempt(_inventoryLayer, item.Item);
                 return;
             }
 
@@ -82,7 +83,7 @@ namespace Runtime.Inventory.UI
 
             if (!CanAcceptItem(InventoryItem))
             {
-                EquipmentManager.HandleInvalidSlotAttempt(_inventoryLayer, InventoryItem.Item);
+                // EquipmentManager.HandleInvalidSlotAttempt(_inventoryLayer, InventoryItem.Item);
                 return;
             }
 
@@ -112,12 +113,7 @@ namespace Runtime.Inventory.UI
 
         private bool CanAcceptItem(InventoryItem item)
         {
-            if (!item)
-            {
-                return false;
-            }
-
-            return EquipmentManager.CanEquip(_inventoryLayer, item.Item.Layer);
+            return item && EquipmentManager.CanEquip(_inventoryLayer, item.Item.Layer);
         }
 
         private void EquipItem(InventoryItem item)

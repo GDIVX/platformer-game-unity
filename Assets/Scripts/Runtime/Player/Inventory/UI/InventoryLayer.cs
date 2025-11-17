@@ -1,4 +1,4 @@
-namespace Runtime.Inventory.UI
+namespace Runtime.Player.Inventory.UI
 {
     public enum InventoryLayer
     {
