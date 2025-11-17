@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Runtime.Inventory;
 using Runtime.Inventory.UI;
+using Runtime.Player.Inventory.UI;
 using Sirenix.Utilities;
 using UnityEngine;
 
