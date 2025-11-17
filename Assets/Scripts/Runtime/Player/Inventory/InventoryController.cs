@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Runtime.Inventory.UI;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -230,6 +232,71 @@ namespace Runtime.Player.Inventory
             return RemoveItemAt(_selectedSlotIndex, amount);
         }
 
+        public int GetAvailableAmount(Item item)
+        {
+            return item == null ? 0 : GetAvailableAmount(item.ItemName);
+        }
+
+        public int GetAvailableAmount(string itemName)
+        {
+            var totalAmount = 0;
+
+            foreach (var slot in _slots)
+            {
+                var slotItem = slot.InventoryItem;
+                if (!slotItem) continue;
+
+                if (!string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                totalAmount += slotItem.Amount;
+            }
+
+            return totalAmount;
+        }
+
+        public bool CanMeetRequirements(IEnumerable<ItemRequirement> requirements)
+        {
+            foreach (var requirement in requirements)
+            {
+                if (requirement.Amount <= 0 || !requirement.Item)
+                {
+                    continue;
+                }
+
+                if (GetAvailableAmount(requirement.Item) < requirement.Amount)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public bool TryRemoveRequirements(IEnumerable<ItemRequirement> requirements)
+        {
+            requirements = ItemRequirement.Compress(requirements);
+            IEnumerable<ItemRequirement> itemRequirements = requirements.ToArray();
+            if (!CanMeetRequirements(itemRequirements))
+            {
+                return false;
+            }
+
+            foreach (var requirement in itemRequirements)
+            {
+                if (requirement.Amount <= 0 || requirement.Item == null)
+                {
+                    continue;
+                }
+
+                RemoveItemStacks(requirement.Item.ItemName, requirement.Amount);
+            }
+
+            return true;
+        }
+
         [Button]
         public void SortInventory()
         {
@@ -266,6 +333,34 @@ namespace Runtime.Player.Inventory
             slot.SetItem(newItem);
         }
 
+        private void RemoveItemStacks(string itemName, int amount)
+        {
+            foreach (var slot in _slots)
+            {
+                if (amount <= 0)
+                {
+                    break;
+                }
+
+                var slotItem = slot.InventoryItem;
+                if (!slotItem || !string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var amountToRemove = Mathf.Min(amount, slotItem.Amount);
+                var newAmount = slotItem.Amount - amountToRemove;
+                amount -= amountToRemove;
+
+                if (newAmount <= 0)
+                {
+                    slotItem.DestroySelf();
+                    continue;
+                }
+
+                slotItem.SetAmount(newAmount);
+            }
+        }
 
         [Button]
         private void DropItem(Item item, int amount)
@@ -288,6 +383,57 @@ namespace Runtime.Player.Inventory
             itemDrop.Initialize(item, amount);
         }
 
-        #endregion
+        [Serializable]
+        public struct ItemRequirement : IEquatable<ItemRequirement>
+        {
+            public Item Item;
+            public int Amount;
+
+            /// <summary>
+            /// Return an organized list of requirements where duplicate items are merged into the same requirements
+            /// </summary>
+            /// <param name="requirements"></param>
+            /// <returns></returns>
+            public static List<ItemRequirement> Compress(IEnumerable<ItemRequirement> requirements)
+            {
+                var newList = new List<ItemRequirement>();
+
+                foreach (var requirement in requirements)
+                {
+                    if (requirement.Amount <= 0 || !requirement.Item)
+                    {
+                        continue;
+                    }
+
+                    if (newList.Contains(requirement))
+                    {
+                        var item = newList.First((r) => Equals(r.Item, requirement.Item));
+                        item.Amount += requirement.Amount;
+                        continue;
+                    }
+
+                    newList.Add(requirement);
+                }
+
+                return newList;
+            }
+
+            #endregion
+
+            public bool Equals(ItemRequirement other)
+            {
+                return Equals(Item, other.Item) && Amount == other.Amount;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is ItemRequirement other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Item, Amount);
+            }
+        }
     }
 }
