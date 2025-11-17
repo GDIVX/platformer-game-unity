@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Runtime.Inventory.UI;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -275,12 +277,13 @@ namespace Runtime.Player.Inventory
 
         public bool TryRemoveRequirements(IEnumerable<ItemRequirement> requirements)
         {
-            if (!CanMeetRequirements(requirements))
+            IEnumerable<ItemRequirement> itemRequirements = requirements as ItemRequirement[] ?? requirements.ToArray();
+            if (!CanMeetRequirements(itemRequirements))
             {
                 return false;
             }
 
-            foreach (var requirement in requirements)
+            foreach (var requirement in itemRequirements)
             {
                 if (requirement.Amount <= 0 || requirement.Item == null)
                 {
@@ -291,6 +294,8 @@ namespace Runtime.Player.Inventory
             }
 
             return true;
+        }
+
         [Button]
         public void SortInventory()
         {
@@ -356,12 +361,6 @@ namespace Runtime.Player.Inventory
             }
         }
 
-        [Serializable]
-        public struct ItemRequirement
-        {
-            public Item Item;
-            public int Amount;
-
         [Button]
         private void DropItem(Item item, int amount)
         {
@@ -383,6 +382,13 @@ namespace Runtime.Player.Inventory
             itemDrop.Initialize(item, amount);
         }
 
-        #endregion
+        [Serializable]
+        public struct ItemRequirement
+        {
+            public Item Item;
+            public int Amount;
+
+            #endregion
+        }
     }
 }
