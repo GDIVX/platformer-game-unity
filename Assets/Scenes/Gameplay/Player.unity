@@ -19525,7 +19525,7 @@ MonoBehaviour:
   _inventoryItemPrefab: {fileID: 5568448967001937556, guid: daa7c8f98a481034c9db5a3425d4fd19, type: 3}
   _freezeTimeOnInventoryOpen: 0
   _inventorySorter:
-    rid: 22852643936796672
+    rid: 22852643936796747
   _slots:
   - {fileID: 1011534897}
   - {fileID: 1781976148}
@@ -19588,11 +19588,12 @@ MonoBehaviour:
   - {fileID: 1391695501}
   - {fileID: 1486535898}
   _itemDropPrefab: {fileID: 8996791176420086064, guid: 80861fb1fe4ae1647aa2daab94a491cd, type: 3}
+  _playerTransform: {fileID: 0}
   references:
     version: 2
     RefIds:
-    - rid: 22852643936796672
-      type: {class: DefaultInventorySorter, ns: Runtime.Inventory, asm: Assembly-CSharp}
+    - rid: 22852643936796747
+      type: {class: DefaultInventorySorter, ns: Runtime.Player.Inventory, asm: Runtime.Player.Inventory}
       data: 
 --- !u!114 &1712958974 stripped
 MonoBehaviour:

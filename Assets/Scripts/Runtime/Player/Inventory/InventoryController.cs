@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Runtime.Inventory.UI;
 using Runtime.Player.Inventory.UI;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -10,32 +9,36 @@ using Random = UnityEngine.Random;
 
 namespace Runtime.Player.Inventory
 {
+    /// <summary>
+    /// Controls the player's inventory: UI visibility, item stacks, requirements,
+    /// sorting and item dropping.
+    /// </summary>
     public class InventoryController : MonoBehaviour
     {
         [SerializeField, FoldoutGroup("UI")] private GameObject _inventoryGroup;
+
         [SerializeField, FoldoutGroup("UI")] private InventoryItem _inventoryItemPrefab;
+
         [SerializeField, FoldoutGroup("UI")] private bool _freezeTimeOnInventoryOpen;
 
         [SerializeReference, FoldoutGroup("Content")]
         private IInventorySorter _inventorySorter = new DefaultInventorySorter();
-
 
         [SerializeField, FoldoutGroup("Content")]
         private List<InventorySlot> _slots;
 
         [SerializeField, FoldoutGroup("Drop")] private GameObject _itemDropPrefab;
 
+        [SerializeField, FoldoutGroup("Drop")] private Transform _playerTransform;
+
         [ShowInInspector] private int _selectedSlotIndex = -1;
 
-        private static PlayerInput _playerInput;
-        private static InputAction _inventoryOpenInput;
-        private static InputAction _inventoryCloseInput;
+        private PlayerInput _playerInput;
+        private InputAction _inventoryOpenInput;
+        private InputAction _inventoryCloseInput;
         private InputAction _hotbarInput;
-        private InputAction _moveInput;
 
-        private bool _inventoryOpen;
-        private static GameObject _player;
-
+        // private bool _inventoryOpen;
 
         #region Unity Events
 
@@ -46,160 +49,224 @@ namespace Runtime.Player.Inventory
             _inventoryOpenInput = _playerInput.actions["Open Inventory"];
             _inventoryCloseInput = _playerInput.actions["Close Inventory"];
 
-            _inventoryOpenInput.performed += (_) => OpenInventory();
-            _inventoryCloseInput.performed += (_) => CloseInventory();
+            _inventoryOpenInput.performed += OnInventoryOpenPerformed;
+            _inventoryCloseInput.performed += OnInventoryClosePerformed;
 
-            _moveInput = _playerInput.actions["UIMove"];
             _hotbarInput = _playerInput.actions["HotbarSelect"];
 
-            SelectedSlotAt(0);
+            _slots ??= new List<InventorySlot>();
+
+            if (_slots.Count > 0)
+            {
+                SelectedSlotAt(0);
+            }
+
             CloseInventory();
 
-            _player = GameObject.FindWithTag("Player");
+            if (_playerTransform != null) return;
+            var playerGo = GameObject.FindWithTag("Player");
+            if (playerGo != null)
+            {
+                _playerTransform = playerGo.transform;
+            }
         }
 
+        private void OnDestroy()
+        {
+            if (_inventoryOpenInput != null)
+            {
+                _inventoryOpenInput.performed -= OnInventoryOpenPerformed;
+            }
+
+            if (_inventoryCloseInput != null)
+            {
+                _inventoryCloseInput.performed -= OnInventoryClosePerformed;
+            }
+        }
 
         private void Update()
         {
-            //TODO: Fix
-            // if (_inventoryOpen)
-            // {
-            //     var movement = _moveInput.ReadValue<Vector2>();
-            //     Debug.Log($"Movement: {movement.x}, {movement.y}");
-            //     //There are 10 columns
-            //     var slotIndexDelta = Mathf.FloorToInt(movement.x + 10 * movement.y);
-            //     Debug.Log($"Slot Index Delta: {slotIndexDelta}");
-            //     var slotIndex = Mathf.Clamp(slotIndexDelta + _selectedSlotIndex % _slots.Count - 1, 0,
-            //         _slots.Count - 1);
-            //     Debug.Log($"Slot Index: {slotIndex}");
-            //     SelectedSlotAt(slotIndex);
-            // }
+            if (_hotbarInput == null || _slots == null || _slots.Count == 0)
+            {
+                return;
+            }
 
-            if (!_hotbarInput.triggered) return;
+            if (!_hotbarInput.triggered)
+            {
+                return;
+            }
+
+            // Input is [1..N], slots are [0..N-1]
             var read = _hotbarInput.ReadValue<float>();
-            var index = Mathf.Clamp(Mathf.RoundToInt(read - 1), 0, _slots.Count - 1);
+            var index = Mathf.RoundToInt(read - 1f);
+            index = Mathf.Clamp(index, 0, _slots.Count - 1);
 
-            SelectedSlotAt(Mathf.RoundToInt(index));
+            SelectedSlotAt(index);
         }
 
         #endregion
 
+        #region Inventory UI
 
-        #region Show Inventory Page
+        private void OnInventoryOpenPerformed(InputAction.CallbackContext _)
+        {
+            OpenInventory();
+        }
+
+        private void OnInventoryClosePerformed(InputAction.CallbackContext _)
+        {
+            CloseInventory();
+        }
 
         private void OpenInventory()
         {
-            _inventoryGroup.SetActive(true);
-            _playerInput.SwitchCurrentActionMap("Inventory");
+            if (_inventoryGroup != null)
+            {
+                _inventoryGroup.SetActive(true);
+            }
+
+            if (_playerInput != null)
+            {
+                _playerInput.SwitchCurrentActionMap("Inventory");
+            }
 
             if (_freezeTimeOnInventoryOpen)
             {
-                Time.timeScale = 0;
+                Time.timeScale = 0f;
             }
-
-            _inventoryOpen = true;
         }
 
         private void CloseInventory()
         {
-            _inventoryGroup.SetActive(false);
-            _playerInput.SwitchCurrentActionMap("Player");
+            if (_inventoryGroup != null)
+            {
+                _inventoryGroup.SetActive(false);
+            }
 
-            Time.timeScale = 1;
-            _inventoryOpen = false;
+            if (_playerInput != null)
+            {
+                _playerInput.SwitchCurrentActionMap("Player");
+            }
         }
 
         #endregion
 
         #region Public Interface
 
+        /// <summary>
+        /// Tries to add the requested amount of the given item to the inventory.
+        /// Returns true if all items fit; false if some or all had to be dropped.
+        /// </summary>
         [Button]
         public bool TryAddItem(Item item, int amount)
         {
-            while (true)
+            if (item == null || amount <= 0)
             {
-                if (amount <= 0)
+                return false;
+            }
+
+            if (_slots == null || _slots.Count == 0)
+            {
+                DropItem(item, amount);
+                return false;
+            }
+
+            var remaining = amount;
+
+            // First: stack into existing slots where possible.
+            foreach (var slot in _slots)
+            {
+                if (remaining <= 0)
                 {
-                    return false;
+                    break;
                 }
 
-                //early split check
-                if (amount > item.MaxStack)
+                var slotItem = slot.InventoryItem;
+                if (!slotItem)
                 {
-                    //we need to split before we continue,
-                    //first add a full stack first
-                    TryAddItem(item, item.MaxStack);
-                    //now add whatever left
-                    var remains = amount - item.MaxStack;
-                    amount = remains;
                     continue;
                 }
 
-                InventorySlot emptySlot = null;
-
-                //Search for a stack opportunity
-                foreach (InventorySlot slot in _slots)
+                if (!string.Equals(slotItem.Item.ItemName, item.ItemName, StringComparison.Ordinal))
                 {
-                    var itemInSlot = slot.InventoryItem;
-                    //is this empty?
-                    if (!itemInSlot)
-                    {
-                        if (emptySlot) continue;
-                        //Save this for later if we need to look for an empty slot
-                        emptySlot = slot;
-                        continue;
-                    }
-
-                    //is this the same item?
-                    if (itemInSlot.Item.ItemName != item.ItemName)
-                    {
-                        continue;
-                    }
-
-                    //Can we stack it?
-                    if (itemInSlot.IsFull) continue;
-
-                    //Do we need to split?
-                    var sum = amount + itemInSlot.Amount;
-                    if (sum > itemInSlot.Item.MaxStack)
-                    {
-                        //split
-                        itemInSlot.SetAmount(itemInSlot.Item.MaxStack);
-                        var diff = sum - itemInSlot.Item.MaxStack;
-                        return TryAddItem(item, diff);
-                    }
-
-                    //We found an item of the same type and that can accept stacking
-                    itemInSlot.AddAmount(amount);
-                    return true;
+                    continue;
                 }
 
-                if (!emptySlot)
+                if (slotItem.IsFull)
                 {
-                    DropItem(item, amount);
-                    return false;
+                    continue;
                 }
 
-                CreateNewItem(item, emptySlot, amount);
-                return true;
+                var maxStack = slotItem.Item.MaxStack;
+                var space = Mathf.Max(0, maxStack - slotItem.Amount);
+                if (space <= 0)
+                {
+                    continue;
+                }
+
+                var toAdd = Mathf.Min(space, remaining);
+                slotItem.AddAmount(toAdd);
+                remaining -= toAdd;
             }
+
+            // Second: create new stacks in empty slots while we still have room and remaining items.
+            foreach (var slot in _slots)
+            {
+                if (remaining <= 0)
+                {
+                    break;
+                }
+
+                if (slot.InventoryItem)
+                {
+                    continue;
+                }
+
+                var toCreate = Mathf.Min(remaining, item.MaxStack);
+                CreateNewItem(item, slot, toCreate);
+                remaining -= toCreate;
+            }
+
+            // If we still have remaining items, drop them.
+            if (remaining > 0)
+            {
+                DropItem(item, remaining);
+                return false;
+            }
+
+            return true;
         }
 
         [Button]
         public void SelectedSlotAt(int slotIndex)
         {
-            if (_selectedSlotIndex >= 0)
+            if (_slots == null || _slots.Count == 0)
             {
-                _slots[_selectedSlotIndex].Deselect();
+                _selectedSlotIndex = -1;
+                return;
             }
 
-            _slots[slotIndex].Select();
+            slotIndex = Mathf.Clamp(slotIndex, 0, _slots.Count - 1);
+
+            if (_selectedSlotIndex >= 0 && _selectedSlotIndex < _slots.Count)
+            {
+                _slots[_selectedSlotIndex]?.Deselect();
+            }
+
+            _slots[slotIndex]?.Select();
             _selectedSlotIndex = slotIndex;
         }
 
         [Button]
         public Item GetCurrentlySelectedItem()
         {
+            if (_slots == null ||
+                _selectedSlotIndex < 0 ||
+                _selectedSlotIndex >= _slots.Count)
+            {
+                return null;
+            }
+
             var slot = _slots[_selectedSlotIndex];
             var itemInSlot = slot.InventoryItem;
             return itemInSlot ? itemInSlot.Item : null;
@@ -208,10 +275,15 @@ namespace Runtime.Player.Inventory
         [Button]
         public ItemRemovalOutcome RemoveItemAt(int slotIndex, int amount)
         {
+            if (_slots == null || slotIndex < 0 || slotIndex >= _slots.Count)
+            {
+                return ItemRemovalOutcome.NoItemToRemove;
+            }
+
             var slot = _slots[slotIndex];
             var itemInSlot = slot.InventoryItem;
 
-            if (itemInSlot == null)
+            if (!itemInSlot)
             {
                 return ItemRemovalOutcome.NoItemToRemove;
             }
@@ -240,52 +312,44 @@ namespace Runtime.Player.Inventory
 
         public int GetAvailableAmount(string itemName)
         {
-            var totalAmount = 0;
-
-            foreach (var slot in _slots)
+            if (string.IsNullOrWhiteSpace(itemName) || _slots == null)
             {
-                var slotItem = slot.InventoryItem;
-                if (!slotItem) continue;
-
-                if (!string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                totalAmount += slotItem.Amount;
+                return 0;
             }
 
-            return totalAmount;
+            return (from slot in _slots
+                select slot.InventoryItem
+                into slotItem
+                where slotItem
+                where string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase)
+                select slotItem.Amount).Sum();
         }
 
         public bool CanMeetRequirements(IEnumerable<ItemRequirement> requirements)
         {
-            foreach (var requirement in requirements)
+            if (requirements == null)
             {
-                if (requirement.Amount <= 0 || !requirement.Item)
-                {
-                    continue;
-                }
-
-                if (GetAvailableAmount(requirement.Item) < requirement.Amount)
-                {
-                    return false;
-                }
+                return true;
             }
 
-            return true;
+            return requirements.Where(requirement => requirement.Amount > 0 && requirement.Item).All(requirement =>
+                GetAvailableAmount(requirement.Item) >= requirement.Amount);
         }
 
         public bool TryRemoveRequirements(IEnumerable<ItemRequirement> requirements)
         {
-            requirements = ItemRequirement.Compress(requirements);
-            IEnumerable<ItemRequirement> itemRequirements = requirements.ToArray();
-            if (!CanMeetRequirements(itemRequirements))
+            if (requirements == null)
+            {
+                return true;
+            }
+
+            var compressed = ItemRequirement.Compress(requirements).ToArray();
+            if (!CanMeetRequirements(compressed))
             {
                 return false;
             }
 
-            foreach (var requirement in itemRequirements)
+            foreach (var requirement in compressed)
             {
                 if (requirement.Amount <= 0 || requirement.Item == null)
                 {
@@ -323,59 +387,83 @@ namespace Runtime.Player.Inventory
 
         private void CreateNewItem(Item item, InventorySlot slot, int amount)
         {
+            if (item == null || slot == null)
+            {
+                return;
+            }
+
             if (amount <= 0)
             {
                 Debug.LogWarning("Amount of items cannot be less or equal to zero");
                 return;
             }
 
-            InventoryItem newItem = Instantiate(_inventoryItemPrefab);
+            var newItem = Instantiate(_inventoryItemPrefab);
             newItem.SetItem(item, amount);
             slot.SetItem(newItem);
         }
 
         private void RemoveItemStacks(string itemName, int amount)
         {
+            if (_slots == null || string.IsNullOrWhiteSpace(itemName) || amount <= 0)
+            {
+                return;
+            }
+
+            var remaining = amount;
+
             foreach (var slot in _slots)
             {
-                if (amount <= 0)
+                if (remaining <= 0)
                 {
                     break;
                 }
 
                 var slotItem = slot.InventoryItem;
-                if (!slotItem || !string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase))
+                if (!slotItem ||
+                    !string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
-                var amountToRemove = Mathf.Min(amount, slotItem.Amount);
+                var amountToRemove = Mathf.Min(remaining, slotItem.Amount);
                 var newAmount = slotItem.Amount - amountToRemove;
-                amount -= amountToRemove;
+                remaining -= amountToRemove;
 
                 if (newAmount <= 0)
                 {
                     slotItem.DestroySelf();
-                    continue;
                 }
-
-                slotItem.SetAmount(newAmount);
+                else
+                {
+                    slotItem.SetAmount(newAmount);
+                }
             }
         }
 
         [Button]
         private void DropItem(Item item, int amount)
         {
+            if (item == null || amount <= 0)
+            {
+                return;
+            }
+
             if (!_itemDropPrefab)
             {
                 Debug.LogWarning("Item drop prefab is not assigned");
                 return;
             }
 
-            var position = (Vector3)(Random.insideUnitCircle * 5) + _player.transform.position;
+            if (_playerTransform == null)
+            {
+                Debug.LogWarning("Player transform is not assigned; cannot determine drop position.");
+                return;
+            }
 
-            var dropObject = Instantiate(_itemDropPrefab, position,
-                Quaternion.identity);
+            var position = (Vector3)(Random.insideUnitCircle * 5f) + _playerTransform.position;
+            var dropObject = Instantiate(_itemDropPrefab, position, Quaternion.identity);
+
             if (!dropObject.TryGetComponent<ItemDrop>(out var itemDrop))
             {
                 itemDrop = dropObject.AddComponent<ItemDrop>();
@@ -384,6 +472,8 @@ namespace Runtime.Player.Inventory
             itemDrop.Initialize(item, amount);
         }
 
+        #endregion
+
         [Serializable]
         public struct ItemRequirement : IEquatable<ItemRequirement>
         {
@@ -391,35 +481,40 @@ namespace Runtime.Player.Inventory
             public int Amount;
 
             /// <summary>
-            /// Return an organized list of requirements where duplicate items are merged into the same requirements
+            /// Returns a list of requirements where duplicate items are merged,
+            /// summing their amounts.
             /// </summary>
-            /// <param name="requirements"></param>
-            /// <returns></returns>
             public static List<ItemRequirement> Compress(IEnumerable<ItemRequirement> requirements)
             {
-                var newList = new List<ItemRequirement>();
+                var result = new List<ItemRequirement>();
+                if (requirements == null)
+                {
+                    return result;
+                }
+
+                var accumulator = new Dictionary<Item, int>();
 
                 foreach (var requirement in requirements)
                 {
-                    if (requirement.Amount <= 0 || !requirement.Item)
+                    if (requirement.Amount <= 0 || requirement.Item == null)
                     {
                         continue;
                     }
 
-                    if (newList.Contains(requirement))
+                    if (accumulator.TryGetValue(requirement.Item, out var current))
                     {
-                        var item = newList.First((r) => Equals(r.Item, requirement.Item));
-                        item.Amount += requirement.Amount;
-                        continue;
+                        accumulator[requirement.Item] = current + requirement.Amount;
                     }
-
-                    newList.Add(requirement);
+                    else
+                    {
+                        accumulator[requirement.Item] = requirement.Amount;
+                    }
                 }
 
-                return newList;
-            }
+                result.AddRange(accumulator.Select(kvp => new ItemRequirement { Item = kvp.Key, Amount = kvp.Value }));
 
-            #endregion
+                return result;
+            }
 
             public bool Equals(ItemRequirement other)
             {
