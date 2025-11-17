@@ -261,7 +261,7 @@ namespace Runtime.Player.Inventory
         {
             foreach (var requirement in requirements)
             {
-                if (requirement.Amount <= 0 || requirement.Item == null)
+                if (requirement.Amount <= 0 || !requirement.Item)
                 {
                     continue;
                 }
@@ -277,7 +277,8 @@ namespace Runtime.Player.Inventory
 
         public bool TryRemoveRequirements(IEnumerable<ItemRequirement> requirements)
         {
-            IEnumerable<ItemRequirement> itemRequirements = requirements as ItemRequirement[] ?? requirements.ToArray();
+            requirements = ItemRequirement.Compress(requirements);
+            IEnumerable<ItemRequirement> itemRequirements = requirements.ToArray();
             if (!CanMeetRequirements(itemRequirements))
             {
                 return false;
@@ -383,12 +384,56 @@ namespace Runtime.Player.Inventory
         }
 
         [Serializable]
-        public struct ItemRequirement
+        public struct ItemRequirement : IEquatable<ItemRequirement>
         {
             public Item Item;
             public int Amount;
 
+            /// <summary>
+            /// Return an organized list of requirements where duplicate items are merged into the same requirements
+            /// </summary>
+            /// <param name="requirements"></param>
+            /// <returns></returns>
+            public static List<ItemRequirement> Compress(IEnumerable<ItemRequirement> requirements)
+            {
+                var newList = new List<ItemRequirement>();
+
+                foreach (var requirement in requirements)
+                {
+                    if (requirement.Amount <= 0 || !requirement.Item)
+                    {
+                        continue;
+                    }
+
+                    if (newList.Contains(requirement))
+                    {
+                        var item = newList.First((r) => Equals(r.Item, requirement.Item));
+                        item.Amount += requirement.Amount;
+                        continue;
+                    }
+
+                    newList.Add(requirement);
+                }
+
+                return newList;
+            }
+
             #endregion
+
+            public bool Equals(ItemRequirement other)
+            {
+                return Equals(Item, other.Item) && Amount == other.Amount;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is ItemRequirement other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Item, Amount);
+            }
         }
     }
 }
