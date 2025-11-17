@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Runtime.Inventory
+namespace Runtime.Player.Inventory
 {
     [RequireComponent(typeof(Collider2D))]
     public class ItemCollector : MonoBehaviour

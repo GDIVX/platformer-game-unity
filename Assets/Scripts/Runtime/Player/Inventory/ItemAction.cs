@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Runtime.Inventory
+namespace Runtime.Player.Inventory
 {
     /// <summary>
     /// Abstract base class for item interactions such as equipping the item or consuming it

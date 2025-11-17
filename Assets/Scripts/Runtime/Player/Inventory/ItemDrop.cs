@@ -2,7 +2,7 @@ using System.Collections;
 using Runtime.Inventory.UI;
 using UnityEngine;
 
-namespace Runtime.Inventory
+namespace Runtime.Player.Inventory
 {
     public class ItemDrop : MonoBehaviour
     {
