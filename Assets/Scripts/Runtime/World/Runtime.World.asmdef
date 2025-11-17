@@ -1,9 +1,8 @@
 {
-    "name": "Runtime.Player",
+    "name": "Runtime.World",
     "rootNamespace": "",
     "references": [
-        "GUID:75469ad4d38634e559750d17036d5f7c",
-        "GUID:9e39bcccacc347f4384dcb124b753572"
+        "DOTween.Modules"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

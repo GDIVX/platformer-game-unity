@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Runtime.Physics2D
+namespace Runtime.GamePhysics
 {
     /// <summary>
     /// Builds a modular 2D hinge chain starting from THIS object as the anchor.

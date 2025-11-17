@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Runtime.Inventory;
+using Runtime.Player.Inventory;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -8,6 +10,7 @@ namespace Runtime.Inventory.UI
     {
         [SerializeField] private InventoryItem _inventoryItemPrefab;
         [SerializeField] private RectTransform _contentPanel;
+        [SerializeField] private InventoryController _inventoryController;
 
         [ShowInInspector, ReadOnly] private List<InventoryItem> _inventoryItems = new();
 
@@ -28,6 +31,11 @@ namespace Runtime.Inventory.UI
         public void Hide()
         {
             gameObject.SetActive(false);
+        }
+
+        public void SortInventory()
+        {
+            _inventoryController?.SortInventory();
         }
     }
 }

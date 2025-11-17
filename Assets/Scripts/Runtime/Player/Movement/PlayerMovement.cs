@@ -8,7 +8,6 @@ using Runtime.Movement;
 using Runtime.Player.Movement.Abilities;
 using Runtime.Player.Movement.Events;
 using Runtime.Player.Movement.States;
-using Runtime.Player.Movement.Tools;
 
 namespace Runtime.Player.Movement
 {
