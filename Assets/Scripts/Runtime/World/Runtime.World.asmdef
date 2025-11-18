@@ -2,7 +2,8 @@
     "name": "Runtime.World",
     "rootNamespace": "",
     "references": [
-        "DOTween.Modules"
+        "DOTween.Modules",
+        "Runtime.Player.Inventory"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

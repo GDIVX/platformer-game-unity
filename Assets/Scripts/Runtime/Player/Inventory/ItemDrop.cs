@@ -9,26 +9,23 @@ namespace Runtime.Player.Inventory
 {
     public class ItemDrop : MonoBehaviour
     {
-        [Header("View")]
-        [SerializeField] private ItemView _itemView;
+        [Header("View")] [SerializeField] private ItemView _itemView;
 
-        [Header("Data")]
-        [SerializeField] private Item _item;
+        [Header("Data")] [SerializeField] private Item _item;
         [SerializeField, Min(1)] private int _count;
 
-        [Header("Movement")]
-        [SerializeField] private float _pickupDistance = 0.6f;
+        [Header("Movement")] [SerializeField] private float _pickupDistance = 0.6f;
         [SerializeField] private float _baseSpeed = 3f;
         [SerializeField] private float _distanceAccel = 6f;
         [SerializeField] private float _maxMagnetDistance = 6f;
 
-        [Header("Events")]
-        public UnityEvent OnMovementStart;
+        [Header("Events")] public UnityEvent OnMovementStart;
         public UnityEvent OnPickUp;
 
         private Coroutine _collectRoutine;
         private bool _movementStarted;
-        
+        private bool _canBeCollected = true;
+
         private static GameObject _player;
 
         public int Count
@@ -57,6 +54,19 @@ namespace Runtime.Player.Inventory
             UpdateView();
         }
 
+
+        public void SetPickupDelay(float duration)
+        {
+            _canBeCollected = false;
+            StartCoroutine(PickupDelayRoutine(duration));
+        }
+
+        private IEnumerator PickupDelayRoutine(float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            _canBeCollected = true;
+        }
+
         private bool TryAddToInventory(InventoryController inventory)
         {
             if (!inventory || !_item)
@@ -74,7 +84,8 @@ namespace Runtime.Player.Inventory
 
         public void BeginCollection(InventoryController inventory)
         {
-            if (_collectRoutine != null || inventory == null)
+            if (!_canBeCollected) return;
+            if (_collectRoutine != null || inventory == null || _item == null)
                 return;
 
             _collectRoutine = StartCoroutine(CollectRoutine(inventory));
@@ -126,7 +137,7 @@ namespace Runtime.Player.Inventory
                     // Gravity bias: if we're moving DOWN, accelerate slightly
                     if (dir.y < 0f)
                     {
-                        dir.y -= 0.4f;   // stronger downward pull
+                        dir.y -= 0.4f; // stronger downward pull
                     }
                     else
                     {
