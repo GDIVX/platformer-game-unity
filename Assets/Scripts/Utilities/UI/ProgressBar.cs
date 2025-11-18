@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,11 +12,15 @@ namespace Utilities.UI
         public int current;
         public Image mask;
 
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
+        #if UNITY_EDITOR
+        [MenuItem("GameObject/UI/ProgressBar")]
+        public static void CreateProgressBar()
         {
-
+            GameObject obj = Instantiate(Resources.Load<GameObject>("UI/ProgressBar"));
+            obj.transform.SetParent(Selection.activeGameObject.transform,false);
         }
+        #endif
+
 
         // Update is called once per frame
         void Update()
