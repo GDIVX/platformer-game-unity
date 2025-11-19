@@ -19664,7 +19664,7 @@ MonoBehaviour:
   - {fileID: 1391695501}
   - {fileID: 1486535898}
   _itemDropPrefab: {fileID: 8996791176420086064, guid: 80861fb1fe4ae1647aa2daab94a491cd, type: 3}
-  _playerTransform: {fileID: 0}
+  _playerTransform: {fileID: 1237692335}
   references:
     version: 2
     RefIds:

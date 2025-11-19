@@ -172,7 +172,7 @@ namespace Runtime.Player.Inventory
         [Button]
         public ItemRemovalOutcome RemoveItemAt(int slotIndex, int amount)
         {
-            return _itemService == null ? ItemRemovalOutcome.NoItemToRemove : _itemService.RemoveItemAt(slotIndex, amount);
+            return _itemService?.RemoveItemAt(slotIndex, amount) ?? ItemRemovalOutcome.NoItemToRemove;
         }
 
         [Button]

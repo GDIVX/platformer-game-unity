@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Runtime.Player.Inventory.UI;
 using UnityEngine;
 
 namespace Runtime.Player.Inventory.Services
@@ -10,7 +11,8 @@ namespace Runtime.Player.Inventory.Services
         private readonly InventoryItem _inventoryItemPrefab;
         private readonly ItemDropService _itemDropService;
 
-        public InventoryItemService(List<InventorySlot> slots, InventoryItem inventoryItemPrefab, ItemDropService itemDropService)
+        public InventoryItemService(List<InventorySlot> slots, InventoryItem inventoryItemPrefab,
+            ItemDropService itemDropService)
         {
             _slots = slots;
             _inventoryItemPrefab = inventoryItemPrefab;
@@ -19,7 +21,7 @@ namespace Runtime.Player.Inventory.Services
 
         public bool TryAddItem(Item item, int amount)
         {
-            if (item == null || amount <= 0)
+            if (!item || amount <= 0)
             {
                 return false;
             }
@@ -84,20 +86,16 @@ namespace Runtime.Player.Inventory.Services
                 remaining -= toCreate;
             }
 
-            if (remaining > 0)
-            {
-                _itemDropService.DropItem(item, remaining);
-                return false;
-            }
-
-            return true;
+            if (remaining <= 0) return true;
+            _itemDropService.DropItem(item, remaining);
+            return false;
         }
 
-        public ItemRemovalOutcome RemoveItemAt(int slotIndex, int amount)
+        public InventoryController.ItemRemovalOutcome RemoveItemAt(int slotIndex, int amount)
         {
             if (_slots == null || slotIndex < 0 || slotIndex >= _slots.Count)
             {
-                return ItemRemovalOutcome.NoItemToRemove;
+                return InventoryController.ItemRemovalOutcome.NoItemToRemove;
             }
 
             var slot = _slots[slotIndex];
@@ -105,18 +103,18 @@ namespace Runtime.Player.Inventory.Services
 
             if (!itemInSlot)
             {
-                return ItemRemovalOutcome.NoItemToRemove;
+                return InventoryController.ItemRemovalOutcome.NoItemToRemove;
             }
 
             var newAmount = Mathf.Clamp(itemInSlot.Amount - amount, 0, itemInSlot.Item.MaxStack);
             if (newAmount <= 0)
             {
                 itemInSlot.DestroySelf();
-                return ItemRemovalOutcome.ItemDestroyed;
+                return InventoryController.ItemRemovalOutcome.ItemDestroyed;
             }
 
             itemInSlot.SetAmount(newAmount);
-            return ItemRemovalOutcome.ChangedStackAmount;
+            return InventoryController.ItemRemovalOutcome.ChangedStackAmount;
         }
 
         public void RemoveItemStacks(string itemName, int amount)
@@ -159,7 +157,7 @@ namespace Runtime.Player.Inventory.Services
 
         private void CreateNewItem(Item item, InventorySlot slot, int amount)
         {
-            if (item == null)
+            if (!item)
             {
                 Debug.LogWarning("Item cannot be null");
                 return;
@@ -167,14 +165,14 @@ namespace Runtime.Player.Inventory.Services
 
             if (!_inventoryItemPrefab)
             {
-                Debug.LogWarning("Inventory item prefab is not assigned");
+                Debug.LogError("Inventory item prefab is not assigned");
                 return;
             }
 
             if (amount <= 0)
             {
-                Debug.LogWarning("Amount of items cannot be less or equal to zero");
-                return;
+                Debug.LogWarning("Amount of items cannot be less or equal to zero. Setting to 1");
+                amount = 1;
             }
 
             var newItem = UnityEngine.Object.Instantiate(_inventoryItemPrefab);

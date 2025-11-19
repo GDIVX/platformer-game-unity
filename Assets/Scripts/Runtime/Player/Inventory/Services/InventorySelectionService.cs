@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Runtime.Player.Inventory.UI;
 
 namespace Runtime.Player.Inventory.Services
 {

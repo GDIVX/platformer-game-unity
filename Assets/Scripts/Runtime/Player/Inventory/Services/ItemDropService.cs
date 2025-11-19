@@ -13,20 +13,21 @@ namespace Runtime.Player.Inventory.Services
             _playerTransform = playerTransform;
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         public void DropItem(Item item, int amount)
         {
-            if (item == null || amount <= 0)
+            if (!item || amount <= 0)
             {
                 return;
             }
 
             if (!_itemDropPrefab)
             {
-                Debug.LogWarning("Item drop prefab is not assigned");
+                Debug.LogError("Item drop prefab is not assigned");
                 return;
             }
 
-            if (_playerTransform == null)
+            if (!_playerTransform)
             {
                 Debug.LogWarning("Player transform is not assigned; cannot determine drop position.");
                 return;
