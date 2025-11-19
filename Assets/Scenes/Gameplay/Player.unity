@@ -15345,7 +15345,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
-    TrackingTarget: {fileID: 1378950748}
+    TrackingTarget: {fileID: 1237692335}
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
@@ -15377,7 +15377,7 @@ Transform:
   m_GameObject: {fileID: 1191507197}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.00000047683716, y: 0.45000058, z: -60}
+  m_LocalPosition: {x: 0.15, y: 3.6238859, z: -60}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15398,21 +15398,21 @@ MonoBehaviour:
   CameraDistance: 60
   DeadZoneDepth: 0
   Composition:
-    ScreenPosition: {x: 0, y: 0}
+    ScreenPosition: {x: 0, y: 0.15}
     DeadZone:
       Enabled: 1
-      Size: {x: 0.2, y: 0.15}
+      Size: {x: 0.25, y: 0.15}
     HardLimits:
       Enabled: 0
-      Size: {x: 0.2, y: 1}
+      Size: {x: 0.5, y: 1}
       Offset: {x: 0, y: 1}
   CenterOnActivate: 1
-  TargetOffset: {x: 0, y: 0.45, z: 0}
+  TargetOffset: {x: 0.15, y: 0.45, z: 0}
   Damping: {x: 0.25, y: 0.35, z: 1}
   Lookahead:
     Enabled: 1
     Time: 0.25
-    Smoothing: 0.5
+    Smoothing: 0.8
     IgnoreY: 1
 --- !u!114 &1191507202
 MonoBehaviour:
@@ -16982,58 +16982,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 1337511009888141929, guid: 9838de0aeba62e84c96842e0bde1ef44, type: 3}
   m_PrefabInstance: {fileID: 1375188419}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1378950747
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1378950748}
-  - component: {fileID: 1378950749}
-  m_Layer: 0
-  m_Name: Target Group
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1378950748
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378950747}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2023927340}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1378950749
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1378950747}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e5eb80d8e62d9d145bb50fb783c0f731, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineTargetGroup
-  PositionMode: 0
-  RotationMode: 1
-  UpdateMethod: 2
-  Targets:
-  - Object: {fileID: 1237692335}
-    Weight: 10
-    Radius: 12
-  m_LegacyTargets: []
 --- !u!1 &1382383810
 GameObject:
   m_ObjectHideFlags: 0
@@ -20219,7 +20167,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineImpulseSource
   ImpulseDefinition:
     ImpulseChannel: 1
-    ImpulseShape: 2
+    ImpulseShape: 4
     CustomImpulseShape:
       serializedVersion: 2
       m_Curve: []
@@ -20257,7 +20205,7 @@ MonoBehaviour:
     DissipationMode: 2
     DissipationDistance: 20
     PropagationSpeed: 343
-  DefaultVelocity: {x: 0.45, y: 0, z: 0}
+  DefaultVelocity: {x: 0.45, y: 0.15, z: 0}
 --- !u!114 &1864471911
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20291,26 +20239,53 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
+      inSlope: 0.6666666
+      outSlope: 0.6666666
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0
-      outWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.15
+      value: 0.1
+      inSlope: 1.6666665
+      outSlope: 1.6666665
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.3
+      value: 0.5
+      inSlope: 2.0833333
+      outSlope: 2.0833333
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.8
+      inSlope: 0.95000005
+      outSlope: 0.95000005
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 2
-      outSlope: 2
-      tangentMode: 0
+      inSlope: 0.39999998
+      outSlope: 0.39999998
+      tangentMode: 34
       weightedMode: 0
-      inWeight: 0
+      inWeight: 0.33333334
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _maxAirTime: 9.5
-  _stats: {fileID: 11400000, guid: 1927c16c03c42c148aaf4027c76a4915, type: 2}
+  _maxAirTime: 5
+  _stats: {fileID: 11400000, guid: cd4dd93a22fe473498ea57d571d841a0, type: 2}
   _playerMovement: {fileID: 1544233365}
 --- !u!1001 &1898011236
 PrefabInstance:
@@ -20890,7 +20865,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1191507200}
-  - {fileID: 1378950748}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2032458615
