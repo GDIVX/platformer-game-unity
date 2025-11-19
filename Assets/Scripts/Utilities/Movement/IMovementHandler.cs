@@ -30,6 +30,12 @@ namespace Runtime.Movement
         void AddVelocity(Vector2 delta);
 
         /// <summary>
+        /// Queues a force that will be applied after the current movement step.
+        /// </summary>
+        /// <param name="force">Force represented as a delta velocity.</param>
+        void ApplyForce(Vector2 force);
+
+        /// <summary>
         /// Overrides the vertical velocity component.
         /// </summary>
         /// <param name="verticalVelocity">New vertical velocity value.</param>
@@ -40,5 +46,10 @@ namespace Runtime.Movement
         /// </summary>
         /// <param name="delta">Change applied to the vertical velocity.</param>
         void AddVerticalVelocity(float delta);
+
+        /// <summary>
+        /// Prevents any movement for the rest of the current frame.
+        /// </summary>
+        void FreezeForFrame();
     }
 }

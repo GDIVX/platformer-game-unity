@@ -8,6 +8,7 @@ using Runtime.Movement;
 using Runtime.Player.Movement.Abilities;
 using Runtime.Player.Movement.Events;
 using Runtime.Player.Movement.States;
+using Runtime.Player.Movement.Controllers;
 
 namespace Runtime.Player.Movement
 {
@@ -34,6 +35,8 @@ namespace Runtime.Player.Movement
         [ShowInInspector, ReadOnly] public PlayerMovementContext Context { get; private set; }
 
         public PlayerMovementStateMachine StateMachine => _stateMachine;
+
+        public MovementFacade Movement => Context?.Movement;
 
         private readonly List<IMovementAbility> _configuredAbilities = new List<IMovementAbility>();
 
@@ -416,6 +419,7 @@ namespace Runtime.Player.Movement
 
             CollisionCheck();
             _stateMachine.FixedTick();
+            Context.Movement?.CommitFrame();
         }
 
         private void ReadInput()
@@ -657,12 +661,9 @@ namespace Runtime.Player.Movement
 
         public void SetVelocity(Vector2 velocity)
         {
-            if (Context?.RuntimeData != null)
+            if (Context?.Movement != null)
             {
-                var data = Context.RuntimeData;
-                data.Velocity = new Vector2(velocity.x, velocity.y);
-                data.VerticalVelocity = velocity.y;
-                SyncRuntimeVelocityToRigidbody();
+                Context.Movement.SetVelocity(velocity);
                 return;
             }
 
@@ -674,29 +675,28 @@ namespace Runtime.Player.Movement
 
         public void AddVelocity(Vector2 delta)
         {
-            if (Context?.RuntimeData != null)
+            ApplyForce(delta);
+        }
+
+        public void ApplyForce(Vector2 force)
+        {
+            if (Context?.Movement != null)
             {
-                var data = Context.RuntimeData;
-                data.Velocity = new Vector2(data.Velocity.x + delta.x, data.Velocity.y + delta.y);
-                data.VerticalVelocity += delta.y;
-                SyncRuntimeVelocityToRigidbody();
+                Context.Movement.ApplyForce(force);
                 return;
             }
 
             if (_rb != null)
             {
-                _rb.linearVelocity += delta;
+                _rb.linearVelocity += force;
             }
         }
 
         public void SetVerticalVelocity(float verticalVelocity)
         {
-            if (Context?.RuntimeData != null)
+            if (Context?.Movement != null)
             {
-                var data = Context.RuntimeData;
-                data.VerticalVelocity = verticalVelocity;
-                data.Velocity = new Vector2(data.Velocity.x, verticalVelocity);
-                SyncRuntimeVelocityToRigidbody();
+                Context.Movement.SetVerticalVelocity(verticalVelocity);
                 return;
             }
 
@@ -710,18 +710,27 @@ namespace Runtime.Player.Movement
 
         public void AddVerticalVelocity(float delta)
         {
-            SetVerticalVelocity(VerticalVelocity + delta);
-        }
-
-        private void SyncRuntimeVelocityToRigidbody()
-        {
-            if (_rb == null || Context?.RuntimeData == null)
+            if (Context?.Movement != null)
             {
+                Context.Movement.AddVerticalVelocity(delta);
                 return;
             }
 
-            var data = Context.RuntimeData;
-            _rb.linearVelocity = new Vector2(data.Velocity.x, data.VerticalVelocity);
+            SetVerticalVelocity(VerticalVelocity + delta);
+        }
+
+        public void FreezeForFrame()
+        {
+            if (Context?.Movement != null)
+            {
+                Context.Movement.Freeze();
+                return;
+            }
+
+            if (_rb != null)
+            {
+                _rb.linearVelocity = Vector2.zero;
+            }
         }
 
         private class AbilityRuntimeData

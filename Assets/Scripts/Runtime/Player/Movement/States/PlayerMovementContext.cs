@@ -75,6 +75,8 @@ namespace Runtime.Player.Movement.States
                 OnTurnEvent,
                 Jump);
 
+            Movement = new MovementFacade(RuntimeData, Rigidbody);
+
             Jump.ConfigureDependencies(Wall, Horizontal);
 
             InitializeFlightRuntimeData();
@@ -101,6 +103,8 @@ namespace Runtime.Player.Movement.States
         [ShowInInspector, ReadOnly] public JumpController Jump { get; }
 
         [ShowInInspector, ReadOnly] public WallInteractionController Wall { get; }
+
+        [ShowInInspector, ReadOnly] public MovementFacade Movement { get; }
 
 
         public void SetInput(Vector2 moveInput, bool runHeld, bool jumpPressed, bool jumpHeld, bool jumpReleased)
