@@ -12,7 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cca01c178334ec890e1bb84d361f2a1, type: 3}
   m_Name: New Crafting Recipe
   m_EditorClassIdentifier: Runtime.Player.Inventory::Runtime.Player.Inventory.Crafting.CraftingRecipe
-  Output: {fileID: 0}
+  Output: {fileID: 11400000, guid: 6122a1a531007e542b4f27f7a635e798, type: 2}
   OutputAmount: 1
-  Requirements: []
-  Description: 
+  Requirements:
+  - Item: {fileID: 11400000, guid: c0e39e5b397b6904c89e6da1a0ca0a01, type: 2}
+    Amount: 4
+  - Item: {fileID: 11400000, guid: cb127a49d990b58409b1348230420ad5, type: 2}
+    Amount: 1
+  Description: That's a demo item

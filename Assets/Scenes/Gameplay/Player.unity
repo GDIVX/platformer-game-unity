@@ -6760,7 +6760,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 10, y: 10}
+  m_Size: {x: 2, y: 2}
   m_EdgeRadius: 0
 --- !u!1001 &500749024
 PrefabInstance:
@@ -7532,7 +7532,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: 0.073795885}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -7542,7 +7542,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 0.8}
+  m_Size: {x: 1, y: 0.8516571}
   m_EdgeRadius: 0
 --- !u!4 &648492759
 Transform:
@@ -15729,7 +15729,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1674405102}
@@ -19548,6 +19548,7 @@ MonoBehaviour:
   _inventoryGroup: {fileID: 629116844}
   _inventoryItemPrefab: {fileID: 5568448967001937556, guid: daa7c8f98a481034c9db5a3425d4fd19, type: 3}
   _freezeTimeOnInventoryOpen: 0
+  _startingCraftingRecipes: []
   _inventorySorter:
     rid: 22852643936796747
   _slots:
