@@ -10,7 +10,7 @@ namespace Runtime.Player.Inventory
     [CreateAssetMenu(fileName = "Items ")]
     public class Item : ScriptableObject
     {
-        public string ItemName;
+        public string DisplayName;
         public Sprite Sprite;
         public int MaxStack = 100;
         public InventoryLayer Layer = InventoryLayer.Everything;
@@ -20,9 +20,9 @@ namespace Runtime.Player.Inventory
 #if UNITY_EDITOR
         private void OnEnable()
         {
-            if (ItemName.IsNullOrWhitespace())
+            if (DisplayName.IsNullOrWhitespace())
             {
-                ItemName = name;
+                DisplayName = name;
             }
         }
 #endif
