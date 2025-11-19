@@ -20,7 +20,7 @@ namespace Runtime.Player.Inventory.UI
         {
             get
             {
-                if (_inventoryItem != null) return _inventoryItem;
+                if (_inventoryItem) return _inventoryItem;
 
                 _inventoryItem = GetComponentInChildren<InventoryItem>();
                 return _inventoryItem;
