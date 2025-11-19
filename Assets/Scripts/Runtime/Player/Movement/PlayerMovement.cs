@@ -425,12 +425,40 @@ namespace Runtime.Player.Movement
                 return;
             }
 
+            bool runHeld = ShouldApplyRunInput(InputManager.RunHeld);
             Context.SetInput(
                 InputManager.Movement,
-                InputManager.RunHeld,
+                runHeld,
                 InputManager.JumpPressed,
                 InputManager.JumpHeld,
                 InputManager.JumpReleased);
+        }
+
+        private bool ShouldApplyRunInput(bool desiredRunHeld)
+        {
+            if (!desiredRunHeld)
+            {
+                return false;
+            }
+
+            bool dashStateAvailable = _stateMachine?.GetState<DashState>() != null;
+            if (!dashStateAvailable)
+            {
+                return desiredRunHeld;
+            }
+
+            var data = Context?.RuntimeData;
+            if (data == null)
+            {
+                return desiredRunHeld;
+            }
+
+            if (data.IsDashing || data.DashRequested)
+            {
+                return false;
+            }
+
+            return desiredRunHeld;
         }
 
         private void CollisionCheck()

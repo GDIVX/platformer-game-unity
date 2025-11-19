@@ -15,7 +15,6 @@ namespace Runtime.Player
         public static event Action RunReleased;
 
         public static event Action DashPressed;
-        public static event Action DashReleased;
 
         public static event Action InteractPressed;
         public static event Action InteractReleased;
@@ -38,7 +37,6 @@ namespace Runtime.Player
         public static bool JumpReleased;
 
         public static bool RunHeld;
-        public static bool DashHeld;
         public static bool InteractHeld;
         public static bool GadgetHeld;
         public static bool PrimaryHeld;
@@ -50,7 +48,6 @@ namespace Runtime.Player
         private InputAction _moveAction;
         private InputAction _jumpAction;
         private InputAction _runAction;
-        private InputAction _dashAction;
         private InputAction _interactAction;
         private InputAction _gadgetAction;
         private InputAction _primaryAction;
@@ -63,7 +60,6 @@ namespace Runtime.Player
             _moveAction = PlayerInput.actions["Move"];
             _jumpAction = PlayerInput.actions["Jump"];
             _runAction = PlayerInput.actions["Run"];
-            _dashAction = PlayerInput.actions["Dash"];
             _interactAction = PlayerInput.actions["Interact"];
             _gadgetAction = PlayerInput.actions["Gadget"];
             _primaryAction = PlayerInput.actions["Primary"];
@@ -76,7 +72,6 @@ namespace Runtime.Player
 
             HandleJump();
             HandleRun();
-            HandleDash();
             HandleInteract();
             HandleGadget();
             HandlePrimary();
@@ -98,22 +93,14 @@ namespace Runtime.Player
                 return;
             }
 
-            if (_runAction.WasPressedThisFrame()) RunPressed?.Invoke();
-            if (_runAction.WasReleasedThisFrame()) RunReleased?.Invoke();
-            RunHeld = _runAction.IsPressed();
-        }
-
-        private void HandleDash()
-        {
-            if (_dashAction == null)
+            if (_runAction.WasPressedThisFrame())
             {
-                DashHeld = false;
-                return;
+                RunPressed?.Invoke();
+                DashPressed?.Invoke();
             }
 
-            if (_dashAction.WasPressedThisFrame()) DashPressed?.Invoke();
-            if (_dashAction.WasReleasedThisFrame()) DashReleased?.Invoke();
-            DashHeld = _dashAction.IsPressed();
+            if (_runAction.WasReleasedThisFrame()) RunReleased?.Invoke();
+            RunHeld = _runAction.IsPressed();
         }
 
         private void HandleInteract()
