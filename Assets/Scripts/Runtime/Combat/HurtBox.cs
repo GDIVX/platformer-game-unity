@@ -90,7 +90,7 @@ namespace Runtime.Combat
                 IMovementHandler movementHandler = GetComponentInParent<IMovementHandler>();
                 if (movementHandler != null)
                 {
-                    movementHandler.AddVelocity(dir * data.KnockbackForce);
+                    movementHandler.ApplyForce(dir * data.KnockbackForce);
                     knockbackApplied = true;
                 }
                 else
