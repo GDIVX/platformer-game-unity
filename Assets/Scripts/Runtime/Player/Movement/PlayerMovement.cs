@@ -8,6 +8,7 @@ using Runtime.Movement;
 using Runtime.Player.Movement.Abilities;
 using Runtime.Player.Movement.Events;
 using Runtime.Player.Movement.States;
+using Runtime.Player.Movement.Kinematic;
 
 namespace Runtime.Player.Movement
 {
@@ -49,6 +50,12 @@ namespace Runtime.Player.Movement
 
             if (_movementStats == null)
             {
+                return;
+            }
+
+            if (_movementStats.UseKinematicPrototype)
+            {
+                BootstrapKinematicPrototype();
                 return;
             }
 
@@ -722,6 +729,31 @@ namespace Runtime.Player.Movement
 
             var data = Context.RuntimeData;
             _rb.linearVelocity = new Vector2(data.Velocity.x, data.VerticalVelocity);
+        }
+
+        private void BootstrapKinematicPrototype()
+        {
+            var prototype = GetComponent<KinematicPlayerMovement>();
+            if (prototype == null)
+            {
+                prototype = gameObject.AddComponent<KinematicPlayerMovement>();
+            }
+
+            prototype.Configure(
+                _movementStats,
+                _movementEventBus,
+                _feetCollider,
+                _bodyCollider,
+                transform,
+                OnJump,
+                OnFall,
+                OnMoveStart,
+                OnMoveStopped,
+                OnMoveFullyStopped,
+                OnTurn,
+                OnLanded);
+
+            enabled = false;
         }
 
         private class AbilityRuntimeData
