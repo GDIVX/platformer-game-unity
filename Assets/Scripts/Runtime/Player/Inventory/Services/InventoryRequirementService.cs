@@ -18,7 +18,7 @@ namespace Runtime.Player.Inventory.Services
 
         public int GetAvailableAmount(Item item)
         {
-            return item == null ? 0 : GetAvailableAmount(item.ItemName);
+            return item == null ? 0 : GetAvailableAmount(item.DisplayName);
         }
 
         public int GetAvailableAmount(string itemName)
@@ -32,7 +32,7 @@ namespace Runtime.Player.Inventory.Services
                 select slot.InventoryItem
                 into slotItem
                 where slotItem
-                where string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase)
+                where string.Equals(slotItem.Item.DisplayName, itemName, StringComparison.OrdinalIgnoreCase)
                 select slotItem.Amount).Sum();
         }
 
@@ -67,7 +67,7 @@ namespace Runtime.Player.Inventory.Services
                     continue;
                 }
 
-                _inventoryItemService.RemoveItemStacks(requirement.Item.ItemName, requirement.Amount);
+                _inventoryItemService.RemoveItemStacks(requirement.Item.DisplayName, requirement.Amount);
             }
 
             return true;

@@ -39,7 +39,7 @@ namespace Runtime.Player.Inventory
                     continue;
                 }
 
-                var itemName = slotItem.Item.ItemName;
+                var itemName = slotItem.Item.DisplayName;
                 if (stackTotals.TryGetValue(itemName, out var existing))
                 {
                     existing.amount += slotItem.Amount;

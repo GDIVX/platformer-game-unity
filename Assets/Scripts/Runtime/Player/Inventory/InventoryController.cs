@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Runtime.Player.Inventory.Crafting;
+using Runtime.Player.Inventory.Crafting.Runtime.Player.Crafting;
 using Runtime.Player.Inventory.Services;
 using Runtime.Player.Inventory.UI;
 using Sirenix.OdinInspector;
@@ -20,6 +22,9 @@ namespace Runtime.Player.Inventory
         [SerializeField, FoldoutGroup("UI")] private InventoryItem _inventoryItemPrefab;
 
         [SerializeField, FoldoutGroup("UI")] private bool _freezeTimeOnInventoryOpen;
+
+        [SerializeField, FoldoutGroup("Crafting")]
+        private List<CraftingRecipe> _startingCraftingRecipes;
 
         [SerializeReference, FoldoutGroup("Content")]
         private IInventorySorter _inventorySorter = new DefaultInventorySorter();
@@ -43,6 +48,7 @@ namespace Runtime.Player.Inventory
         private InventoryRequirementService _requirementService;
         private InventoryUiService _uiService;
         private ItemDropService _itemDropService;
+        private CraftingService _craftingService;
 
         // private bool _inventoryOpen;
 
@@ -76,6 +82,7 @@ namespace Runtime.Player.Inventory
             _itemService = new InventoryItemService(_slots, _inventoryItemPrefab, _itemDropService);
             _requirementService = new InventoryRequirementService(_slots, _itemService);
             _uiService = new InventoryUiService(_inventoryGroup, _playerInput, _freezeTimeOnInventoryOpen);
+            _craftingService = new CraftingService(this, _startingCraftingRecipes);
 
             if (_slots.Count > 0)
             {
@@ -150,45 +157,39 @@ namespace Runtime.Player.Inventory
         /// Tries to add the requested amount of the given item to the inventory.
         /// Returns true if all items fit; false if some or all had to be dropped.
         /// </summary>
-        [Button]
+        [Button, FoldoutGroup("Content")]
         public bool TryAddItem(Item item, int amount)
         {
             return _itemService != null && _itemService.TryAddItem(item, amount);
         }
 
-        [Button]
         public void SelectedSlotAt(int slotIndex)
         {
             _selectionService?.SelectSlot(slotIndex);
             _selectedSlotIndex = _selectionService?.SelectedSlotIndex ?? -1;
         }
 
-        [Button]
         public Item GetCurrentlySelectedItem()
         {
             return _selectionService?.GetCurrentlySelectedItem();
         }
 
-        [Button]
+        [Button, FoldoutGroup("Content")]
         public ItemRemovalOutcome RemoveItemAt(int slotIndex, int amount)
         {
             return _itemService?.RemoveItemAt(slotIndex, amount) ?? ItemRemovalOutcome.NoItemToRemove;
         }
 
-        [Button]
+        [Button, FoldoutGroup("Content")]
         public ItemRemovalOutcome RemoveCurrentlySelectedItem(int amount)
         {
             return RemoveItemAt(_selectedSlotIndex, amount);
         }
 
+
         public int GetAvailableAmount(Item item)
         {
             return _requirementService?.GetAvailableAmount(item) ?? 0;
-        }
-
-        public int GetAvailableAmount(string itemName)
-        {
-            return _requirementService?.GetAvailableAmount(itemName) ?? 0;
         }
 
         public bool CanMeetRequirements(IEnumerable<ItemRequirement> requirements)
@@ -199,6 +200,32 @@ namespace Runtime.Player.Inventory
         public bool TryRemoveRequirements(IEnumerable<ItemRequirement> requirements)
         {
             return _requirementService?.TryRemoveRequirements(requirements) ?? true;
+        }
+
+        [Button, FoldoutGroup("Crafting")]
+        public bool TryCraft(CraftingRecipe recipe)
+        {
+            return _craftingService?.TryCraft(recipe) ?? false;
+        }
+
+        public List<CraftingRecipe> GetCraftingRecipes(bool showAvailableOnly)
+        {
+            return _craftingService?.GetRecipes(showAvailableOnly).ToList() ?? new List<CraftingRecipe>();
+        }
+
+        public void AddCraftingRecipe(CraftingRecipe recipe)
+        {
+            _craftingService?.AddRecipe(recipe);
+        }
+
+        public bool MeetsRequirement(ItemRequirement requirement)
+        {
+            return _craftingService?.MeetsRequirement(requirement) ?? false;
+        }
+
+        public List<RequirementViewModel> BuildRequirementModels(CraftingRecipe recipe)
+        {
+            return _craftingService?.BuildRequirementModels(recipe).ToList() ?? new List<RequirementViewModel>();
         }
 
         [Button]

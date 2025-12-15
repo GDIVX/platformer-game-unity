@@ -47,7 +47,7 @@ namespace Runtime.Player.Inventory.Services
                     continue;
                 }
 
-                if (!string.Equals(slotItem.Item.ItemName, item.ItemName, StringComparison.Ordinal))
+                if (!string.Equals(slotItem.Item.DisplayName, item.DisplayName, StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -135,7 +135,7 @@ namespace Runtime.Player.Inventory.Services
 
                 var slotItem = slot.InventoryItem;
                 if (!slotItem ||
-                    !string.Equals(slotItem.Item.ItemName, itemName, StringComparison.OrdinalIgnoreCase))
+                    !string.Equals(slotItem.Item.DisplayName, itemName, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
