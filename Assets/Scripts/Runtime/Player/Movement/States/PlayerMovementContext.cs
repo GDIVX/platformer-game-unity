@@ -56,7 +56,7 @@ namespace Runtime.Player.Movement.States
                 OnFallEvent,
                 OnLandedEvent);
 
-            Wall = new WallInteractionController(
+            WallController = new WallInteractionController(
                 RuntimeData,
                 Stats,
                 Rigidbody,
@@ -75,7 +75,7 @@ namespace Runtime.Player.Movement.States
                 OnTurnEvent,
                 Jump);
 
-            Jump.ConfigureDependencies(Wall, Horizontal);
+            Jump.ConfigureDependencies(WallController, Horizontal);
 
             InitializeFlightRuntimeData();
         }
@@ -100,7 +100,7 @@ namespace Runtime.Player.Movement.States
 
         [ShowInInspector, ReadOnly] public JumpController Jump { get; }
 
-        [ShowInInspector, ReadOnly] public WallInteractionController Wall { get; }
+        [ShowInInspector, ReadOnly] public WallInteractionController WallController { get; }
 
 
         public void SetInput(Vector2 moveInput, bool runHeld, bool jumpPressed, bool jumpHeld, bool jumpReleased)
@@ -112,7 +112,7 @@ namespace Runtime.Player.Movement.States
         public void UpdateTimers(float deltaTime)
         {
             Jump.UpdateTimers(deltaTime);
-            Wall.UpdateTimers(deltaTime);
+            WallController.UpdateTimers(deltaTime);
 
             UpdateDashTimers(deltaTime);
             UpdateFlightTimers(deltaTime);
@@ -121,6 +121,15 @@ namespace Runtime.Player.Movement.States
         public void RefillFlightTime()
         {
             SetFlightTimeRemaining(RuntimeData.FlightTimeMax);
+        }
+        
+        /// <summary>
+        /// Updates the ground state based on the given raycast hit.
+        /// </summary>
+        public void SetGroundHit(RaycastHit2D hit)
+        {
+            RuntimeData.GroundHit = hit;
+            RuntimeData.IsGrounded = hit.collider;
         }
 
         public void SetFlightTimeRemaining(float time)

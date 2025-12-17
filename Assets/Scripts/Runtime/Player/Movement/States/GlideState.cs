@@ -70,7 +70,7 @@ namespace Runtime.Player.Movement.States
                 }
             }
 
-            if (Context.Wall.ShouldStartWallSlide())
+            if (Context.WallController.ShouldStartWallSlide())
             {
                 StateMachine.ChangeState<WallSlideState>();
                 return;
@@ -124,7 +124,7 @@ namespace Runtime.Player.Movement.States
 
             glideData.ElapsedTime += fixedDeltaTime;
 
-            if (Context.Wall.ShouldStartWallSlide())
+            if (Context.WallController.ShouldStartWallSlide())
             {
                 StateMachine.ChangeState<WallSlideState>();
                 return;
