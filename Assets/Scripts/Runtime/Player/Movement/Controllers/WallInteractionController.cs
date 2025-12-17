@@ -44,14 +44,7 @@ namespace Runtime.Player.Movement.Controllers
         // HIT SETUP
         // ---------------------------------------------------------------------
 
-        /// <summary>
-        /// Updates the ground state based on the given raycast hit.
-        /// </summary>
-        public void SetGroundHit(RaycastHit2D hit)
-        {
-            _data.GroundHit = hit;
-            _data.IsGrounded = hit.collider != null;
-        }
+
 
         /// <summary>
         /// Updates the head bump state from the given raycast hit.

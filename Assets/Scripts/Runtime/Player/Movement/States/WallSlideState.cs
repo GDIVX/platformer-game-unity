@@ -40,7 +40,7 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
-            if (!Context.Wall.CanContinueWallSlide())
+            if (!Context.WallController.CanContinueWallSlide())
             {
                 if (data.IsFastFalling)
                     StateMachine.ChangeState<FastFallingState>();
@@ -59,7 +59,7 @@ namespace Runtime.Player.Movement.States
         {
             var data = Context.RuntimeData;
 
-            if (!Context.Wall.CanContinueWallSlide())
+            if (!Context.WallController.CanContinueWallSlide())
             {
                 if (data.IsGrounded)
                     StateMachine.ChangeState<GroundedState>();
@@ -79,8 +79,8 @@ namespace Runtime.Player.Movement.States
             }
 
             float fixedDeltaTime = Time.fixedDeltaTime;
-            Context.Wall.ApplyWallSlideHorizontal(settings, fixedDeltaTime);
-            Context.Wall.ApplyWallSlideVertical(settings, fixedDeltaTime);
+            Context.WallController.ApplyWallSlideHorizontal(settings, fixedDeltaTime);
+            Context.WallController.ApplyWallSlideVertical(settings, fixedDeltaTime);
             Context.Jump.ApplyVerticalVelocity();
         }
     }

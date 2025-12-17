@@ -27,7 +27,7 @@ namespace Runtime.Player.Movement.States
                 return;
             }
 
-            if (Context.Wall.ShouldStartWallSlide())
+            if (Context.WallController.ShouldStartWallSlide())
             {
                 data.IsFastFalling = false;
                 StateMachine.ChangeState<WallSlideState>();
@@ -69,7 +69,7 @@ namespace Runtime.Player.Movement.States
 
             var data = Context.RuntimeData;
 
-            if (Context.Wall.ShouldStartWallSlide())
+            if (Context.WallController.ShouldStartWallSlide())
             {
                 data.IsFastFalling = false;
                 StateMachine.ChangeState<WallSlideState>();

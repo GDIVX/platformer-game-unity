@@ -491,7 +491,7 @@ namespace Runtime.Player.Movement
                 _movementStats.GroundDetectionRayLength,
                 _movementStats.GroundLayer);
 
-            Context.Wall.SetGroundHit(groundHit);
+            Context.SetGroundHit(groundHit);
 
 #if UNITY_EDITOR
             if (_movementStats.DebugShowIsGrounded)
@@ -535,7 +535,7 @@ namespace Runtime.Player.Movement
                 _movementStats.HeadDetectionRayLength,
                 _movementStats.GroundLayer);
 
-            Context.Wall.SetHeadHit(headHit);
+            Context.WallController.SetHeadHit(headHit);
 
 #if UNITY_EDITOR
             if (_movementStats.DebugShowHeadBumpBox)
@@ -568,8 +568,8 @@ namespace Runtime.Player.Movement
 
             if (_bodyCollider == null)
             {
-                Context.Wall.ClearWallHit(true);
-                Context.Wall.ClearWallHit(false);
+                Context.WallController.ClearWallHit(true);
+                Context.WallController.ClearWallHit(false);
                 return;
             }
 
@@ -604,8 +604,8 @@ namespace Runtime.Player.Movement
                     castDistance,
                     _movementStats.GroundLayer);
 
-                Context.Wall.SetWallHit(true, rightHit);
-                Context.Wall.SetWallHit(false, leftHit);
+                Context.WallController.SetWallHit(true, rightHit);
+                Context.WallController.SetWallHit(false, leftHit);
             }
             else
             {
@@ -623,8 +623,8 @@ namespace Runtime.Player.Movement
                     castDistance,
                     _movementStats.GroundLayer);
 
-                Context.Wall.SetWallHit(true, rightHit);
-                Context.Wall.SetWallHit(false, leftHit);
+                Context.WallController.SetWallHit(true, rightHit);
+                Context.WallController.SetWallHit(false, leftHit);
             }
         }
 

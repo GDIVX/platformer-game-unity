@@ -28,6 +28,15 @@ namespace Runtime.Player.Movement.States
             {
                 data.DashStopTimer = 0f;
             }
+
+            //Find the ground and make it a parent
+            var ground = Context.RuntimeData.GroundHit.transform;
+            Context.Rigidbody.transform.SetParent(ground);
+        }
+
+        public override void OnExit()
+        {
+            Context.Rigidbody.transform.parent = null;
         }
 
         public override void HandleInput()

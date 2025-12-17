@@ -59,7 +59,7 @@ namespace Runtime.Player.Movement.States
                 }
             }
 
-            if (Context.Wall.ShouldStartWallSlide())
+            if (Context.WallController.ShouldStartWallSlide())
             {
                 StateMachine.ChangeState<WallSlideState>();
                 return;
@@ -103,7 +103,7 @@ namespace Runtime.Player.Movement.States
             Context.Jump.ClampVerticalVelocity();
             Context.Jump.ApplyVerticalVelocity();
 
-            if (Context.Wall.ShouldStartWallSlide())
+            if (Context.WallController.ShouldStartWallSlide())
             {
                 StateMachine.ChangeState<WallSlideState>();
                 return;
