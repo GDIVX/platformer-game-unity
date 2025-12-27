@@ -18,6 +18,9 @@ namespace Runtime.Player.Movement
         public Rigidbody2D.SlideMovement SlideMovement;
         public float DirectionBufferDuration = 0.15f;
 
+        [Header("Prototype")]
+        public bool UseKinematicPrototype = false;
+
 
         [Header("Flight")] [Range(0f, 30f)] public float FlyDuration = 3f;
 
